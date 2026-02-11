@@ -1,0 +1,36 @@
+import 'package:flutter/material.dart';
+
+class AppColors {
+  // Primary Colors - Cyan/Turquoise family
+  static const Color primaryLight = Color(0xFF00ACC1); // Light Cyan
+  static const Color primary = Color(0xFF0097A7); // Primary Cyan
+  static const Color primaryDark = Color(0xFF00838F); // Dark Cyan
+  
+  // Secondary Colors - Teal family
+  static const Color secondaryLight = Color(0xFF26C6DA); // Light Teal
+  static const Color secondary = Color(0xFF00BCD4); // Primary Teal
+  static const Color secondaryDark = Color(0xFF00ACC1); // Dark Teal
+  
+  // Accent Colors - Turquoise family
+  static const Color accentLight = Color(0xFF4DD0E1); // Light Turquoise
+  static const Color accent = Color(0xFF00BFA5); // Primary Turquoise
+  static const Color accentDark = Color(0xFF00897B); // Dark Turquoise
+  
+  // Semantic Colors
+  static const Color success = Color(0xFF00BFA5);
+  static const Color warning = Color(0xFFFFB74D);
+  static const Color error = Color(0xFFE57373);
+  static const Color info = Color(0xFF64B5F6);
+  
+  // Background Colors
+  static const Color backgroundLight = Color(0xFFFFFFFF);
+  static const Color backgroundDark = Color(0xFF121212);
+  static const Color surfaceLight = Color(0xFFFFFFFF);
+  static const Color surfaceDark = Color(0xFF1E1E1E);
+  
+  // Text Colors
+  static const Color textPrimaryLight = Color(0xFF212121);
+  static const Color textSecondaryLight = Color(0xFF757575);
+  static const Color textPrimaryDark = Color(0xFFFFFFFF);
+  static const Color textSecondaryDark = Color(0xFFB3B3B3);
+}
