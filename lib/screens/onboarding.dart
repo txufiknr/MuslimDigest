@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:muslimdigest/utils/extensions.dart';
 import '../config/constants.dart';
 import '../config/colors.dart';
 import '../utils/functions.dart';
@@ -27,10 +28,7 @@ class OnboardingPage extends StatelessWidget {
         ),
         child: Stack(
           children: [
-            Center(child: Transform.scale(
-              scale: 1.2,
-              child: Logo(size: h.screenWidth),
-            )),
+            Center(child: Logo(size: h.screenWidth).scale(1.2)),
             SafeArea(
               child: Padding(
                 padding: const EdgeInsets.all(32.0),
@@ -63,8 +61,9 @@ class OnboardingPage extends StatelessWidget {
                     // Get started button
                     MyButton(
                       text: 'Get Started',
-                      onPressed: () => context.go('/welcome'),
-                    ),
+                      onPressed: () => context.push('/welcome'),
+                      brightness: Brightness.dark,
+                    ).hero('primary-button'),
                     
                     const SizedBox(height: 24),
                     

@@ -48,7 +48,9 @@ extension WidgetExtension on Widget {
   Widget moveIt(double x, double y) => moveTo(Offset(x, y));
   Widget moveX(double x) => moveTo(Offset(x, 0));
   Widget moveY(double y) => moveTo(Offset(0, y));
-  Widget scaleIt(double scale) => Transform.scale(scale: scale, child: this);
+  Widget scale(double scale) => Transform.scale(scale: scale, child: this);
+  Widget clipRadius(double radius) => ClipRRect(borderRadius: BorderRadius.circular(radius), child: this);
+  Widget hero(String tag) => Hero(tag: tag, child: this);
   Widget ignore([bool ignoring = true]) => IgnorePointer(ignoring: ignoring, child: this,);
   Widget invisible([bool hide = true]) => Visibility(
     visible: !hide,

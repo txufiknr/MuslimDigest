@@ -9,7 +9,7 @@
 ## Overview
 
 <div align="left">
-  <img src="assets/images/icons/icon.png" alt="App Icon" width="150" height="150" style="float: left; margin-right: 20px; margin-bottom: 20px; max-width: 50%; object-fit: contain; aspect-ratio: 1/1;">
+  <img src="assets/images/icons/icon.png" align="left" alt="MuslimDigest Icon" width="150" height="150" style="float: left; margin-right: 20px; margin-bottom: 20px; max-width: 50%; object-fit: contain; aspect-ratio: 1/1;">
   <strong>Muslim Digest</strong> is a mobile application that aims to provide Muslims with a one-stop platform for news and information. The app offers a clean and organized collection of Muslim-related articles, summarized to cater to the busy lifestyle of Muslim individuals. With its intuitive interface, the app offers a seamless user experience, making it an essential tool for those seeking to stay updated on the latest happenings in the Muslim community. Built with Flutter, a framework that allows for cross-platform development, the app is designed to provide a consistent and engaging experience across Android and iOS devices. The app showcases the latest design techniques, ensuring a visually appealing and user-friendly interface that caters to the needs of Muslims worldwide.
 </div>
 <div style="clear: both;"></div>

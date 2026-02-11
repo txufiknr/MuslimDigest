@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lottie/lottie.dart';
 import 'package:muslimdigest/utils/extensions.dart';
 import 'package:muslimdigest/utils/variables.dart';
 import 'package:uuid/uuid.dart';
@@ -16,15 +17,14 @@ class WelcomePage extends StatefulWidget {
 }
 
 class _WelcomePageState extends State<WelcomePage> {
-  final PageController _pageController = PageController();
+  final _pageController = PageController();
+  final _steps = <String>['Gender', 'Age', 'Name'];
   int _currentStep = 0;
   
   // Form data
   String _userName = '';
   String _gender = '';
   String _ageGroup = '';
-
-  final List<String> _steps = ['Name', 'Gender', 'Age'];
 
   @override
   void dispose() {
@@ -59,12 +59,17 @@ class _WelcomePageState extends State<WelcomePage> {
   }
 
   void _complete() async {
+    // TODO: loading state, handle error
+
     // Save user ID to shared preferences
     final userId = const Uuid().v7();
+    debugPrint('[welcome] User ID: $userId');
     await prefs.setString('user_id', userId);
 
     // Post user data to backend API
+    debugPrint('[welcome] Registering user...');
     final result = await ApiService.registerUser(userId, _userName, _gender, _ageGroup);
+    debugPrint('[welcome] Registration result: $result');
     
     if (result['success']) {
       debugPrint('[welcome] User registered successfully: ${result['data']}');
@@ -81,11 +86,11 @@ class _WelcomePageState extends State<WelcomePage> {
   bool _canProceed() {
     switch (_currentStep) {
       case 0:
-        return _userName.trim().isNotEmpty;
-      case 1:
         return _gender.isNotEmpty;
-      case 2:
+      case 1:
         return _ageGroup.isNotEmpty;
+      case 2:
+        return _userName.trim().isNotEmpty;
       default:
         return false;
     }
@@ -109,15 +114,6 @@ class _WelcomePageState extends State<WelcomePage> {
         ),
         child: Stack(
           children: [
-            // Background logo
-            // Center(
-            //   child: Transform.scale(
-            //     scale: 1.2,
-            //     child: Logo(size: h.screenWidth),
-            //   ),
-            // ),
-            
-            // Content
             SafeArea(
               child: Padding(
                 padding: const EdgeInsets.all(32.0),
@@ -148,18 +144,19 @@ class _WelcomePageState extends State<WelcomePage> {
                       textAlign: TextAlign.center,
                     ),
                     
-                    const SizedBox(height: 32),
-                    
                     // PageView for steps
                     Expanded(
                       child: PageView(
                         controller: _pageController,
                         physics: const NeverScrollableScrollPhysics(),
                         children: [
-                          _buildNameStep(h),
                           _buildGenderStep(h),
                           _buildAgeStep(h),
-                        ],
+                          _buildNameStep(h),
+                        ].map((widget) => Center(child: SingleChildScrollView(
+                          padding: const EdgeInsets.symmetric(vertical: 32),
+                          child: widget,
+                        ))).toList(),
                       ),
                     ),
                     
@@ -228,6 +225,7 @@ class _WelcomePageState extends State<WelcomePage> {
             ),
             keyboardType: TextInputType.name,
             textCapitalization: TextCapitalization.words,
+            autofocus: true,
             decoration: InputDecoration(
               hintText: 'Enter your name',
               hintStyle: h.currentTextTheme.bodyLarge?.copyWith(
@@ -262,17 +260,15 @@ class _WelcomePageState extends State<WelcomePage> {
           children: [
             _buildGenderOption(
               h,
-              'Muslim',
-              'assets/icons/muslim.png',
-              () => setState(() => _gender = 'Muslim'),
-              _gender == 'Muslim',
+              'male',
+              () => setState(() => _gender = 'male'),
+              _gender == 'male',
             ),
             _buildGenderOption(
               h,
-              'Muslimah',
-              'assets/icons/muslimah.png',
-              () => setState(() => _gender = 'Muslimah'),
-              _gender == 'Muslimah',
+              'female',
+              () => setState(() => _gender = 'female'),
+              _gender == 'female',
             ),
           ],
         ),
@@ -282,59 +278,45 @@ class _WelcomePageState extends State<WelcomePage> {
 
   Widget _buildGenderOption(
     MyHelper h,
-    String label,
-    String imagePath,
+    String gender,
     VoidCallback onTap,
     bool isSelected,
   ) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 120,
-        height: 120,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: isSelected 
-              ? Colors.white.withValues(alpha: 0.3)
-              : Colors.white.withValues(alpha: 0.1),
-          border: Border.all(
-            color: isSelected 
-                ? Colors.white 
-                : Colors.white.withValues(alpha: 0.3),
-            width: isSelected ? 3 : 2,
+    final label = gender == 'male' ? 'muslim' : 'muslimah';
+    final lottiePath = 'assets/lottie/$label.json';
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        GestureDetector(
+          onTap: onTap,
+          child: Container(
+            width: 120,
+            height: 120,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: isSelected 
+                  ? Colors.white.withValues(alpha: 0.3)
+                  : Colors.white.withValues(alpha: 0.1),
+              border: Border.all(
+                color: isSelected 
+                    ? Colors.white 
+                    : Colors.white.withValues(alpha: 0.3),
+                width: isSelected ? 3 : 2,
+              ),
+            ),
+            child: Lottie.asset(lottiePath).scale(gender == 'male' ? 2.2 : 2).moveX(gender == 'male' ? 0 : 15).clipRadius(120),
           ),
         ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            // Placeholder for image
-            Container(
-              width: 60,
-              height: 60,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.white.withValues(alpha: 0.2),
-              ),
-              child: Icon(
-                Icons.person,
-                size: 32,
-                color: Colors.white.withValues(alpha: 0.8),
-              ),
-            ),
-            
-            const SizedBox(height: 8),
-            
-            Text(
-              label,
-              style: h.currentTextTheme.bodyMedium?.copyWith(
-                color: Colors.white,
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ],
+        const SizedBox(height: 8),
+        Text(
+          label.toCapitalized(),
+          style: h.currentTextTheme.bodyMedium?.copyWith(
+            color: Colors.white,
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+          ),
+          textAlign: TextAlign.center,
         ),
-      ),
+      ],
     );
   }
 
@@ -394,6 +376,7 @@ class _WelcomePageState extends State<WelcomePage> {
                     style: h.currentTextTheme.bodyLarge?.copyWith(
                       color: Colors.white,
                       fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                      fontSize: 24,
                     ),
                     textAlign: TextAlign.center,
                   ),
@@ -427,34 +410,42 @@ class _WelcomePageState extends State<WelcomePage> {
                 brightness: Brightness.dark,
                 text: _currentStep == _steps.length - 1 ? 'Complete' : _currentStep > 0 ? 'Next' : 'Continue',
                 onPressed: _canProceed() ? _nextStep : null,
-              ),
+              ).hero('primary-button'),
             ),
           ],
         ),
         
-        const SizedBox(height: 24),
+        const SizedBox(height: 8),
         
         // Skip button
-        Text(
-          "I'd rather not say (Skip)",
-          style: h.currentTextTheme.bodyMedium?.copyWith(
-            color: Colors.white.withValues(alpha: 0.9),
-            decoration: TextDecoration.underline,
+        TextButton(
+          child: Text(
+            _currentStep == 0 ? "Go back" : "I'd rather not say (Skip)",
+            style: h.currentTextTheme.bodySmall?.copyWith(
+              color: Colors.white.withValues(alpha: 0.9),
+              decoration: TextDecoration.underline,
+            ),
+            textAlign: TextAlign.center,
           ),
-          textAlign: TextAlign.center,
-        ).onTap(() {
-          // Reset form data for current step when skipping
-          switch (_currentStep) {
-            case 0: _userName = ''; break;
-            case 1: _gender = ''; break;
-            case 2: _ageGroup = ''; break;
-          }
-          if (_currentStep < _steps.length - 1) {
-            _nextStep();
-          } else {
-            _complete();
-          }
-        }),
+          onPressed: () {
+            if (_currentStep == 0) {
+              context.pop();
+              return;
+            }
+
+            // Reset form data for current step when skipping
+            switch (_currentStep) {
+              case 0: _gender = ''; break;
+              case 1: _ageGroup = ''; break;
+              case 2: _userName = ''; break;
+            }
+            if (_currentStep < _steps.length - 1) {
+              _nextStep();
+            } else {
+              _complete();
+            }
+          },
+        ),
       ],
     );
   }
