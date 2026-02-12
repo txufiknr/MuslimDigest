@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:muslimdigest/utils/extensions.dart';
@@ -62,11 +63,26 @@ class OnboardingPage extends StatelessWidget {
                     
                     // Get started button
                     MyButton(
-                      text: 'Get Started',
+                      variant: MyButtonVariant.success,
+                      text: 'Select interests',
                       onPressed: () => context.push('/welcome'),
-                      brightness: Brightness.dark,
+                      icon: Icon(CupertinoIcons.square_grid_2x2),
                     ).hero('primary-button'),
+                    SizedBox(height: 16),
+
+                    Text("For more personalized experience\nor just:", textAlign: TextAlign.center, style: h.currentTextTheme.bodySmall?.copyWith(
+                      color: Colors.white.withValues(alpha: 0.9),
+                    )),
+                    SizedBox(height: 12),
                     
+                    // Get started button
+                    MyButton(
+                      text: 'Start reading now',
+                      onPressed: () => context.push('/home'),
+                      brightness: Brightness.dark,
+                      icon: Icon(CupertinoIcons.book),
+                    ),
+
                     const SizedBox(height: 24),
                     
                     // Copyright and privacy policy

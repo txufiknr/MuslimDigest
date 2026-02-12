@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 Future<void> openUrl(String url) async {
@@ -5,4 +6,8 @@ Future<void> openUrl(String url) async {
   if (await canLaunchUrl(uri)) {
     await launchUrl(uri);
   }
+}
+
+void unfocus() {
+  FocusManager.instance.primaryFocus?.unfocus();
 }

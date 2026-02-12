@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:muslimdigest/models/user.dart';
+import 'package:muslimdigest/services/api.dart';
 import 'package:muslimdigest/utils/extensions.dart';
 import '../config/constants.dart';
 import '../config/colors.dart';
@@ -7,6 +9,7 @@ import '../utils/helpers.dart';
 import '../utils/variables.dart';
 import '../widgets/animations/loading_indicator_bar.dart';
 import '../widgets/components/logo.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 /// Duration of the splash screen in seconds
 const SPLASH_DURATION_SECONDS = 2;
@@ -21,15 +24,41 @@ class SplashPage extends StatefulWidget {
 class _SplashPageState extends State<SplashPage> {
   @override
   void initState() {
-    debugPrint('[splash] Initializing... (user id: $userId)');
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _startSplash();
-    });
+    _initSplash();
   }
 
+  /// Initialize splash screen
+  Future<void> _initSplash() async {
+    await Future.wait([
+      _initAppData(),
+      _initUserData(),
+    ]);
+    _startSplash();
+  }
+
+  /// Initialize app data
+  Future<void> _initAppData() async {
+    final packageInfo = await PackageInfo.fromPlatform();
+    appVersion = packageInfo.version;
+  }
+
+  /// Initialize user data
+  Future<void> _initUserData() async {
+    if (userId != null) {
+      debugPrint('[splash] Getting user data... (user id: $userId)');
+      final response = await ApiService.get('users');
+      if (response.statusCode == 404) {
+        await prefs.remove('user_id');
+      } else if (response.success) {
+        debugPrint('[splash] User data obtained: ${response.data}');
+        user = User.fromJson(response.data);
+      }
+    }
+  }
+
+  /// Preload target route during splash delay for faster navigation
   void _preloadTargetRoute(BuildContext context) {
-    // Preload target route during splash delay for faster navigation
     final navigator = Navigator.of(context);
     if (navigator.canPop()) {
       // Route is already in the stack, no need to preload
@@ -39,6 +68,7 @@ class _SplashPageState extends State<SplashPage> {
     }
   }
 
+  /// Start the splash screen animation and navigation
   void _startSplash() async {
     // Preload the target route during splash delay
     final target = userId == null ? '/onboarding' : '/home';

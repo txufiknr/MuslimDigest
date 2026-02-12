@@ -1,8 +1,10 @@
 import 'dart:convert';
 import 'dart:developer' show log;
+import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import '../config/constants.dart';
+import '../utils/variables.dart';
 
 /// HTTP content type constant for JSON requests
 const String contentType = 'application/json';
@@ -10,7 +12,7 @@ const Duration timeout = Duration(seconds: 30);
 
 /// Represents a standardized API response wrapper
 /// 
-/// This class encapsulates the result of API calls, providing a consistent
+/// This class encapsulates result of API calls, providing a consistent
 /// structure for handling success, data, and error states across the application.
 class ApiResponse {
   /// Indicates whether the API call was successful
@@ -23,13 +25,17 @@ class ApiResponse {
   /// Contains error message when the API call fails
   /// Will be null if the call succeeded
   final String? error;
+  
+  /// Contains the HTTP status code from the response
+  final int statusCode;
 
   /// Creates a new ApiResponse instance
   /// 
   /// [success] - Whether the API call was successful (required)
   /// [data] - Response data (optional)
   /// [error] - Error message (optional)
-  ApiResponse({required this.success, this.data, this.error});
+  /// [statusCode] - HTTP status code from the response (required)
+  ApiResponse({required this.success, this.data, this.error, required this.statusCode});
 }
 
 /// Service class for handling HTTP API communications
@@ -44,6 +50,29 @@ class ApiService {
   /// This allows the app to connect to different API endpoints for testing
   /// and production environments.
   static String get baseUrl => kDebugMode ? APP_URL_API_DEV : APP_URL_API;
+
+  /// Builds common headers for all API requests
+  /// 
+  /// Includes authentication, app version, and platform information.
+  static Future<Map<String, String>> _buildHeaders() async {
+    final headers = <String, String>{
+      'Content-Type': contentType,
+    };
+
+    // Add user ID if available
+    final userId = prefs.getString('user_id');
+    if (userId != null) {
+      headers['X-Client-Id'] = userId;
+    }
+
+    // Add app version (hardcoded for now, can be updated later)
+    headers['X-App-Version'] = appVersion;
+
+    // Add platform information
+    headers['X-Platform'] = Platform.operatingSystem;
+
+    return headers;
+  }
   
   /// Makes an HTTP POST request to the specified API endpoint
   /// 
@@ -59,13 +88,13 @@ class ApiService {
     try {
       log('[api] POST $baseUrl/$path $body');
 
+      // Build headers with common information
+      final headers = await _buildHeaders();
+
       // Construct the full URL by combining base URL with the endpoint path
       final response = await http.post(
         Uri.parse('$baseUrl/$path'),
-        headers: {
-          // Set content type to JSON for proper request formatting
-          'Content-Type': contentType,
-        },
+        headers: headers,
         // Convert the body map to JSON string for the request
         body: jsonEncode(body),
       ).timeout(timeout);
@@ -79,12 +108,14 @@ class ApiService {
         return ApiResponse(
           success: result['success'] ?? true,
           data: result['data'],
+          statusCode: response.statusCode,
         );
       } else {
         // Handle HTTP error responses with status code information
         return ApiResponse(
           success: false,
           error: result['error'] ?? 'Failed to create $path: ${response.statusCode}',
+          statusCode: response.statusCode,
         );
       }
     } catch (e) {
@@ -92,6 +123,7 @@ class ApiService {
       return ApiResponse(
         success: false,
         error: 'Network error: $e',
+        statusCode: 0,
       );
     }
   }
@@ -110,12 +142,13 @@ class ApiService {
     try {
       log('[api] PUT $baseUrl/$path $body');
 
+      // Build headers with common information
+      final headers = await _buildHeaders();
+
       // Construct the full URL and send PUT request with JSON body
       final response = await http.put(
         Uri.parse('$baseUrl/$path'),
-        headers: {
-          'Content-Type': contentType,
-        },
+        headers: headers,
         body: jsonEncode(body),
       ).timeout(timeout);
 
@@ -128,12 +161,14 @@ class ApiService {
         return ApiResponse(
           success: result['success'] ?? true,
           data: result['data'],
+          statusCode: response.statusCode,
         );
       } else {
         // Handle HTTP error responses with status code information
         return ApiResponse(
           success: false,
           error: result['error'] ?? 'Failed to update $path: ${response.statusCode}',
+          statusCode: response.statusCode,
         );
       }
     } catch (e) {
@@ -141,6 +176,7 @@ class ApiService {
       return ApiResponse(
         success: false,
         error: 'Network error: $e',
+        statusCode: 0,
       );
     }
   }
@@ -152,18 +188,26 @@ class ApiService {
   /// responses. No request body is sent with GET requests.
   /// 
   /// [path] - The API endpoint path (relative to base URL)
+  /// [queryParams] - Optional query parameters to include in the request
   /// 
   /// Returns [ApiResponse] with success status, data, or error information
-  static Future<ApiResponse> get(String path) async {
+  static Future<ApiResponse> get(String path, {Map<String, String>? queryParams}) async {
     try {
-      log('[api] GET $baseUrl/$path');
+      log('[api] GET $baseUrl/$path${queryParams != null ? '?${Uri(queryParameters: queryParams).query}' : ''}');
+
+      // Build headers with common information
+      final headers = await _buildHeaders();
+
+      // Construct the full URL with query parameters if provided
+      var uri = Uri.parse('$baseUrl/$path');
+      if (queryParams != null) {
+        uri = Uri.parse('$baseUrl/$path').replace(queryParameters: queryParams);
+      }
 
       // Construct the full URL and send GET request (no body needed)
       final response = await http.get(
-        Uri.parse('$baseUrl/$path'),
-        headers: {
-          'Content-Type': contentType,
-        },
+        uri,
+        headers: headers,
       ).timeout(timeout);
 
       final result = jsonDecode(response.body) as Map<String, dynamic>;
@@ -175,12 +219,14 @@ class ApiService {
         return ApiResponse(
           success: result['success'] ?? true,
           data: result['data'],
+          statusCode: response.statusCode,
         );
       } else {
         // Handle HTTP error responses with status code information
         return ApiResponse(
           success: false,
           error: result['error'] ?? 'Failed to get $path: ${response.statusCode}',
+          statusCode: response.statusCode,
         );
       }
     } catch (e) {
@@ -188,6 +234,7 @@ class ApiService {
       return ApiResponse(
         success: false,
         error: 'Network error: $e',
+        statusCode: 0,
       );
     }
   }

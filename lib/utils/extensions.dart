@@ -50,6 +50,7 @@ extension WidgetExtension on Widget {
   Widget moveY(double y) => moveTo(Offset(0, y));
   Widget scale(double scale) => Transform.scale(scale: scale, child: this);
   Widget sized({double? width, double? height}) => SizedBox(width: width, height: height, child: this);
+  Widget squared(double? size) => sized(width: size, height: size);
   Widget center() => Center(child: this);
   Widget clipRadius(double radius) => ClipRRect(borderRadius: BorderRadius.circular(radius), child: this);
   Widget expand() => Expanded(child: this);

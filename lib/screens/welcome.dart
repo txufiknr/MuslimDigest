@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:lottie/lottie.dart';
 import 'package:muslimdigest/models/user.dart';
 import 'package:muslimdigest/utils/extensions.dart';
+import 'package:muslimdigest/utils/functions.dart';
 import 'package:muslimdigest/utils/variables.dart';
 import 'package:uuid/uuid.dart';
 import '../config/colors.dart';
@@ -22,6 +23,8 @@ class _WelcomePageState extends State<WelcomePage> {
   final _steps = <String>['Gender', 'Age', 'Interests', 'Name'];
   var _currentStep = 0;
   var _isLoading = false;
+
+  bool get _isLastStep => _currentStep == _steps.length - 1;
   
   // Form data
   var _userName = '';
@@ -54,21 +57,19 @@ class _WelcomePageState extends State<WelcomePage> {
 
   /// Move to the next step
   void _nextStep() {
-    if (_currentStep < _steps.length - 1) {
-      _pageController.nextPage(
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
-      );
-      setState(() {
-        _currentStep++;
-      });
-    } else {
-      _complete();
-    }
+    if (_isLastStep) return _complete();
+    _pageController.nextPage(
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+    );
+    setState(() {
+      _currentStep++;
+    });
   }
 
   /// Move to the previous step
   void _previousStep() {
+    if (_isLastStep) unfocus();
     if (_currentStep > 0) {
       _pageController.previousPage(
         duration: const Duration(milliseconds: 300),
@@ -95,19 +96,9 @@ class _WelcomePageState extends State<WelcomePage> {
     final newUser = User(userId: userId, name: _userName, gender: _gender, ageGroup: _ageGroup);
     final newUserPreferences = UserPreferences(userId: userId, topics: _selectedTopics);
 
-    if (true) {
-      debugPrint('[welcome] Skipping registration for testing');
-      debugPrint('[welcome] Register user: $newUser');
-      debugPrint('[welcome] Register preferences: $newUserPreferences');
-      await Future.delayed(const Duration(seconds: 2));
-      setState(() {
-        _isLoading = false;
-      });
-      return;
-    }
-
     // 3. Post user data and preferences to backend API
-    debugPrint('[welcome] Registering user... $newUser');
+    debugPrint('[welcome] Registering user: $newUser');
+    debugPrint('[welcome] Registering preferences: $newUserPreferences');
     final results = await Future.wait([
       ApiService.post('user', newUser.toJson()),
       ApiService.post('preferences', newUserPreferences.toJson()),
@@ -542,7 +533,7 @@ class _WelcomePageState extends State<WelcomePage> {
             
             MyButton(
               brightness: Brightness.dark,
-              text: _currentStep == _steps.length - 1 ? 'Complete' : _currentStep > 0 ? 'Next' : 'Continue',
+              text: _isLastStep ? 'Complete' : _currentStep > 0 ? 'Next' : 'Continue',
               onPressed: _canProceed() ? _nextStep : null,
               isLoading: _isLoading,
             ).hero('primary-button').expand(),
@@ -566,10 +557,10 @@ class _WelcomePageState extends State<WelcomePage> {
               case 2: _selectedTopics.clear(); break;
               case 3: _userName = ''; break;
             }
-            if (_currentStep < _steps.length - 1) {
-              _nextStep();
-            } else {
+            if (_isLastStep) {
               _complete();
+            } else {
+              _nextStep();
             }
           },
           child: Text(
