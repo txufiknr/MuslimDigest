@@ -1,6 +1,11 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Internet permission for API calls -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Lock screen orientation to portrait -->
+    <uses-permission android:name="android.permission.SET_ORIENTATION" />
+    
     <application
-        android:label="muslimdigest"
+        android:label="Muslim Digest"
         android:name="${applicationName}"
         android:icon="@mipmap/launcher_icon">
         <activity
@@ -9,6 +14,7 @@
             android:launchMode="singleTop"
             android:taskAffinity=""
             android:theme="@style/LaunchTheme"
+            android:screenOrientation="portrait"
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
             android:hardwareAccelerated="true"
             android:windowSoftInputMode="adjustResize">

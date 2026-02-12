@@ -34,6 +34,8 @@ class OnboardingPage extends StatelessWidget {
                 padding: const EdgeInsets.all(32.0),
                 child: Column(
                   children: [
+                    SizedBox(height: 16,),
+
                     // App title
                     Text(
                       APP_NAME,
@@ -51,11 +53,11 @@ class OnboardingPage extends StatelessWidget {
                       APP_DESCRIPTION,
                       style: h.currentTextTheme.bodyLarge?.copyWith(
                         color: Colors.white.withValues(alpha: 0.9),
+                        fontSize: 20,
                       ),
                       textAlign: TextAlign.center,
                     ),
                     
-                    // const SizedBox(height: 64),
                     Spacer(),
                     
                     // Get started button
@@ -77,17 +79,15 @@ class OnboardingPage extends StatelessWidget {
                           ),
                           textAlign: TextAlign.center,
                         ),
-                        const SizedBox(height: 8),
-                        GestureDetector(
-                          onTap: () => openUrl(APP_URL_PRIVACY),
+                        TextButton(
                           child: Text(
                             'Privacy Policy',
                             style: h.currentTextTheme.bodySmall?.copyWith(
                               color: Colors.white.withValues(alpha: 0.7),
                               decoration: TextDecoration.underline,
                             ),
-                            textAlign: TextAlign.center,
                           ),
+                          onPressed: () => openUrl(APP_URL_PRIVACY),
                         ),
                       ],
                     ),

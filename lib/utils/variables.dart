@@ -9,4 +9,4 @@ final defaultTheme = platformBrightness == Brightness.dark ? APP_UI_THEME_DARK :
 late final SharedPreferencesWithCache prefs;
 
 // Shared preferences
-String? get userId => prefs.getString('uuid');
+String? get userId => prefs.getString('user_id');

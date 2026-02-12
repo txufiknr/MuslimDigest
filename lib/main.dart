@@ -24,7 +24,7 @@ Future<void> main() async {
   // Initialize shared preferences with cache
   prefs = await SharedPreferencesWithCache.create(
     cacheOptions: const SharedPreferencesWithCacheOptions(
-      allowList: <String>{ 'uuid', 'theme' },
+      allowList: <String>{ 'user_id', 'theme' },
     ),
   );
   

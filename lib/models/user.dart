@@ -1,0 +1,115 @@
+class User {
+  final String userId;
+  final String? name;
+  final String? gender;
+  final String? ageGroup;
+  final DateTime? createdAt;
+  final DateTime? updatedAt;
+
+  User({
+    required this.userId,
+    this.name,
+    this.gender,
+    this.ageGroup,
+    this.createdAt,
+    this.updatedAt,
+  });
+
+  factory User.fromJson(Map<String, dynamic> json) {
+    return User(
+      userId: json['userId'],
+      name: json['name'],
+      gender: json['gender'],
+      ageGroup: json['ageGroup'],
+      createdAt: json['createdAt'] != null ? DateTime.parse(json['createdAt']) : null,
+      updatedAt: json['updatedAt'] != null ? DateTime.parse(json['updatedAt']) : null,
+    );
+  }
+  
+  Map<String, dynamic> toJson() {
+    return {
+      'userId': userId,
+      'name': name,
+      'gender': gender,
+      'ageGroup': ageGroup,
+      'createdAt': createdAt?.toIso8601String(),
+      'updatedAt': updatedAt?.toIso8601String(),
+    };
+  }
+
+  @override
+  String toString() {
+    return '''
+User(
+  userId: $userId,
+  name: $name,
+  gender: $gender,
+  ageGroup: $ageGroup,
+  createdAt: $createdAt,
+  updatedAt: $updatedAt
+)''';
+  }
+}
+
+class UserPreferences {
+  final String userId;
+  final List<String> topics;
+  final List<String> madhahib;
+  final List<String> sources;
+  final List<String> avoidedTopics;
+  final List<String> avoidedSources;
+  final DateTime? createdAt;
+  final DateTime? updatedAt;
+  
+  UserPreferences({
+    required this.userId,
+    this.topics = const [],
+    this.madhahib = const [],
+    this.sources = const [],
+    this.avoidedTopics = const [],
+    this.avoidedSources = const [],
+    this.createdAt,
+    this.updatedAt,
+  });
+  
+  factory UserPreferences.fromJson(Map<String, dynamic> json) {
+    return UserPreferences(
+      userId: json['userId'],
+      topics: List<String>.from(json['topics']),
+      madhahib: List<String>.from(json['madhahib']),
+      sources: List<String>.from(json['sources']),
+      avoidedTopics: List<String>.from(json['avoidedTopics']),
+      avoidedSources: List<String>.from(json['avoidedSources']),
+      createdAt: json['createdAt'] != null ? DateTime.parse(json['createdAt']) : null,
+      updatedAt: json['updatedAt'] != null ? DateTime.parse(json['updatedAt']) : null,
+    );
+  }
+  
+  Map<String, dynamic> toJson() {
+    return {
+      'userId': userId,
+      'topics': topics,
+      'madhahib': madhahib,
+      'sources': sources,
+      'avoidedTopics': avoidedTopics,
+      'avoidedSources': avoidedSources,
+      'createdAt': createdAt?.toIso8601String(),
+      'updatedAt': updatedAt?.toIso8601String(),
+    };
+  }
+
+  @override
+  String toString() {
+    return '''
+UserPreferences(
+  userId: $userId,
+  topics: $topics,
+  madhahib: $madhahib,
+  sources: $sources,
+  avoidedTopics: $avoidedTopics,
+  avoidedSources: $avoidedSources,
+  createdAt: $createdAt,
+  updatedAt: $updatedAt
+)''';
+  }
+}

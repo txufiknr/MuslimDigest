@@ -7,7 +7,7 @@ class AppThemes {
   static const double textHeightMultiplier = 1.2;
   
   // Text sizes
-  static const double displayLargeSize = 40;
+  static const double displayLargeSize = 36;
   static const double displayMediumSize = 28;
   static const double headlineLargeSize = 24;
   static const double headlineMediumSize = 20;

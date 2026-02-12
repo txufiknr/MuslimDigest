@@ -49,7 +49,10 @@ extension WidgetExtension on Widget {
   Widget moveX(double x) => moveTo(Offset(x, 0));
   Widget moveY(double y) => moveTo(Offset(0, y));
   Widget scale(double scale) => Transform.scale(scale: scale, child: this);
+  Widget sized({double? width, double? height}) => SizedBox(width: width, height: height, child: this);
+  Widget center() => Center(child: this);
   Widget clipRadius(double radius) => ClipRRect(borderRadius: BorderRadius.circular(radius), child: this);
+  Widget expand() => Expanded(child: this);
   Widget hero(String tag) => Hero(tag: tag, child: this);
   Widget ignore([bool ignoring = true]) => IgnorePointer(ignoring: ignoring, child: this,);
   Widget invisible([bool hide = true]) => Visibility(
@@ -59,6 +62,10 @@ extension WidgetExtension on Widget {
     maintainAnimation: true,
     child: this,
   );
+
+  Widget withPadding({double horizontal = 0, double vertical = 0, double top = 0, double right = 0, double bottom = 0, double left = 0}) => Padding(padding: EdgeInsets.symmetric(horizontal: horizontal, vertical: vertical).copyWith(top: top == 0 ? vertical : top, right: right == 0 ? horizontal : right, bottom: bottom == 0 ? vertical : bottom, left: left == 0 ? horizontal : left), child: this);
+  Widget withPaddingHorizontal(double padding) => Padding(padding: EdgeInsets.symmetric(horizontal: padding), child: this);
+  Widget withPaddingVertical(double padding) => Padding(padding: EdgeInsets.symmetric(vertical: padding), child: this);
 
   /// fungsi untuk aksi tap widget dengan gesturedetector
   Widget onTap(VoidCallback? onTap) {

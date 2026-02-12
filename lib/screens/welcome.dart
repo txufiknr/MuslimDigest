@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lottie/lottie.dart';
+import 'package:muslimdigest/models/user.dart';
 import 'package:muslimdigest/utils/extensions.dart';
 import 'package:muslimdigest/utils/variables.dart';
 import 'package:uuid/uuid.dart';
 import '../config/colors.dart';
 import '../utils/helpers.dart';
 import '../widgets/components/button.dart';
-import '../services/api_service.dart';
+import '../services/api.dart';
 
 class WelcomePage extends StatefulWidget {
   const WelcomePage({super.key});
@@ -18,13 +19,32 @@ class WelcomePage extends StatefulWidget {
 
 class _WelcomePageState extends State<WelcomePage> {
   final _pageController = PageController();
-  final _steps = <String>['Gender', 'Age', 'Name'];
-  int _currentStep = 0;
+  final _steps = <String>['Gender', 'Age', 'Interests', 'Name'];
+  var _currentStep = 0;
+  var _isLoading = false;
   
   // Form data
-  String _userName = '';
-  String _gender = '';
-  String _ageGroup = '';
+  var _userName = '';
+  var _gender = ''; // male / female
+  var _ageGroup = '';
+  final _availableTopics = <String>[];
+  final _selectedTopics = <String>[];
+
+  Future<void> _initForm() async {
+    final response = await ApiService.get('topics');
+    if (response.success && response.data != null) {
+      debugPrint('[welcome] Available topics: ${response.data}');
+      setState(() {
+        _availableTopics.addAll(List<String>.from(response.data));
+      });
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _initForm();
+  }
 
   @override
   void dispose() {
@@ -32,6 +52,7 @@ class _WelcomePageState extends State<WelcomePage> {
     super.dispose();
   }
 
+  /// Move to the next step
   void _nextStep() {
     if (_currentStep < _steps.length - 1) {
       _pageController.nextPage(
@@ -46,6 +67,7 @@ class _WelcomePageState extends State<WelcomePage> {
     }
   }
 
+  /// Move to the previous step
   void _previousStep() {
     if (_currentStep > 0) {
       _pageController.previousPage(
@@ -58,41 +80,66 @@ class _WelcomePageState extends State<WelcomePage> {
     }
   }
 
+  /// Complete the welcome process
   void _complete() async {
-    // TODO: loading state, handle error
+    setState(() {
+      _isLoading = true;
+    });
 
-    // Save user ID to shared preferences
+    // 1. Crate and save user ID to shared preferences
     final userId = const Uuid().v7();
     debugPrint('[welcome] User ID: $userId');
     await prefs.setString('user_id', userId);
 
-    // Post user data to backend API
-    debugPrint('[welcome] Registering user...');
-    final result = await ApiService.registerUser(userId, _userName, _gender, _ageGroup);
-    debugPrint('[welcome] Registration result: $result');
-    
-    if (result['success']) {
-      debugPrint('[welcome] User registered successfully: ${result['data']}');
-    } else {
-      debugPrint('[welcome] Registration failed: ${result['error']}');
+    // 2. Prepare user data and preferences
+    final newUser = User(userId: userId, name: _userName, gender: _gender, ageGroup: _ageGroup);
+    final newUserPreferences = UserPreferences(userId: userId, topics: _selectedTopics);
+
+    if (true) {
+      debugPrint('[welcome] Skipping registration for testing');
+      debugPrint('[welcome] Register user: $newUser');
+      debugPrint('[welcome] Register preferences: $newUserPreferences');
+      await Future.delayed(const Duration(seconds: 2));
+      setState(() {
+        _isLoading = false;
+      });
+      return;
     }
 
-    // Navigate to home screen
-    if (mounted) {
-      context.go('/home');
+    // 3. Post user data and preferences to backend API
+    debugPrint('[welcome] Registering user... $newUser');
+    final results = await Future.wait([
+      ApiService.post('user', newUser.toJson()),
+      ApiService.post('preferences', newUserPreferences.toJson()),
+    ]);
+    final successCount = results.where((result) => result.success).length;
+    debugPrint('[welcome] Registration result: $successCount/${results.length} success');
+
+    // 4. Check if all API calls were successful
+    final isSuccess = successCount == results.length;
+    if (isSuccess) {
+      debugPrint('[welcome] User registered successfully');
+    } else {
+      debugPrint('[welcome] Registration failed');
     }
+
+    // 5. Navigate to home screen
+    if (!mounted) return;
+    if (isSuccess) return context.go('/home');
+    setState(() {
+      _isLoading = false;
+    });
   }
 
+  /// Check if the current step can proceed
   bool _canProceed() {
+    if (_isLoading) return false;
     switch (_currentStep) {
-      case 0:
-        return _gender.isNotEmpty;
-      case 1:
-        return _ageGroup.isNotEmpty;
-      case 2:
-        return _userName.trim().isNotEmpty;
-      default:
-        return false;
+      case 0: return _gender.isNotEmpty;
+      case 1: return _ageGroup.isNotEmpty;
+      case 2: return _selectedTopics.isNotEmpty;
+      case 3: return _userName.trim().isNotEmpty;
+      default: return false;
     }
   }
 
@@ -116,11 +163,11 @@ class _WelcomePageState extends State<WelcomePage> {
           children: [
             SafeArea(
               child: Padding(
-                padding: const EdgeInsets.all(32.0),
+                padding: const EdgeInsets.symmetric(vertical: 32),
                 child: Column(
                   children: [
                     // Progress indicator
-                    _buildProgressIndicator(h),
+                    _buildProgressIndicator(h).withPaddingHorizontal(32),
                     
                     const SizedBox(height: 32),
                     
@@ -131,7 +178,7 @@ class _WelcomePageState extends State<WelcomePage> {
                         color: Colors.white.withValues(alpha: 0.9),
                       ),
                       textAlign: TextAlign.center,
-                    ),
+                    ).withPaddingHorizontal(32),
                     
                     const SizedBox(height: 8),
                     
@@ -139,10 +186,9 @@ class _WelcomePageState extends State<WelcomePage> {
                       _steps[_currentStep],
                       style: h.currentTextTheme.headlineLarge?.copyWith(
                         color: Colors.white,
-                        fontWeight: FontWeight.bold,
                       ),
                       textAlign: TextAlign.center,
-                    ),
+                    ).withPaddingHorizontal(32),
                     
                     // PageView for steps
                     Expanded(
@@ -152,6 +198,7 @@ class _WelcomePageState extends State<WelcomePage> {
                         children: [
                           _buildGenderStep(h),
                           _buildAgeStep(h),
+                          _buildInterestsStep(h),
                           _buildNameStep(h),
                         ].map((widget) => Center(child: SingleChildScrollView(
                           padding: const EdgeInsets.symmetric(vertical: 32),
@@ -161,7 +208,7 @@ class _WelcomePageState extends State<WelcomePage> {
                     ),
                     
                     // Navigation buttons
-                    _buildNavigationButtons(h),
+                    _buildNavigationButtons(h).withPaddingHorizontal(32),
                   ],
                 ),
               ),
@@ -172,6 +219,7 @@ class _WelcomePageState extends State<WelcomePage> {
     );
   }
 
+  /// Build progress indicator
   Widget _buildProgressIndicator(MyHelper h) {
     return Row(
       children: List.generate(
@@ -192,12 +240,13 @@ class _WelcomePageState extends State<WelcomePage> {
     );
   }
 
+  /// Build name input step
   Widget _buildNameStep(MyHelper h) {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         Text(
-          'What\'s your name?',
+          "What's your name?",
           style: h.currentTextTheme.labelLarge?.copyWith(
             color: Colors.white.withValues(alpha: 0.9),
           ),
@@ -207,6 +256,7 @@ class _WelcomePageState extends State<WelcomePage> {
         const SizedBox(height: 24),
         
         Container(
+          margin: EdgeInsets.symmetric(horizontal: 32),
           decoration: BoxDecoration(
             color: Colors.white.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(12),
@@ -235,12 +285,15 @@ class _WelcomePageState extends State<WelcomePage> {
               contentPadding: const EdgeInsets.all(16),
             ),
             textAlign: TextAlign.center,
+            readOnly: _isLoading,
+            enableInteractiveSelection: !_isLoading,
           ),
         ),
       ],
     );
   }
 
+  /// Build gender selection step
   Widget _buildGenderStep(MyHelper h) {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -276,6 +329,7 @@ class _WelcomePageState extends State<WelcomePage> {
     );
   }
 
+  /// Build gender option
   Widget _buildGenderOption(
     MyHelper h,
     String gender,
@@ -320,6 +374,7 @@ class _WelcomePageState extends State<WelcomePage> {
     );
   }
 
+  /// Build age selection step
   Widget _buildAgeStep(MyHelper h) {
     final ageGroups = [
       {'label': '0-12', 'value': '0-12'},
@@ -332,7 +387,7 @@ class _WelcomePageState extends State<WelcomePage> {
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         Text(
-          'Select your age',
+          'How old are you?',
           style: h.currentTextTheme.labelLarge?.copyWith(
             color: Colors.white.withValues(alpha: 0.9),
           ),
@@ -342,13 +397,14 @@ class _WelcomePageState extends State<WelcomePage> {
         const SizedBox(height: 32),
         
         GridView.builder(
+          padding: const EdgeInsets.symmetric(horizontal: 32),
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: 2,
             crossAxisSpacing: 16,
             mainAxisSpacing: 16,
-            childAspectRatio: 2,
+            childAspectRatio: 1.5,
           ),
           itemCount: ageGroups.length,
           itemBuilder: (context, index) {
@@ -375,7 +431,7 @@ class _WelcomePageState extends State<WelcomePage> {
                     group['label']!,
                     style: h.currentTextTheme.bodyLarge?.copyWith(
                       color: Colors.white,
-                      fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                      fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
                       fontSize: 24,
                     ),
                     textAlign: TextAlign.center,
@@ -389,29 +445,107 @@ class _WelcomePageState extends State<WelcomePage> {
     );
   }
 
+  /// Build interests selection step
+  Widget _buildInterestsStep(MyHelper h) {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Text(
+          'What interests you?',
+          style: h.currentTextTheme.labelLarge?.copyWith(
+            color: Colors.white.withValues(alpha: 0.9),
+          ),
+          textAlign: TextAlign.center,
+        ),
+        
+        const SizedBox(height: 8),
+        
+        Text(
+          'Select all that apply',
+          style: h.currentTextTheme.bodySmall?.copyWith(
+            color: Colors.white.withValues(alpha: 0.7),
+          ),
+          textAlign: TextAlign.center,
+        ),
+        
+        const SizedBox(height: 32),
+        
+        if (_availableTopics.isEmpty)
+          (_gender.isNotEmpty
+              ? Lottie.asset('assets/lottie/${_gender == 'male' ? 'muslim' : 'muslimah'}.json', height: 200)
+              : CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+              )).center()
+        else
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            alignment: WrapAlignment.center,
+            children: _availableTopics.map((topic) {
+              final isSelected = _selectedTopics.contains(topic);
+              return FilterChip(
+                label: Text(
+                  topic.toCapitalized(),
+                  style: h.currentTextTheme.bodyMedium?.copyWith(
+                    color: isSelected ? AppColors.primary : Colors.white,
+                  ),
+                ),
+                selected: isSelected,
+                onSelected: (selected) {
+                  setState(() {
+                    if (selected) {
+                      _selectedTopics.add(topic);
+                    } else {
+                      _selectedTopics.remove(topic);
+                    }
+                  });
+                },
+                backgroundColor: AppColors.accentLight.withValues(alpha: .9),
+                surfaceTintColor: Colors.transparent,
+                shadowColor: Colors.transparent,
+                elevation: 0,
+                pressElevation: 0,
+                selectedColor: Colors.white,
+                selectedShadowColor: Colors.transparent,
+                // checkmarkColor: AppColors.primary,
+                showCheckmark: false,
+                side: BorderSide(
+                  color: isSelected 
+                      ? Colors.white 
+                      : Colors.white.withValues(alpha: 0.3),
+                  width: 1,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+              );
+            }).toList(),
+          ).withPaddingHorizontal(16),
+      ],
+    );
+  }
+
   Widget _buildNavigationButtons(MyHelper h) {
     return Column(
       children: [
         Row(
           children: [
-            if (_currentStep > 0)
-              Expanded(
-                child: MyOutlinedButton(
-                  text: 'Previous',
-                  onPressed: _previousStep,
-                  brightness: Brightness.dark,
-                ),
-              ),
-            
-            if (_currentStep > 0) const SizedBox(width: 16),
-            
-            Expanded(
-              child: MyButton(
+            if (_currentStep > 0 && !_isLoading) ...[
+              MyButton(
+                text: 'Previous',
+                onPressed: _previousStep,
                 brightness: Brightness.dark,
-                text: _currentStep == _steps.length - 1 ? 'Complete' : _currentStep > 0 ? 'Next' : 'Continue',
-                onPressed: _canProceed() ? _nextStep : null,
-              ).hero('primary-button'),
-            ),
+                outlined: true,
+              ).expand(),
+              SizedBox(width: 16),
+            ],
+            
+            MyButton(
+              brightness: Brightness.dark,
+              text: _currentStep == _steps.length - 1 ? 'Complete' : _currentStep > 0 ? 'Next' : 'Continue',
+              onPressed: _canProceed() ? _nextStep : null,
+              isLoading: _isLoading,
+            ).hero('primary-button').expand(),
           ],
         ),
         
@@ -419,15 +553,7 @@ class _WelcomePageState extends State<WelcomePage> {
         
         // Skip button
         TextButton(
-          child: Text(
-            _currentStep == 0 ? "Go back" : "I'd rather not say (Skip)",
-            style: h.currentTextTheme.bodySmall?.copyWith(
-              color: Colors.white.withValues(alpha: 0.9),
-              decoration: TextDecoration.underline,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          onPressed: () {
+          onPressed: _isLoading ? null : () {
             if (_currentStep == 0) {
               context.pop();
               return;
@@ -437,7 +563,8 @@ class _WelcomePageState extends State<WelcomePage> {
             switch (_currentStep) {
               case 0: _gender = ''; break;
               case 1: _ageGroup = ''; break;
-              case 2: _userName = ''; break;
+              case 2: _selectedTopics.clear(); break;
+              case 3: _userName = ''; break;
             }
             if (_currentStep < _steps.length - 1) {
               _nextStep();
@@ -445,6 +572,14 @@ class _WelcomePageState extends State<WelcomePage> {
               _complete();
             }
           },
+          child: Text(
+            _currentStep == 0 ? "Go back" : "I'd rather not say (Skip)",
+            style: h.currentTextTheme.bodySmall?.copyWith(
+              color: Colors.white.withValues(alpha: 0.9),
+              decoration: TextDecoration.underline,
+            ),
+            textAlign: TextAlign.center,
+          ),
         ),
       ],
     );
