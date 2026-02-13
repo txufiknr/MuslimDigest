@@ -122,7 +122,7 @@ class _WelcomePageState extends State<WelcomePage> {
     debugPrint('[welcome] Registering user: $newUser');
     debugPrint('[welcome] Registering preferences: $newUserPreferences');
     final responses = await Future.wait([
-      ApiService.post('users', newUser.toJson()),
+      ApiService.post('user', newUser.toJson()),
       ApiService.post('preferences', newUserPreferences.toJson()),
     ]);
 
@@ -146,7 +146,7 @@ class _WelcomePageState extends State<WelcomePage> {
           footer: 'We\'ll save your progress locally for now.',
         );
         if (shouldRetry && mounted) {
-          await _complete();
+          return _complete();
         }
       }
     }

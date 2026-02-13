@@ -56,7 +56,7 @@ class _SplashPageState extends State<SplashPage> {
     try {
       // Parallel API calls for better performance - fetch user and preferences simultaneously
       final responses = await Future.wait([
-        ApiService.get('users'), // Get user data
+        ApiService.get('user'), // Get user data
         ApiService.get('preferences'), // Get user preferences
         ApiService.get('streaks'), // Get user reading streaks
       ]);
@@ -72,12 +72,12 @@ class _SplashPageState extends State<SplashPage> {
       if (mounted) {
         final shouldRetry = await showRetryableError(
           context,
-          title: 'Failed to save your data',
+          title: 'Failed to get user data',
           message: 'Please check your internet connection and try again.',
           error: e,
         );
         if (shouldRetry && mounted) {
-          await _initUserData();
+          return _initUserData();
         }
       }
     }

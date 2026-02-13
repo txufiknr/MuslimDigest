@@ -80,6 +80,7 @@ Future<void> handleStreaksResponse(ApiResponse? response) async {
   if (response == null) return;
   if (response.success && response.data != null) {
     debugPrint('[handleUserResponses] User streaks obtained successfully');
+    debugPrint('[handleUserResponses] User streaks: ${response.data}');
     // Cache streaks locally
     final streaks = UserStreaks.fromJson(response.data);
     await prefs.setString('streaks', jsonEncode(streaks.toJson()));

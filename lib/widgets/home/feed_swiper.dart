@@ -1,27 +1,116 @@
 import 'dart:developer' show log;
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_card_swiper/flutter_card_swiper.dart';
-import 'package:cached_network_image/cached_network_image.dart';
+import 'package:muslimdigest/config/feeds.dart';
+import 'package:muslimdigest/services/api.dart';
 import 'package:muslimdigest/utils/extensions.dart';
 import 'package:muslimdigest/utils/helpers.dart';
+import 'package:muslimdigest/widgets/animations/loader.dart';
 import '../../models/feed.dart';
+import '../components/cached_image.dart';
+import 'package:muslimdigest/utils/dialogs.dart';
+import 'package:muslimdigest/utils/feeds.dart';
+import 'package:muslimdigest/utils/users.dart';
+import 'package:muslimdigest/variables/app.dart';
+import 'package:muslimdigest/variables/feed.dart';
+import 'package:muslimdigest/variables/time.dart';
+import 'package:muslimdigest/variables/user.dart';
 
 /// Feed swiper widget for displaying news cards with vertical swipe navigation
-class FeedSwiper extends StatelessWidget {
-  final List<FeedItem> feedItems;
-  final Function(String) onSwipeUp;
-  final VoidCallback onSwipeDown;
+class FeedSwiper extends StatefulWidget {
+  final String? topic;
 
   const FeedSwiper({
+    this.topic,
     super.key,
-    required this.feedItems,
-    required this.onSwipeUp,
-    required this.onSwipeDown,
   });
 
   @override
+  State<FeedSwiper> createState() => _FeedSwiperState();
+}
+
+class _FeedSwiperState extends State<FeedSwiper> {
+  var _isLoading = true;
+
+  /// Load feeds from API
+  Future<void> _loadFeeds() async {
+    final response = await ApiService.get('feed', queryParams: <String, String>{
+      if (widget.topic != null) 'topic': widget.topic!,
+      'limit': DAILY_READ_TARGET.toString(),
+    });
+
+    if (response.success && response.data != null) {
+      // TODO: fix type conversion issue
+      // Unhandled Exception: type '(Map<String, dynamic>) => FeedItem' is not a subtype of type '(dynamic) => dynamic' of 'f'
+      // E/flutter ( 8161): #0      _FeedSwiperState._loadFeeds (package:muslimdigest/widgets/home/feed_swiper.dart:45:59)
+      final feedItems = List<FeedItem>.from(response.data.map((item) => FeedItem.fromJson(item as Map<String, dynamic>)));
+      debugPrint('[_loadFeed] ${feedItems.length} feed items obtained successfully');
+
+      // Cache feed items locally
+      await setFeedItems(feedItems);
+    } else {
+      debugPrint('[_loadFeed] Failed to fetch feed items: ${response.error}');
+      if (!mounted) return;
+      final shouldRetry = await showRetryableError(
+        context,
+        title: 'Failed to fetch feed items.',
+        message: 'Failed to load feed. Would you like to retry?',
+        footer: 'You can always pull to refresh to reload your feed.',
+      );
+      if (shouldRetry) {
+        return _loadFeeds();
+      }
+    }
+
+    setState(() {
+      _isLoading = false;
+    });
+  }
+
+  Future<void> _incrementReadCount(String lastClusterId) async {
+    // Increment count
+    final newCount = (readCount + 1).clamp(0, DAILY_READ_TARGET);
+    await prefs.setInt('read_count', newCount);
+    await prefs.setString('read_last_date', today.toIso8601String());
+    setState(() {});
+    
+    // Track reading progress to backend for analytics and user engagement
+    try {
+      final responses = await Future.wait([
+        ApiService.post('streaks/increment', {}),
+        ApiService.post('history', {'clusterId': lastClusterId}),
+      ]);
+      await handleStreaksResponse(responses[0]);
+      setState(() {});
+    } catch (e) {
+      // Ignore errors for history tracking - not critical
+      debugPrint('Failed to track reading history: $e');
+    }
+  }
+
+  void _decreaseReadCount() {
+    if (readCount > 0) {
+      prefs.setInt('read_count', readCount - 1);
+      setState(() {});
+    }
+  }
+  
+  @override
+  void initState() {
+    super.initState();
+    _loadFeeds();
+  }
+
+  @override
   Widget build(BuildContext context) {
+
+    if (_isLoading) {
+      return const Center(child: MyLoader());
+    }
+
+    // TODO: placeholder widget
     if (feedItems.isEmpty) {
       return const Center(
         child: Text(
@@ -46,9 +135,9 @@ class FeedSwiper extends StatelessWidget {
         if (direction == CardSwiperDirection.top) {
           final swipedItem = feedItems[previousIndex];
           log('[feed] Swiped item: $swipedItem');
-          onSwipeUp(swipedItem.cluster.id);
+          _incrementReadCount(swipedItem.cluster.id);
         } else if (direction == CardSwiperDirection.bottom) {
-          onSwipeDown();
+          _decreaseReadCount();
         }
         return true;
       },
@@ -111,41 +200,12 @@ class _FeedHeader extends StatelessWidget {
       child: Stack(
         children: [
           // Image
-          feedItem.image != null
-              ? CachedNetworkImage(
-                  imageUrl: feedItem.image!,
-                  height: 200,
-                  width: double.infinity,
-                  fit: BoxFit.cover,
-                  placeholder: (context, url) => Container(
-                    height: 200,
-                    color: Colors.grey[200],
-                    child: const Center(
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.grey),
-                      ),
-                    ),
-                  ),
-                  errorWidget: (context, url, error) => Container(
-                    height: 200,
-                    color: Colors.grey[200],
-                    child: const Icon(
-                      Icons.image_not_supported,
-                      size: 50,
-                      color: Colors.grey,
-                    ),
-                  ),
-                )
-              : Container(
-                  height: 200,
-                  color: Colors.grey[200],
-                  child: const Icon(
-                    Icons.article,
-                    size: 50,
-                    color: Colors.grey,
-                  ),
-                ),
+          CachedImageWidget(
+            imageUrl: feedItem.image,
+            height: 200,
+            width: double.infinity,
+            fit: BoxFit.cover,
+          ),
           
           // Title overlay
           Positioned(
@@ -267,28 +327,20 @@ class _FeedFooter extends StatelessWidget {
               color: Colors.grey[300],
               borderRadius: BorderRadius.circular(4),
             ),
-            child: feedItem.source.siteIcon != null
-                ? ClipRRect(
-                    borderRadius: BorderRadius.circular(4),
-                    child: Image.network(
-                      feedItem.source.siteIcon!,
-                      width: 24,
-                      height: 24,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        return const Icon(
-                          Icons.public,
-                          size: 16,
-                          color: Colors.grey,
-                        );
-                      },
-                    ),
-                  )
-                : const Icon(
-                    Icons.public,
-                    size: 16,
-                    color: Colors.grey,
-                  ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(4),
+              child: CachedImageWidget(
+                imageUrl: feedItem.source.siteIcon,
+                width: 24,
+                height: 24,
+                fit: BoxFit.contain,
+                errorWidget: (context, url, error) => const Icon(
+                  CupertinoIcons.globe,
+                  size: 16,
+                  color: Colors.grey,
+                ),
+              ),
+            ),
           ),
           const SizedBox(width: 8),
           

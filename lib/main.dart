@@ -32,6 +32,7 @@ Future<void> main() async {
         'read_last_date', // Last read date (YYYY-MM-DD)
         'read_count', // Daily read count (number)
         'streaks', // User streaks data (JSON string)
+        'feed_items', // Cached feed items (JSON string)
       },
     ),
   );

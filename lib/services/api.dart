@@ -228,7 +228,8 @@ class ApiService {
         // Parse the successful JSON response and return success result
         return ApiResponse(
           success: result['success'] ?? true,
-          data: result['data'],
+          // data: result['data'],
+          data: result['data'] ?? result['items'],
           statusCode: response.statusCode,
         );
       } else {

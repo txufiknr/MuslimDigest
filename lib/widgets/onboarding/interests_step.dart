@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:muslimdigest/utils/extensions.dart';
-import '../../utils/helpers.dart';
+import 'package:muslimdigest/utils/helpers.dart';
+import 'package:muslimdigest/widgets/animations/loader.dart';
+import 'topic_chip.dart';
 
 /// Interests selection step widget for onboarding
 class OnboardingInterestsStep extends StatelessWidget {
@@ -17,38 +19,18 @@ class OnboardingInterestsStep extends StatelessWidget {
 
   /// Build individual topic chip
   Widget _buildTopicChip(MyHelper h, String topic, bool isSelected) {
-    return GestureDetector(
-      onTap: () {
+    return TopicChip(
+      topic: topic,
+      isSelected: isSelected,
+      onSelected: (selected) {
         final newSelectedTopics = List<String>.from(selectedTopics);
-        if (isSelected) {
-          newSelectedTopics.remove(topic);
-        } else {
+        if (selected) {
           newSelectedTopics.add(topic);
+        } else {
+          newSelectedTopics.remove(topic);
         }
         onTopicsChanged(newSelectedTopics);
       },
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: BoxDecoration(
-          color: isSelected 
-              ? Colors.white.withValues(alpha: 0.3)
-              : Colors.white.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: isSelected 
-                  ? Colors.white 
-                  : Colors.white.withValues(alpha: 0.3),
-            width: 1,
-          ),
-        ),
-        child: Text(
-          topic,
-          style: h.currentTextTheme.bodyMedium?.copyWith(
-            color: Colors.white,
-            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-          ),
-        ),
-      ),
     );
   }
 
@@ -79,10 +61,7 @@ class OnboardingInterestsStep extends StatelessWidget {
         
         const SizedBox(height: 32),
         
-        if (availableTopics.isEmpty)
-          const CircularProgressIndicator(
-            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-          ).center()
+        if (availableTopics.isEmpty) MyLoader(color: Colors.white).center()
         else
           Wrap(
             spacing: 6,
@@ -92,7 +71,7 @@ class OnboardingInterestsStep extends StatelessWidget {
               final isSelected = selectedTopics.contains(topic);
               return _buildTopicChip(h, topic, isSelected);
             }).toList(),
-          ),
+          ).withPaddingHorizontal(16),
       ],
     );
   }

@@ -1,14 +1,17 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:muslimdigest/config/colors.dart';
 import 'package:muslimdigest/utils/extensions.dart';
 import 'package:muslimdigest/variables/user.dart';
+import '../components/my_icon_button.dart';
 
 const TAB_HEIGHT = 50.0;
 const TAB_RADIUS = 20.0;
 
 /// Header widget for the home page containing hamburger menu and topic tabs
 class HomeHeader extends StatelessWidget {
-  final Function(String) onTopicChanged;
+  final Function(String?) onTopicChanged;
   final String? currentTopic;
 
   const HomeHeader({
@@ -27,59 +30,58 @@ class HomeHeader extends StatelessWidget {
       child: Row(
         children: [
           // Hamburger menu button
-          IconButton(
-            onPressed: () => context.push('/settings'),
-            icon: const Icon(
-              Icons.menu,
-              color: Colors.black87,
-              size: 20,
-            ),
+          MyIconButton(
+            icon: CupertinoIcons.bars,
+            // iconSize: 16,
             tooltip: "Settings",
-            visualDensity: VisualDensity.compact,
-            padding: EdgeInsets.zero,
-            style: IconButton.styleFrom(
-              backgroundColor: Colors.grey[100],
-              minimumSize: const Size(TAB_HEIGHT, TAB_HEIGHT),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(TAB_RADIUS),
-              ),
-            ),
+            onPressed: () => context.push('/settings'),
+            backgroundColor: Colors.grey[100],
+            size: TAB_HEIGHT,
+            radius: TAB_RADIUS,
           ),
           
           // Topic tabs
-          SingleChildScrollView(
+          ListView(
             scrollDirection: Axis.horizontal,
             padding: EdgeInsets.only(left: 8, right: 16),
-            child: Row(
-              children: <Widget>[
-                if (streaks != null) 
-                  Container(
-                    height: TAB_HEIGHT,
-                    decoration: BoxDecoration(
-                      color: Colors.orange[100],
-                      borderRadius: BorderRadius.circular(TAB_RADIUS),
-                    ),
-                    child: Text(
-                      '🔥 ${streaks!.currentStreak}',
-                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-                    ),
+            children: <Widget>[
+              if (streaks != null) 
+                Container(
+                  height: TAB_HEIGHT,
+                  decoration: BoxDecoration(
+                    color: Colors.orange[100],
+                    borderRadius: BorderRadius.circular(TAB_RADIUS),
                   ),
-                _TopicTab(
-                  title: 'My Digest',
-                  isSelected: currentTopic == 'My Digest',
-                  onTap: () => onTopicChanged('My Digest'),
-                ),
-                ...List.generate(
-                  topics.length,
-                  (index) => _TopicTab(
-                    title: topics[index],
-                    isSelected: topics[index] == currentTopic,
-                    onTap: () => onTopicChanged(topics[index]),
+                  child: Text(
+                    '🔥 ${streaks!.currentStreak}',
+                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
                   ),
                 ),
-                // TODO: add "+ Add topic" as the last button (go to "/settings")
-              ].addItemInBetween(SizedBox(width: 8,)),
-            ),
+              _TopicTab(
+                title: 'My Digest',
+                isSelected: currentTopic == null,
+                onTap: () => onTopicChanged(null),
+              ),
+              ...List.generate(
+                topics.length,
+                (index) => _TopicTab(
+                  title: topics[index],
+                  isSelected: topics[index] == currentTopic,
+                  onTap: () => onTopicChanged(topics[index]),
+                ),
+              ),
+              // Add topic menu button
+              MyIconButton(
+                icon: CupertinoIcons.add,
+                iconSize: 16,
+                tooltip: "Add topic",
+                onPressed: () => context.push('/settings'),
+                backgroundColor: Colors.grey[100],
+                size: TAB_HEIGHT,
+                radius: TAB_RADIUS,
+              ),
+              // TODO: add "+ Add topic" as the last button (go to "/settings")
+            ].addItemInBetween(SizedBox(width: 8,)),
           ).expand(),
         ],
       ),
@@ -108,7 +110,7 @@ class _TopicTab extends StatelessWidget {
         height: TAB_HEIGHT,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected ? Colors.blue[600] : Colors.grey[100],
+          color: isSelected ? AppColors.primary : Colors.grey[100],
           borderRadius: BorderRadius.circular(TAB_RADIUS),
         ),
         child: Text(
