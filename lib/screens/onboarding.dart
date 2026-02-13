@@ -1,7 +1,11 @@
+import 'dart:convert';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:muslimdigest/mock/users.dart';
 import 'package:muslimdigest/utils/extensions.dart';
+import 'package:muslimdigest/variables/app.dart';
 import '../config/constants.dart';
 import '../config/colors.dart';
 import '../utils/functions.dart';
@@ -11,6 +15,11 @@ import '../widgets/components/button.dart';
 
 class OnboardingPage extends StatelessWidget {
   const OnboardingPage({super.key});
+
+  void _startReadingNow(BuildContext context) async {
+    prefs.setString('user', jsonEncode(anonymousUser.toJson()));
+    context.go('/home');
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -78,7 +87,7 @@ class OnboardingPage extends StatelessWidget {
                     // Get started button
                     MyButton(
                       text: 'Start reading now',
-                      onPressed: () => context.push('/home'),
+                      onPressed: () => _startReadingNow(context),
                       brightness: Brightness.dark,
                       icon: Icon(CupertinoIcons.book),
                     ),

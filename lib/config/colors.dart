@@ -12,9 +12,9 @@ class AppColors {
   static const Color secondaryDark = Color(0xFF00ACC1); // Dark Teal
   
   // Accent Colors - Turquoise family
-  static const Color accentLight = Color(0xFF4DD0E1); // Light Turquoise
-  static const Color accent = Color(0xFF00BFA5); // Primary Turquoise
-  static const Color accentDark = Color(0xFF00897B); // Dark Turquoise
+  static const Color accentLight = Color(0xFF00BFA5); // Light Tealish Green
+  static const Color accent = Color(0xFF00B294); // Primary Tealish Green
+  static const Color accentDark = Color(0xFF00897B); // Dark Tealish Green
   
   // Semantic Colors
   static const Color success = Color(0xFF00BFA5);
@@ -29,8 +29,8 @@ class AppColors {
   static const Color surfaceDark = Color(0xFF1E1E1E);
   
   // Text Colors
-  static const Color textPrimaryLight = Color(0xFF212121);
-  static const Color textSecondaryLight = Color(0xFF757575);
+  static const Color textPrimaryLight = Color.fromARGB(255, 31, 31, 31);
+  static const Color textSecondaryLight = Color.fromARGB(255, 42, 42, 42);
   static const Color textPrimaryDark = Color(0xFFFFFFFF);
   static const Color textSecondaryDark = Color(0xFFB3B3B3);
 }

@@ -1,0 +1,126 @@
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:muslimdigest/utils/extensions.dart';
+import 'package:muslimdigest/variables/user.dart';
+
+const TAB_HEIGHT = 50.0;
+const TAB_RADIUS = 20.0;
+
+/// Header widget for the home page containing hamburger menu and topic tabs
+class HomeHeader extends StatelessWidget {
+  final Function(String) onTopicChanged;
+  final String? currentTopic;
+
+  const HomeHeader({
+    super.key,
+    required this.onTopicChanged,
+    this.currentTopic,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final topics = preferences?.topics ?? [];
+
+    return Container(
+      height: TAB_HEIGHT,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8).copyWith(right: 0),
+      child: Row(
+        children: [
+          // Hamburger menu button
+          IconButton(
+            onPressed: () => context.push('/settings'),
+            icon: const Icon(
+              Icons.menu,
+              color: Colors.black87,
+              size: 20,
+            ),
+            tooltip: "Settings",
+            visualDensity: VisualDensity.compact,
+            padding: EdgeInsets.zero,
+            style: IconButton.styleFrom(
+              backgroundColor: Colors.grey[100],
+              minimumSize: const Size(TAB_HEIGHT, TAB_HEIGHT),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(TAB_RADIUS),
+              ),
+            ),
+          ),
+          
+          // Topic tabs
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            padding: EdgeInsets.only(left: 8, right: 16),
+            child: Row(
+              children: <Widget>[
+                if (streaks != null) 
+                  Container(
+                    height: TAB_HEIGHT,
+                    decoration: BoxDecoration(
+                      color: Colors.orange[100],
+                      borderRadius: BorderRadius.circular(TAB_RADIUS),
+                    ),
+                    child: Text(
+                      '🔥 ${streaks!.currentStreak}',
+                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                _TopicTab(
+                  title: 'My Digest',
+                  isSelected: currentTopic == 'My Digest',
+                  onTap: () => onTopicChanged('My Digest'),
+                ),
+                ...List.generate(
+                  topics.length,
+                  (index) => _TopicTab(
+                    title: topics[index],
+                    isSelected: topics[index] == currentTopic,
+                    onTap: () => onTopicChanged(topics[index]),
+                  ),
+                ),
+                // TODO: add "+ Add topic" as the last button (go to "/settings")
+              ].addItemInBetween(SizedBox(width: 8,)),
+            ),
+          ).expand(),
+        ],
+      ),
+    );
+  }
+}
+
+/// Individual topic tab widget
+class _TopicTab extends StatelessWidget {
+  final String title;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const _TopicTab({
+    required this.title,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        alignment: Alignment.center,
+        height: TAB_HEIGHT,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected ? Colors.blue[600] : Colors.grey[100],
+          borderRadius: BorderRadius.circular(TAB_RADIUS),
+        ),
+        child: Text(
+          title.toCapitalized(),
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            color: isSelected ? Colors.white : Colors.black87,
+            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+            fontSize: 14,
+          ),
+        ),
+      ),
+    );
+  }
+}

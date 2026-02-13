@@ -1,0 +1,1 @@
+DateTime get today => DateTime.now();

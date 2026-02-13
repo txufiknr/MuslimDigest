@@ -3,6 +3,7 @@ import '../screens/splash.dart';
 import '../screens/home.dart';
 import '../screens/onboarding.dart';
 import '../screens/welcome.dart';
+import '../screens/settings.dart';
 
 class AppRouter {
   static final GoRouter router = GoRouter(
@@ -26,7 +27,12 @@ class AppRouter {
       GoRoute(
         path: '/home',
         name: 'home',
-        builder: (context, state) => const HomePage(title: 'Muslim Digest'),
+        builder: (context, state) => const HomePage(),
+      ),
+      GoRoute(
+        path: '/settings',
+        name: 'settings',
+        builder: (context, state) => const SettingsPage(),
       ),
     ],
   );

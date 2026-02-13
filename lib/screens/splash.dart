@@ -1,12 +1,15 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:muslimdigest/models/user.dart';
 import 'package:muslimdigest/services/api.dart';
+import 'package:muslimdigest/utils/dialogs.dart';
 import 'package:muslimdigest/utils/extensions.dart';
+import 'package:muslimdigest/utils/helpers.dart';
+import 'package:muslimdigest/utils/users.dart';
+import 'package:muslimdigest/variables/user.dart';
 import '../config/constants.dart';
 import '../config/colors.dart';
-import '../utils/helpers.dart';
-import '../utils/variables.dart';
+import '../variables/app.dart';
 import '../widgets/animations/loading_indicator_bar.dart';
 import '../widgets/components/logo.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -43,16 +46,39 @@ class _SplashPageState extends State<SplashPage> {
     appVersion = packageInfo.version;
   }
 
-  /// Initialize user data
+  /// Initialize user data from backend API
+  /// 
+  /// This function handles fetching and caching user data and preferences.
+  /// It includes proper error handling, null safety, and early returns for optimization.
   Future<void> _initUserData() async {
-    if (userId != null) {
-      debugPrint('[splash] Getting user data... (user id: $userId)');
-      final response = await ApiService.get('users');
-      if (response.statusCode == 404) {
-        await prefs.remove('user_id');
-      } else if (response.success) {
-        debugPrint('[splash] User data obtained: ${response.data}');
-        user = User.fromJson(response.data);
+    debugPrint('[splash] Initializing user data... (user id: $userId)');
+    
+    try {
+      // Parallel API calls for better performance - fetch user and preferences simultaneously
+      final responses = await Future.wait([
+        ApiService.get('users'), // Get user data
+        ApiService.get('preferences'), // Get user preferences
+        ApiService.get('streaks'), // Get user reading streaks
+      ]);
+
+      // Process responses using the utility function
+      await handleUserResponses(responses);
+      
+    } catch (e) {
+      // Global error handling - show user-friendly modal
+      debugPrint('[splash] Error during user data initialization: $e');
+      
+      // Show bottom modal sheet with error details and retry options
+      if (mounted) {
+        final shouldRetry = await showRetryableError(
+          context,
+          title: 'Failed to save your data',
+          message: 'Please check your internet connection and try again.',
+          error: e,
+        );
+        if (shouldRetry && mounted) {
+          await _initUserData();
+        }
       }
     }
   }
@@ -71,7 +97,7 @@ class _SplashPageState extends State<SplashPage> {
   /// Start the splash screen animation and navigation
   void _startSplash() async {
     // Preload the target route during splash delay
-    final target = userId == null ? '/onboarding' : '/home';
+    final target = user == null ? '/onboarding' : '/home';
     if (mounted) {
       debugPrint('[splash] Preloading $target route');
       _preloadTargetRoute(context);
@@ -83,6 +109,18 @@ class _SplashPageState extends State<SplashPage> {
       context.go(target);
     }
   }
+
+  /// Show bottom modal confirm with error details and retry options
+  // Future<bool> _handleUserError() async {
+  //   final confirmed = await showBottomModalConfirm(
+  //     context,
+  //     message: 'Failed to load your data. Please check your internet connection and try again.',
+  //     cancelButtonText: 'Continue Anyway',
+  //     confirmButtonText: 'Retry',
+  //     confirmButtonIcon: Icon(CupertinoIcons.refresh),
+  //   );
+  //   return confirmed;
+  // }
 
   @override
   Widget build(BuildContext context) {

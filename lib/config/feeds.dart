@@ -1,0 +1,1 @@
+const DAILY_READ_TARGET = 30;

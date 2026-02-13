@@ -51,6 +51,44 @@ User(
   }
 }
 
+class UserStreaks {
+  final int currentStreak;
+  final int longestStreak;
+  final DateTime? lastReadAt;
+
+  UserStreaks({
+    required this.currentStreak,
+    required this.longestStreak,
+    this.lastReadAt,
+  });
+
+  factory UserStreaks.fromJson(Map<String, dynamic> json) {
+    return UserStreaks(
+      currentStreak: json['currentStreak'] ?? 0,
+      longestStreak: json['longestStreak'] ?? 0,
+      lastReadAt: json['lastReadAt'] != null ? DateTime.parse(json['lastReadAt']) : null,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'currentStreak': currentStreak,
+      'longestStreak': longestStreak,
+      'lastReadAt': lastReadAt?.toIso8601String(),
+    };
+  }
+
+  @override
+  String toString() {
+    return '''
+UserStreaks(
+  currentStreak: $currentStreak,
+  longestStreak: $longestStreak,
+  lastReadAt: $lastReadAt
+)''';
+  }
+}
+
 class UserPreferences {
   final String userId;
   final List<String> topics;

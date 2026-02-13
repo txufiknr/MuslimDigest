@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:muslimdigest/config/constants.dart';
 import 'package:theme_provider/theme_provider.dart';
 
 class MyHelper {
@@ -14,7 +13,7 @@ class MyHelper {
   AppTheme get appTheme => ThemeProvider.themeOf(context);
   ThemeData get currentTheme => appTheme.data;
   String get currentThemeID => appTheme.id;
-  bool get isLightTheme => currentThemeID == APP_UI_THEME_LIGHT;
+  bool get isLightTheme => currentThemeID == Brightness.light.name;
   bool get isDarkTheme => !isLightTheme;
   TextTheme get currentTextTheme => currentTheme.textTheme;
 

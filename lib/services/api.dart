@@ -4,7 +4,7 @@ import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import '../config/constants.dart';
-import '../utils/variables.dart';
+import '../variables/app.dart';
 
 /// HTTP content type constant for JSON requests
 const String contentType = 'application/json';
@@ -78,7 +78,7 @@ class ApiService {
   /// 
   /// Used for creating new resources on the server (e.g., user registration,
   /// creating preferences, etc.). Automatically handles JSON serialization,
-  /// headers, and error responses.
+  /// headers, and error responses. Removes 'createdAt' and 'updatedAt' from body.
   /// 
   /// [path] - The API endpoint path (relative to base URL)
   /// [body] - The request body data to be sent as JSON
@@ -86,17 +86,22 @@ class ApiService {
   /// Returns [ApiResponse] with success status, data, or error information
   static Future<ApiResponse> post(String path, Map<String, dynamic> body) async {
     try {
-      log('[api] POST $baseUrl/$path $body');
+      // Create a copy of body and remove timestamp fields
+      final cleanedBody = Map<String, dynamic>.from(body);
+      cleanedBody.remove('createdAt');
+      cleanedBody.remove('updatedAt');
+      
+      log('[api] POST $baseUrl/$path $cleanedBody');
 
       // Build headers with common information
       final headers = await _buildHeaders();
 
-      // Construct the full URL by combining base URL with the endpoint path
+      // Construct the full URL by combining base URL with endpoint path
       final response = await http.post(
         Uri.parse('$baseUrl/$path'),
         headers: headers,
-        // Convert the body map to JSON string for the request
-        body: jsonEncode(body),
+        // Convert cleaned body map to JSON string for the request
+        body: jsonEncode(cleanedBody),
       ).timeout(timeout);
 
       final result = jsonDecode(response.body) as Map<String, dynamic>;
@@ -132,7 +137,7 @@ class ApiService {
   /// 
   /// Used for updating existing resources on the server (e.g., updating user
   /// profile, modifying preferences, etc.). Automatically handles JSON
-  /// serialization, headers, and error responses.
+  /// serialization, headers, and error responses. Removes 'createdAt' and 'updatedAt' from body.
   /// 
   /// [path] - The API endpoint path (relative to base URL)
   /// [body] - The updated data to be sent as JSON
@@ -140,7 +145,12 @@ class ApiService {
   /// Returns [ApiResponse] with success status, data, or error information
   static Future<ApiResponse> put(String path, Map<String, dynamic> body) async {
     try {
-      log('[api] PUT $baseUrl/$path $body');
+      // Create a copy of body and remove timestamp fields
+      final cleanedBody = Map<String, dynamic>.from(body);
+      cleanedBody.remove('createdAt');
+      cleanedBody.remove('updatedAt');
+      
+      log('[api] PUT $baseUrl/$path $cleanedBody');
 
       // Build headers with common information
       final headers = await _buildHeaders();
@@ -149,7 +159,7 @@ class ApiService {
       final response = await http.put(
         Uri.parse('$baseUrl/$path'),
         headers: headers,
-        body: jsonEncode(body),
+        body: jsonEncode(cleanedBody),
       ).timeout(timeout);
 
       final result = jsonDecode(response.body) as Map<String, dynamic>;

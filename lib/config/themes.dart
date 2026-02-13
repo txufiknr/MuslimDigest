@@ -4,15 +4,16 @@ import 'colors.dart';
 
 class AppThemes {
   // Global text height multiplier
-  static const double textHeightMultiplier = 1.2;
+  static const double textHeightMultiplier = 1.3;
   
   // Text sizes
   static const double displayLargeSize = 36;
   static const double displayMediumSize = 28;
   static const double headlineLargeSize = 24;
   static const double headlineMediumSize = 20;
+  static const double titleLargeSize = 22;
   static const double bodyLargeSize = 22;
-  static const double bodyMediumSize = 18;
+  static const double bodyMediumSize = 17.5;
   static const double bodySmallSize = 14;
   static const double labelLargeSize = 22;
   static const double labelSmallSize = 18;
@@ -153,6 +154,12 @@ class AppThemes {
         fontSize: headlineMediumSize,
         height: textHeightMultiplier,
       ),
+      titleLarge: TextStyle(
+        color: AppColors.textPrimaryLight,
+        fontWeight: FontWeight.w600,
+        fontSize: titleLargeSize,
+        height: textHeightMultiplier,
+      ),
       bodyLarge: TextStyle(
         color: AppColors.textPrimaryLight,
         fontSize: bodyLargeSize,
@@ -207,6 +214,12 @@ class AppThemes {
         color: AppColors.textPrimaryDark,
         fontWeight: FontWeight.w600,
         fontSize: headlineMediumSize,
+        height: textHeightMultiplier,
+      ),
+      titleLarge: TextStyle(
+        color: AppColors.textPrimaryDark,
+        fontWeight: FontWeight.w600,
+        fontSize: titleLargeSize,
         height: textHeightMultiplier,
       ),
       bodyLarge: TextStyle(

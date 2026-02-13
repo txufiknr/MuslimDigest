@@ -5,7 +5,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:muslimdigest/config/constants.dart';
 import 'package:muslimdigest/config/themes.dart';
 import 'package:muslimdigest/config/router.dart';
-import 'package:muslimdigest/utils/variables.dart';
+import 'package:muslimdigest/variables/app.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:theme_provider/theme_provider.dart';
 
@@ -24,7 +24,15 @@ Future<void> main() async {
   // Initialize shared preferences with cache
   prefs = await SharedPreferencesWithCache.create(
     cacheOptions: const SharedPreferencesWithCacheOptions(
-      allowList: <String>{ 'user_id', 'theme' },
+      allowList: <String>{
+        'user_id', // User ID for authentication (uuid v7)
+        'user', // User data (JSON string)
+        'preferences', // App preferences (JSON string)
+        'theme', // Theme preference ("dark" or "light")
+        'read_last_date', // Last read date (YYYY-MM-DD)
+        'read_count', // Daily read count (number)
+        'streaks', // User streaks data (JSON string)
+      },
     ),
   );
   
@@ -45,8 +53,8 @@ class MyApp extends StatelessWidget {
       defaultThemeId: prefs.getString('theme') ?? defaultTheme,
       onThemeChanged: (_, newTheme) => prefs.setString('theme', newTheme.id),
       themes: [
-        AppTheme(id: APP_UI_THEME_LIGHT, description: "Light Theme", data: AppThemes.lightTheme),
-        AppTheme(id: APP_UI_THEME_DARK, description: "Dark Theme", data: AppThemes.darkTheme),
+        AppTheme(id: Brightness.light.name, description: "Light Theme", data: AppThemes.lightTheme),
+        AppTheme(id: Brightness.dark.name, description: "Dark Theme", data: AppThemes.darkTheme),
       ],
       child: ThemeConsumer(
         child: Builder(
