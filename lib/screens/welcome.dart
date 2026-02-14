@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:muslimdigest/config/themes.dart';
 import 'package:muslimdigest/models/user.dart';
 import 'package:muslimdigest/utils/app.dart';
 import 'package:muslimdigest/utils/extensions.dart';
@@ -126,7 +127,7 @@ class _WelcomePageState extends State<WelcomePage> {
     if (!mounted) return;
 
     // 3. Sync to backend
-    unawaited(saveAllData());
+    fireAndForget(saveAllData);
 
     // 4. Navigate to home screen
     context.go('/home');
@@ -147,82 +148,85 @@ class _WelcomePageState extends State<WelcomePage> {
   @override
   Widget build(BuildContext context) {
     final h = MyHelper(context);
-    
-    return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              AppColors.accentLight,
-              AppColors.primary,
-            ],
-            begin: Alignment.topRight,
-            end: Alignment.bottomCenter,
+
+    return Theme(
+      data: AppThemes.darkTheme,
+      child: Scaffold(
+        body: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                AppColors.accentLight,
+                AppColors.primary,
+              ],
+              begin: Alignment.topRight,
+              end: Alignment.bottomCenter,
+            ),
           ),
-        ),
-        child: Stack(
-          children: [
-            SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 32),
-                child: Column(
-                  children: [
-                    // Progress indicator
-                    _buildProgressIndicator().withPaddingHorizontal(32),
-                    
-                    const SizedBox(height: 32),
-                    
-                    // Step title
-                    Text(
-                      'Step ${_currentStep + 1} of ${_steps.length}',
-                      style: h.currentTextTheme.bodyMedium?.copyWith(
-                        color: Colors.white.withValues(alpha: 0.9),
+          child: Stack(
+            children: [
+              SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 32),
+                  child: Column(
+                    children: [
+                      // Progress indicator
+                      _buildProgressIndicator().withPaddingHorizontal(32),
+                      
+                      const SizedBox(height: 32),
+                      
+                      // Step title
+                      Text(
+                        'Step ${_currentStep + 1} of ${_steps.length}',
+                        style: h.currentTextTheme.bodyMedium?.copyWith(
+                          color: Colors.white.withValues(alpha: 0.9),
+                        ),
+                        textAlign: TextAlign.center,
+                      ).withPaddingHorizontal(32),
+                      
+                      const SizedBox(height: 8),
+                      
+                      Text(
+                        _steps[_currentStep],
+                        style: h.currentTextTheme.headlineLarge?.copyWith(
+                          color: Colors.white,
+                        ),
+                        textAlign: TextAlign.center,
+                      ).withPaddingHorizontal(32),
+                      
+                      // PageView for steps
+                      Expanded(
+                        child: PageView(
+                          controller: _pageController,
+                          physics: const NeverScrollableScrollPhysics(),
+                          children: [
+                            _buildGenderStep(),
+                            _buildAgeStep(),
+                            _buildInterestsStep(),
+                            _buildNameStep(),
+                          ].map((widget) => Center(child: SingleChildScrollView(
+                            padding: const EdgeInsets.symmetric(vertical: 32),
+                            child: widget,
+                          ))).toList(),
+                        ),
                       ),
-                      textAlign: TextAlign.center,
-                    ).withPaddingHorizontal(32),
-                    
-                    const SizedBox(height: 8),
-                    
-                    Text(
-                      _steps[_currentStep],
-                      style: h.currentTextTheme.headlineLarge?.copyWith(
-                        color: Colors.white,
-                      ),
-                      textAlign: TextAlign.center,
-                    ).withPaddingHorizontal(32),
-                    
-                    // PageView for steps
-                    Expanded(
-                      child: PageView(
-                        controller: _pageController,
-                        physics: const NeverScrollableScrollPhysics(),
-                        children: [
-                          _buildGenderStep(),
-                          _buildAgeStep(),
-                          _buildInterestsStep(),
-                          _buildNameStep(),
-                        ].map((widget) => Center(child: SingleChildScrollView(
-                          padding: const EdgeInsets.symmetric(vertical: 32),
-                          child: widget,
-                        ))).toList(),
-                      ),
-                    ),
-                    
-                    // Navigation buttons
-                    OnboardingNavigationButtons(
-                      currentStep: _currentStep,
-                      totalSteps: _steps.length,
-                      onPrevPressed: _previousStep,
-                      onSkipPressed: _skipStep,
-                      onNextPressed: _nextStep,
-                      canProceed: _canProceed,
-                      isLoading: _isLoading,
-                    ).withPaddingHorizontal(32),
-                  ],
+                      
+                      // Navigation buttons
+                      OnboardingNavigationButtons(
+                        currentStep: _currentStep,
+                        totalSteps: _steps.length,
+                        onPrevPressed: _previousStep,
+                        onSkipPressed: _skipStep,
+                        onNextPressed: _nextStep,
+                        canProceed: _canProceed,
+                        isLoading: _isLoading,
+                      ).withPaddingHorizontal(32),
+                    ],
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

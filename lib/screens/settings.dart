@@ -1,10 +1,19 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:muslimdigest/config/colors.dart';
 import 'package:muslimdigest/config/constants.dart';
+import 'package:muslimdigest/config/themes.dart';
+import 'package:muslimdigest/utils/app.dart';
+import 'package:muslimdigest/utils/dialogs.dart';
+import 'package:muslimdigest/utils/extensions.dart';
+import 'package:muslimdigest/utils/functions.dart';
 import 'package:muslimdigest/variables/app.dart';
 import 'package:muslimdigest/utils/helpers.dart';
 import 'package:muslimdigest/variables/user.dart';
 import 'package:muslimdigest/widgets/components/button.dart';
+import 'package:muslimdigest/widgets/components/logo.dart';
+import 'package:muslimdigest/widgets/components/my_icon_button.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -14,16 +23,15 @@ class SettingsPage extends StatefulWidget {
 }
 
 class _SettingsPageState extends State<SettingsPage> {
-  bool _darkMode = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _darkMode = defaultTheme == Brightness.dark.name;
-  }
+  // @override
+  // void initState() {
+  //   super.initState();
+  // }
 
   @override
   Widget build(BuildContext context) {
+    final h = MyHelper(context);
+
     return Scaffold(
       body: Container(
         decoration: BoxDecoration(
@@ -37,63 +45,76 @@ class _SettingsPageState extends State<SettingsPage> {
           ),
         ),
         child: SafeArea(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Header
-                SettingsHeader(),
-                const SizedBox(height: 32),
-                
-                // Personal Settings Section
-                SettingsSection(
-                  title: 'Personal Settings',
-                  child: PersonalSettingsSection(),
-                ),
-                const SizedBox(height: 24),
-                
-                // App Settings Section
-                SettingsSection(
-                  title: 'App Settings',
-                  child: AppSettingsSection(
-                    darkMode: _darkMode,
-                    onDarkModeChanged: (value) {
-                      setState(() {
-                        _darkMode = value;
-                      });
-                      // TODO: Implement theme switching
-                    },
-                    onResetData: _showResetDataDialog,
+          child: Column(
+            children: [
+              Row(
+                children: [
+                  Logo(size: 40,),
+                  Spacer(),
+                  MyIconButton(icon: CupertinoIcons.back, iconColor: Colors.white, onPressed: context.pop),
+                ],
+              ).withPadding(horizontal: 16, bottom: 8),
+              ListView(
+                padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 16),
+                children: [
+                  // Header
+                  SettingsHeader(),
+                  const SizedBox(height: 32),
+                  
+                  // Personal Settings Section
+                  SettingsSection(
+                    title: 'Personal Settings',
+                    child: PersonalSettingsSection(),
                   ),
-                ),
-                const SizedBox(height: 24),
-                
-                // Donate Button
-                SettingsDonateButton(),
-                const SizedBox(height: 32),
-                
-                // Footer
-                SettingsFooter(),
-              ],
-            ),
+                  const SizedBox(height: 24),
+                  
+                  // App Settings Section
+                  SettingsSection(
+                    title: 'App Settings',
+                    child: AppSettingsSection(
+                      darkMode: h.isDarkTheme,
+                      onDarkModeChanged: (value) {
+                        h.nextTheme();
+                        // setState(() {});
+                      },
+                      onResetData: _showResetDataDialog,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  
+                  // Donate Button
+                  SettingsDonateButton(),
+                  const SizedBox(height: 32),
+                  
+                  // Footer
+                  SettingsFooter(),
+                ],
+              ).expand(),
+            ],
           ),
         ),
       ),
     );
   }
 
-  void _showResetDataDialog() {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return ResetDataDialog();
-      },
-    );
+  Future<void> _showResetDataDialog() async {
+    final resetData = await showBottomModalConfirm(
+      context,
+      title: 'Reset Data',
+      message: 'Are you sure you want to reset all data?',
+      footer: 'This action cannot be undone.',
+      confirmButtonText: 'Yes, reset',
+      confirmButtonVariant: MyButtonVariant.error,
+      confirmButtonIcon: Icon(CupertinoIcons.arrow_clockwise),
+      cancelButtonText: 'No, keep them',
+    ) ?? false;
+    
+    if (resetData && mounted) {
+      // TODO: reset data
+      showSnackBar(context, 'Data reset successfully');
+    }
   }
 }
-
-// Modular Stateless Widgets
 
 class SettingsHeader extends StatelessWidget {
   const SettingsHeader({super.key});
@@ -164,7 +185,7 @@ class PersonalSettingsSection extends StatelessWidget {
       child: Column(
         children: [
           SettingsTile(
-            icon: Icons.bookmark,
+            icon: CupertinoIcons.bookmark_fill,
             title: 'Saved Feeds',
             onTap: () {
               // TODO: Navigate to saved feeds
@@ -172,7 +193,7 @@ class PersonalSettingsSection extends StatelessWidget {
           ),
           SettingsDivider(),
           SettingsTile(
-            icon: Icons.favorite,
+            icon: CupertinoIcons.heart_fill,
             title: 'Liked Feeds',
             onTap: () {
               // TODO: Navigate to liked feeds
@@ -180,10 +201,18 @@ class PersonalSettingsSection extends StatelessWidget {
           ),
           SettingsDivider(),
           SettingsTile(
-            icon: Icons.tune,
+            icon: CupertinoIcons.square_grid_2x2_fill,
             title: 'Personalize Your Feed',
             onTap: () {
               // TODO: Navigate to feed personalization
+            },
+          ),
+          SettingsDivider(),
+          SettingsTile(
+            icon: CupertinoIcons.person_fill,
+            title: 'Edit Profile',
+            onTap: () {
+              context.push('/welcome');
             },
           ),
         ],
@@ -210,7 +239,7 @@ class AppSettingsSection extends StatelessWidget {
       child: Column(
         children: [
           SettingsTile(
-            icon: Icons.notifications,
+            icon: CupertinoIcons.bell_fill,
             title: 'Notifications',
             onTap: () {
               // TODO: Navigate to notifications settings
@@ -218,7 +247,7 @@ class AppSettingsSection extends StatelessWidget {
           ),
           SettingsDivider(),
           SettingsTile(
-            icon: Icons.dark_mode,
+            icon: CupertinoIcons.moon_fill,
             title: 'Dark Mode',
             trailing: Switch(
               value: darkMode,
@@ -227,15 +256,13 @@ class AppSettingsSection extends StatelessWidget {
           ),
           SettingsDivider(),
           SettingsTile(
-            icon: Icons.feedback,
+            icon: CupertinoIcons.chat_bubble_fill,
             title: 'Feedback',
-            onTap: () {
-              // TODO: Navigate to feedback
-            },
+            onTap: openStoreListing,
           ),
           SettingsDivider(),
           SettingsTile(
-            icon: Icons.refresh,
+            icon: CupertinoIcons.arrow_clockwise,
             title: 'Reset Data',
             onTap: onResetData,
           ),
@@ -286,13 +313,19 @@ class SettingsTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final h = MyHelper(context);
     return ListTile(
+      visualDensity: VisualDensity.compact,
+      contentPadding: EdgeInsets.symmetric(horizontal: 16),
+      minTileHeight: AppThemes.buttonHeight,
+      minLeadingWidth: 0,
+      minVerticalPadding: 0,
       leading: Icon(
         icon,
         color: Colors.white,
+        size: 20,
       ),
       title: Text(
         title,
-        style: h.currentTextTheme.bodyLarge?.copyWith(
+        style: h.currentTextTheme.bodyMedium?.copyWith(
           color: Colors.white,
         ),
       ),
@@ -324,11 +357,9 @@ class SettingsDonateButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return MyButton(
       text: 'Donate',
-      onPressed: () {
-        // TODO: Navigate to donate page
-      },
+      onPressed: () => openUrl(APP_URL_DONATE),
       brightness: Brightness.dark,
-      icon: const Icon(Icons.volunteer_activism),
+      icon: Icon(CupertinoIcons.gift),
       variant: MyButtonVariant.success,
     );
   }
@@ -342,29 +373,30 @@ class SettingsFooter extends StatelessWidget {
     final h = MyHelper(context);
     return Column(
       children: [
-        TextButton(
-          onPressed: () {
-            // TODO: Navigate to contact us
-          },
-          child: Text(
-            'Contact Us',
-            style: h.currentTextTheme.bodyMedium?.copyWith(
-              color: Colors.white,
-              decoration: TextDecoration.underline,
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            TextButton(
+              onPressed: () => openUrl('mailto:$APP_COMPANY_EMAIL'),
+              child: Text(
+                'Contact Us',
+                style: h.currentTextTheme.bodySmall?.copyWith(
+                  color: Colors.white,
+                  decoration: TextDecoration.underline,
+                ),
+              ),
             ),
-          ),
-        ),
-        TextButton(
-          onPressed: () {
-            // TODO: Navigate to privacy policy
-          },
-          child: Text(
-            'Privacy Policy',
-            style: h.currentTextTheme.bodyMedium?.copyWith(
-              color: Colors.white,
-              decoration: TextDecoration.underline,
+            TextButton(
+              onPressed: () => openUrl(APP_URL_PRIVACY),
+              child: Text(
+                'Privacy Policy',
+                style: h.currentTextTheme.bodySmall?.copyWith(
+                  color: Colors.white,
+                  decoration: TextDecoration.underline,
+                ),
+              ),
             ),
-          ),
+          ],
         ),
         const SizedBox(height: 16),
         Text(
@@ -378,44 +410,44 @@ class SettingsFooter extends StatelessWidget {
   }
 }
 
-class ResetDataDialog extends StatelessWidget {
-  const ResetDataDialog({super.key});
+// class ResetDataDialog extends StatelessWidget {
+//   const ResetDataDialog({super.key});
 
-  @override
-  Widget build(BuildContext context) {
-    final h = MyHelper(context);
-    return AlertDialog(
-      title: Text(
-        'Reset Data',
-        style: h.currentTextTheme.titleLarge,
-      ),
-      content: Text(
-        'Are you sure you want to reset all data? This action cannot be undone.',
-        style: h.currentTextTheme.bodyMedium,
-      ),
-      actions: [
-        MyButton(
-          text: 'Cancel',
-          onPressed: () {
-            Navigator.of(context).pop();
-          },
-          outlined: true,
-        ),
-        MyButton(
-          text: 'Reset',
-          onPressed: () {
-            // TODO: Implement data reset
-            Navigator.of(context).pop();
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: const Text('Data reset successfully'),
-                backgroundColor: AppColors.success,
-              ),
-            );
-          },
-          variant: MyButtonVariant.error,
-        ),
-      ],
-    );
-  }
-}
+//   @override
+//   Widget build(BuildContext context) {
+//     final h = MyHelper(context);
+//     return AlertDialog(
+//       title: Text(
+//         'Reset Data',
+//         style: h.currentTextTheme.titleLarge,
+//       ),
+//       content: Text(
+//         'Are you sure you want to reset all data? This action cannot be undone.',
+//         style: h.currentTextTheme.bodyMedium,
+//       ),
+//       actions: [
+//         MyButton(
+//           text: 'Cancel',
+//           onPressed: () {
+//             Navigator.of(context).pop();
+//           },
+//           outlined: true,
+//         ),
+//         MyButton(
+//           text: 'Reset',
+//           onPressed: () {
+//             // TODO: Implement data reset
+//             Navigator.of(context).pop();
+//             ScaffoldMessenger.of(context).showSnackBar(
+//               SnackBar(
+//                 content: const Text('Data reset successfully'),
+//                 backgroundColor: AppColors.success,
+//               ),
+//             );
+//           },
+//           variant: MyButtonVariant.error,
+//         ),
+//       ],
+//     );
+//   }
+// }

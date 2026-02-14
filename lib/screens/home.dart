@@ -6,7 +6,6 @@ import 'package:muslimdigest/utils/dialogs.dart';
 import 'package:muslimdigest/utils/extensions.dart';
 import 'package:muslimdigest/utils/feeds.dart';
 import 'package:muslimdigest/utils/functions.dart';
-import 'package:muslimdigest/utils/helpers.dart';
 import 'package:muslimdigest/utils/time.dart';
 import 'package:muslimdigest/variables/time.dart';
 import 'package:muslimdigest/variables/user.dart';
@@ -32,9 +31,13 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
-    final isFeedLoaded = widget.args['feedLoaded'] as bool? ?? true;
-    if (!isFeedLoaded) {
-      _showLoadFeedFailed(_loadFeeds);
+    if (widget.args['feedLoaded'] != null) {
+      final isFeedLoaded = widget.args['feedLoaded'] as bool;
+      if (!isFeedLoaded) {
+        _showLoadFeedFailed(_loadFeeds);
+      }
+    } else {
+      _loadFeeds();
     }
     _initReadCount();
   }
@@ -78,19 +81,18 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    final h = MyHelper(context);
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, _) async {
         if (didPop) return;
         if (!_isWillExit) {
           // Save all user data before exit
-          unawaited(saveAllData());
+          fireAndForget(saveAllData);
           _isWillExit = true;
-          h.showSnackBar('Press back again to exit');
+          showSnackBar(context, 'Press back again to exit');
           delay(2000, () {
             _isWillExit = false;
-            h.hideSnackBar();
+            hideSnackBar(context);
           });
         } else {
           quit();
@@ -103,7 +105,7 @@ class _HomePageState extends State<HomePage> {
               HomeHeader(
                 onTopicChanged: _loadFeeds,
               ),
-              FeedSwiper(isLoading: _isLoading).expand(),
+              FeedSwiper(isLoading: _isLoading, onReload: _loadFeeds).expand(),
               ReadingStreakFooter(),
             ],
           ),

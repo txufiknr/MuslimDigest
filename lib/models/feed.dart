@@ -2,14 +2,15 @@ class FeedItem {
   final String id;
   final String title;
   final String summary;
-  final String summaryProvider;
-  final String summaryStatus;
-  final String sourceUrl;
-  final String topic;
+  final String? summaryProvider;
+  final String? summaryStatus;
+  final String? sourceUrl;
+  final String? canonicalUrl;
+  final String? topic;
   final String? image;
   final String? video;
-  final String riskLevel;
-  final DateTime publishedAt;
+  final String? riskLevel;
+  final DateTime? publishedAt;
   final List<String> sources;
   final Cluster cluster;
   final List<String> badges;
@@ -20,20 +21,24 @@ class FeedItem {
     required this.id,
     required this.title,
     required this.summary,
-    required this.summaryProvider,
-    required this.summaryStatus,
-    required this.sourceUrl,
-    required this.topic,
+    this.summaryProvider,
+    this.summaryStatus,
+    this.sourceUrl,
+    this.canonicalUrl,
+    this.topic,
     this.image,
     this.video,
-    required this.riskLevel,
-    required this.publishedAt,
-    required this.sources,
+    this.riskLevel,
+    this.publishedAt,
+    this.sources = const [],
     required this.cluster,
-    required this.badges,
+    this.badges = const [],
     required this.source,
-    required this.isBreaking,
+    this.isBreaking = false,
   });
+
+  String get sourceLabel => source.siteName ?? source.id;
+  String? get sourceLink => canonicalUrl ?? sourceUrl;
 
   factory FeedItem.fromJson(Map<String, dynamic> json) {
     return FeedItem(
@@ -43,14 +48,15 @@ class FeedItem {
       summaryProvider: json['summaryProvider'],
       summaryStatus: json['summaryStatus'],
       sourceUrl: json['sourceUrl'],
+      canonicalUrl: json['canonicalUrl'],
       topic: json['topic'],
       image: json['image'],
       video: json['video'],
       riskLevel: json['riskLevel'],
-      publishedAt: DateTime.parse(json['publishedAt']),
-      sources: List<String>.from(json['sources']),
+      publishedAt: json['publishedAt'] == null ? null : DateTime.parse(json['publishedAt']),
+      sources: List<String>.from(json['sources'] ?? []),
       cluster: Cluster.fromJson(json['cluster']),
-      badges: List<String>.from(json['badges']),
+      badges: List<String>.from(json['badges'] ?? []),
       source: Source.fromJson(json['source']),
       isBreaking: json['isBreaking'] ?? false,
     );
@@ -64,11 +70,12 @@ class FeedItem {
       'summaryProvider': summaryProvider,
       'summaryStatus': summaryStatus,
       'sourceUrl': sourceUrl,
+      'canonicalUrl': canonicalUrl,
       'topic': topic,
       'image': image,
       'video': video,
       'riskLevel': riskLevel,
-      'publishedAt': publishedAt.toIso8601String(),
+      'publishedAt': publishedAt?.toIso8601String(),
       'sources': sources,
       'cluster': cluster.toJson(),
       'badges': badges,
@@ -106,38 +113,38 @@ class Cluster {
   final int articleCount;
   final Map<String, int> topicDistribution;
   final double trendingScore;
-  final String trustLevel;
+  final String? trustLevel;
   final String? heroImageUrl;
   final List<String> madhahib;
   final List<String> scholars;
-  final DateTime firstPublishedAt;
-  final DateTime lastPublishedAt;
+  final DateTime? firstPublishedAt;
+  final DateTime? lastPublishedAt;
 
   Cluster({
     required this.id,
-    required this.articleCount,
-    required this.topicDistribution,
-    required this.trendingScore,
-    required this.trustLevel,
+    this.articleCount = 1,
+    this.topicDistribution = const {},
+    this.trendingScore = 0.0,
+    this.trustLevel,
     this.heroImageUrl,
     this.madhahib = const [],
     this.scholars = const [],
-    required this.firstPublishedAt,
-    required this.lastPublishedAt,
+    this.firstPublishedAt,
+    this.lastPublishedAt,
   });
 
   factory Cluster.fromJson(Map<String, dynamic> json) {
     return Cluster(
       id: json['id'],
-      articleCount: json['articleCount'],
-      topicDistribution: Map<String, int>.from(json['topicDistribution']),
+      articleCount: json['articleCount'] ?? 1,
+      topicDistribution: Map<String, int>.from(json['topicDistribution'] ?? {}),
       trendingScore: json['trendingScore']?.toDouble() ?? 0.0,
       trustLevel: json['trustLevel'],
       heroImageUrl: json['heroImageUrl'],
       madhahib: List<String>.from(json['madhahib'] ?? []),
       scholars: List<String>.from(json['scholars'] ?? []),
-      firstPublishedAt: DateTime.parse(json['firstPublishedAt']),
-      lastPublishedAt: DateTime.parse(json['lastPublishedAt']),
+      firstPublishedAt: json['firstPublishedAt'] == null ? null : DateTime.parse(json['firstPublishedAt']),
+      lastPublishedAt: json['lastPublishedAt'] == null ? null : DateTime.parse(json['lastPublishedAt']),
     );
   }
 
@@ -151,8 +158,8 @@ class Cluster {
       'heroImageUrl': heroImageUrl,
       'madhahib': madhahib,
       'scholars': scholars,
-      'firstPublishedAt': firstPublishedAt.toIso8601String(),
-      'lastPublishedAt': lastPublishedAt.toIso8601String(),
+      'firstPublishedAt': firstPublishedAt?.toIso8601String(),
+      'lastPublishedAt': lastPublishedAt?.toIso8601String(),
     };
   }
 
@@ -176,17 +183,17 @@ Cluster(
 
 class Source {
   final String id;
-  final String name;
-  final String trustLevel;
-  final String siteName;
+  final String? name;
+  final String? trustLevel;
+  final String? siteName;
   final String? siteIcon;
   final String? ogImage;
 
   Source({
     required this.id,
-    required this.name,
-    required this.trustLevel,
-    required this.siteName,
+    this.name,
+    this.trustLevel,
+    this.siteName,
     this.siteIcon,
     this.ogImage,
   });

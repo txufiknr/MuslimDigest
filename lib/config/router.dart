@@ -28,10 +28,10 @@ class AppRouter {
         path: '/home',
         name: 'home',
         builder: (context, state) {
-          return HomePage(args: state.extra as Map<String, dynamic>);
+          return HomePage(args: Map<String, dynamic>.from(state.extra as Map? ?? {}));
         },
         // onExit: (context, state) async {
-        //   unawaited(saveAllData());
+        //   fireAndForget(saveAllData);
         //   return true;
         // },
       ),

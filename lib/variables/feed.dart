@@ -8,9 +8,5 @@ String? get currentTopic => prefs.getString('topic');
 List<FeedItem> get feedItems {
   final jsonString = prefs.getString('feed_items');
   if (jsonString == null) return [];
-  try {
-    return List<FeedItem>.from(jsonDecode(jsonString).map(FeedItem.fromJson));
-  } catch (_) {
-    return [];
-  }
+  return List<FeedItem>.from(List<Map<String, dynamic>>.from(jsonDecode(jsonString)).map(FeedItem.fromJson));
 }

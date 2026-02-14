@@ -158,8 +158,9 @@ Future<bool?> showBottomModalConfirm(
     String? title,
     String? footer,
     String? confirmButtonText,
-    String? cancelButtonText,
     Widget? confirmButtonIcon,
+    MyButtonVariant confirmButtonVariant = MyButtonVariant.primary,
+    String? cancelButtonText,
     Widget? cancelButtonIcon,
   }
 ) async {
@@ -181,10 +182,10 @@ Future<bool?> showBottomModalConfirm(
       ModalButtonConfig(
         text: confirmButtonText ?? 'Confirm',
         icon: confirmButtonIcon,
+        variant: confirmButtonVariant,
         onPressed: () {
           Navigator.of(context).pop(true); // Close modal with true
         },
-        variant: MyButtonVariant.primary,
       ),
     ],
   ) as bool?;
@@ -203,3 +204,15 @@ Future<bool> showRetryableError(BuildContext context, {String? title, String? me
   ) ?? true;
   return !continueAnyway;
 }
+
+void showSnackBar(BuildContext context, String message, {bool showAction = false, String? actionLabel, VoidCallback? action}) {
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: Text(message),
+      // backgroundColor: currentTheme.colorScheme.surface,
+      action: showAction ? SnackBarAction(label: actionLabel ?? "Close", onPressed: action ?? Navigator.of(context).pop) : null,
+    ),
+  );
+}
+
+void hideSnackBar(BuildContext context) => ScaffoldMessenger.of(context).hideCurrentSnackBar();

@@ -19,6 +19,8 @@ class AppThemes {
   static const double labelSmallSize = 18;
   static const double buttonLargeSize = 20;
   static const double buttonSmallSize = 16;
+
+  static const double buttonHeight = 50.0;
   
   // Color Schemes
   static ColorScheme get lightColorScheme => ColorScheme.fromSeed(

@@ -16,9 +16,6 @@ Future<bool> loadFeeds({String? topic, int? timeoutMs}) async {
 
   if (response.success && response.data != null) {
     log('[loadFeeds] feed response data: ${response.data}');
-    // TODO: fix type conversion issue
-    // Unhandled Exception: type '(Map<String, dynamic>) => FeedItem' is not a subtype of type '(dynamic) => dynamic' of 'f'
-    // E/flutter ( 8161): #0      _FeedSwiperState._loadFeeds (package:muslimdigest/widgets/home/feed_swiper.dart:45:59)
     final feedItems = List<FeedItem>.from(response.data.map((item) => FeedItem.fromJson(item as Map<String, dynamic>)));
     log('[loadFeeds] ${feedItems.length} feed items obtained successfully');
 
@@ -32,5 +29,8 @@ Future<bool> loadFeeds({String? topic, int? timeoutMs}) async {
 }
 
 Future<void> setFeedItems(List<FeedItem> feedItems) async {
-  await prefs.setString('feed_items', jsonEncode(feedItems.map((item) => item.toJson()).toList()));
+  final feedItemsString = jsonEncode(feedItems.map((item) => item.toJson()).toList());
+  log('[setFeedItems] storing: $feedItemsString');
+  await prefs.setString('feed_items', feedItemsString);
+  log('[setFeedItems] feed items stored successfully!');
 }

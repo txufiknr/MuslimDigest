@@ -2,13 +2,14 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:muslimdigest/config/colors.dart';
+import 'package:muslimdigest/config/themes.dart';
 import 'package:muslimdigest/utils/extensions.dart';
 import 'package:muslimdigest/variables/app.dart';
 import 'package:muslimdigest/variables/feed.dart';
 import 'package:muslimdigest/variables/user.dart';
 import '../components/my_icon_button.dart';
 
-const TAB_HEIGHT = 50.0;
+const TAB_HEIGHT = AppThemes.buttonHeight;
 const TAB_RADIUS = 20.0;
 
 /// Header widget for the home page containing hamburger menu and topic tabs

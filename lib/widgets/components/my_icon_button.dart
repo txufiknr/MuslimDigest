@@ -8,6 +8,7 @@ class MyIconButton extends StatelessWidget {
   final Color? backgroundColor;
   final double? size;
   final double? iconSize;
+  final Color? iconColor;
   final double radius;
 
   const MyIconButton({
@@ -18,6 +19,7 @@ class MyIconButton extends StatelessWidget {
     this.backgroundColor,
     this.size,
     this.iconSize,
+    this.iconColor,
     this.radius = 20.0,
   });
 
@@ -25,7 +27,7 @@ class MyIconButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return IconButton(
       onPressed: onPressed,
-      icon: Icon(icon),
+      icon: Icon(icon, color: iconColor),
       iconSize: iconSize,
       tooltip: tooltip,
       style: IconButton.styleFrom(

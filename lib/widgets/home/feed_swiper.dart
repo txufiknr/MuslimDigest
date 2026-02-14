@@ -4,12 +4,14 @@ import 'dart:developer' show log;
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_card_swiper/flutter_card_swiper.dart';
+import 'package:muslimdigest/config/colors.dart';
 import 'package:muslimdigest/config/feeds.dart';
 import 'package:muslimdigest/services/api.dart';
 import 'package:muslimdigest/utils/extensions.dart';
 import 'package:muslimdigest/utils/functions.dart';
 import 'package:muslimdigest/utils/helpers.dart';
 import 'package:muslimdigest/widgets/animations/loader.dart';
+import 'package:muslimdigest/widgets/components/placeholder.dart';
 import '../../models/feed.dart';
 import '../components/cached_image.dart';
 import 'package:muslimdigest/variables/app.dart';
@@ -20,7 +22,8 @@ import 'package:muslimdigest/variables/user.dart';
 /// Feed swiper widget for displaying news cards with vertical swipe navigation
 class FeedSwiper extends StatefulWidget {
   final bool isLoading;
-  const FeedSwiper({this.isLoading = false, super.key});
+  final VoidCallback onReload;
+  const FeedSwiper({this.isLoading = false, required this.onReload, super.key});
 
   @override
   State<FeedSwiper> createState() => _FeedSwiperState();
@@ -74,24 +77,21 @@ class _FeedSwiperState extends State<FeedSwiper> {
 
     if (feedItems.isEmpty) {
       if (widget.isLoading) {
-        return const Center(child: MyLoader());
+        return MyLoader().center();
       }
 
-      // TODO: placeholder widget
-      return const Center(
-        child: Text(
-          'No articles available',
-          style: TextStyle(
-            fontSize: 16,
-            color: Colors.grey,
-          ),
-        ),
-      );
+      // Empty feed placeholder
+      return MyPlaceholder(
+        'No articles available',
+        icon: Icon(CupertinoIcons.news, size: 80, color: AppColors.accent),
+        onRetry: widget.onReload,
+        retryLabel: "Reload",
+      ).center();
     }
 
     if (widget.isLoading) {
       // TODO: small non-distruptive loader
-      return const Center(child: MyLoader());
+      return MyLoader().center();
     }
 
     return CardSwiper(
@@ -285,7 +285,45 @@ class _FeedFooter extends StatelessWidget {
       ),
       child: Row(
         children: [
-          // Source site icon
+          _FeedFooterSource(feedItem),
+
+          Spacer(),
+          
+          // Summarizer info
+          if (feedItem.summaryProvider != null) Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: Colors.green[50],
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Text(
+              'Summarizer: ${feedItem.summaryProvider!.toCapitalized()}',
+              style: TextStyle(
+                fontSize: 11,
+                color: Colors.green[700],
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _FeedFooterSource extends StatelessWidget {
+  final FeedItem feedItem;
+
+  const _FeedFooterSource(this.feedItem);
+
+  @override
+  Widget build(BuildContext context) {
+    final sourceLink = feedItem.sourceLink;
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // Source site icon
           Container(
             width: 24,
             height: 24,
@@ -311,35 +349,15 @@ class _FeedFooter extends StatelessWidget {
           const SizedBox(width: 8),
           
           // Source site name
-          Expanded(
-            child: Text(
-              feedItem.source.siteName,
-              style: const TextStyle(
-                fontSize: 12,
-                color: Colors.black87,
-                fontWeight: FontWeight.w500,
-              ),
+          Text(
+            feedItem.sourceLabel,
+            style: const TextStyle(
+              fontSize: 12,
+              color: Colors.black87,
+              fontWeight: FontWeight.w500,
             ),
           ),
-          
-          // Summarizer info
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: Colors.green[50],
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Text(
-              feedItem.summaryProvider,
-              style: TextStyle(
-                fontSize: 11,
-                color: Colors.green[700],
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
+      ],
+    ).onTap(sourceLink == null ? null : () => openUrl(sourceLink));
   }
 }

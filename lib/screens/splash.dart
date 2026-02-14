@@ -27,10 +27,12 @@ class _SplashPageState extends State<SplashPage> {
   @override
   void initState() {
     super.initState();
-    unawaited(preCacheAssets(context));
-    unawaited(getAppVersion());
-    // unawaited(getUser());
-    unawaited(_startSplash());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      unawaited(preCacheAssets(context));
+      unawaited(getAppVersion());
+      unawaited(_startSplash());
+    });
   }
 
   Future<bool> _loadFeeds() async {
@@ -40,23 +42,19 @@ class _SplashPageState extends State<SplashPage> {
 
   /// Start the splash screen animation and navigation
   Future<void> _startSplash() async {
-    // Preload the target route during splash delay
-    final target = isFirstRun ? '/onboarding' : '/home';
-    debugPrint('[splash] Preloading $target route');
-    preloadRoutes(context);
-    
     // Preload user feeds within splash screen delay
-    final results = await Future.wait([
+    final results = await Future.wait<bool>([
       _loadFeeds(),
-      delay(SPLASH_DURATION_MS),
+      delay(SPLASH_DURATION_MS).then((_) => true),
     ]);
-
-    final feedLoaded = results[0];
     if (!mounted) return;
 
     // Navigate to target route
-    debugPrint('[splash] Navigating to $target');
-    context.go(target, extra: { 'feedLoaded': feedLoaded });
+    if (isFirstRun) {
+      context.go('/onboarding');
+    } else {
+      context.go('/home', extra: { 'feedLoaded': results[0] });
+    }
   }
 
   @override

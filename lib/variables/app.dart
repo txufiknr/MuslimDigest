@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:in_app_review/in_app_review.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Application-level variables and singleton instances
@@ -43,3 +44,5 @@ var appVersion = '1.0.0';
 /// final value = prefs.getString('key');
 /// ```
 late final SharedPreferencesWithCache prefs;
+
+final inAppReview = InAppReview.instance;
