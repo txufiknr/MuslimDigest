@@ -19,6 +19,9 @@ import 'package:muslimdigest/variables/feed.dart';
 import 'package:muslimdigest/variables/time.dart';
 import 'package:muslimdigest/variables/user.dart';
 
+final SWIPE_DIRECTION = CardSwiperDirection.left;
+final UNDO_DIRECTION = SWIPE_DIRECTION == CardSwiperDirection.left ? CardSwiperDirection.right : CardSwiperDirection.left;
+
 /// Feed swiper widget for displaying news cards with vertical swipe navigation
 class FeedSwiper extends StatefulWidget {
   final bool isLoading;
@@ -30,6 +33,15 @@ class FeedSwiper extends StatefulWidget {
 }
 
 class _FeedSwiperState extends State<FeedSwiper> {
+  final _controller = CardSwiperController();
+
+  bool get _canGoBack => readCount > 0;
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
 
   @override
   void didUpdateWidget(FeedSwiper oldWidget) {
@@ -95,20 +107,38 @@ class _FeedSwiperState extends State<FeedSwiper> {
     }
 
     return CardSwiper(
-      allowedSwipeDirection: AllowedSwipeDirection.symmetric(vertical: true),
+      key: Key("CardSwiper_$_canGoBack"),
+      controller: _controller,
+      showBackCardOnUndo: true,
+      undoSwipeThreshold: 20.0,
+      undoDirection: UndoDirection.right,
+      allowedSwipeDirection: AllowedSwipeDirection.only(
+        left: SWIPE_DIRECTION == CardSwiperDirection.left || _canGoBack,
+        right: SWIPE_DIRECTION == CardSwiperDirection.right || _canGoBack
+      ),
+      initialIndex: readCount,
       cardsCount: feedItems.length,
       cardBuilder: (context, index, percentThresholdX, percentThresholdY) {
         return FeedCard(feedItem: feedItems[index]);
       },
       isDisabled: false,
       onSwipe: (previousIndex, currentIndex, direction) async {
-        log('[feed] Swipe direction: $direction, previousIndex: $previousIndex, currentIndex: $currentIndex');
-        if (direction == CardSwiperDirection.top) {
-          final swipedItem = feedItems[previousIndex];
-          log('[feed] Swiped item: ${swipedItem.title}');
-          _incrementReadCount(swipedItem.cluster.id);
-        } else if (direction == CardSwiperDirection.bottom) {
+        final previousItem = feedItems[previousIndex];
+        log('[feed] Swipe direction: $direction, previousItem: ${previousItem.title}');
+
+        // When an undo swipe is detected
+        if (direction == UNDO_DIRECTION) {
+          // Trigger the undo action on the controller
+          _controller.undo();
           _decreaseReadCount();
+          
+          // Return false to prevent the default swipe action
+          return false;
+        }
+
+        if (direction == SWIPE_DIRECTION) {
+          log('[feed] Swiped item: ${previousItem.title}');
+          _incrementReadCount(previousItem.cluster.id);
         }
         return true;
       },

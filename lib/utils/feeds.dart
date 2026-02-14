@@ -15,7 +15,6 @@ Future<bool> loadFeeds({String? topic, int? timeoutMs}) async {
   }, options: options);
 
   if (response.success && response.data != null) {
-    log('[loadFeeds] feed response data: ${response.data}');
     final feedItems = List<FeedItem>.from(response.data.map((item) => FeedItem.fromJson(item as Map<String, dynamic>)));
     log('[loadFeeds] ${feedItems.length} feed items obtained successfully');
 
@@ -30,7 +29,6 @@ Future<bool> loadFeeds({String? topic, int? timeoutMs}) async {
 
 Future<void> setFeedItems(List<FeedItem> feedItems) async {
   final feedItemsString = jsonEncode(feedItems.map((item) => item.toJson()).toList());
-  log('[setFeedItems] storing: $feedItemsString');
   await prefs.setString('feed_items', feedItemsString);
-  log('[setFeedItems] feed items stored successfully!');
+  log('[setFeedItems] ${feedItems.length} feed items stored successfully!');
 }

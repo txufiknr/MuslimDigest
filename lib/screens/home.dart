@@ -6,7 +6,6 @@ import 'package:muslimdigest/utils/dialogs.dart';
 import 'package:muslimdigest/utils/extensions.dart';
 import 'package:muslimdigest/utils/feeds.dart';
 import 'package:muslimdigest/utils/functions.dart';
-import 'package:muslimdigest/utils/time.dart';
 import 'package:muslimdigest/variables/time.dart';
 import 'package:muslimdigest/variables/user.dart';
 import '../variables/app.dart';
@@ -37,14 +36,13 @@ class _HomePageState extends State<HomePage> {
         _showLoadFeedFailed(_loadFeeds);
       }
     } else {
-      _loadFeeds();
+      _loadFeeds(); // TODO: only load feed when `isNewDay` or topic/prefs changed
     }
     _initReadCount();
   }
 
   /// Reset read count for new day
   void _initReadCount() {
-    final isNewDay = !isSameDay(today, readLastDate);
     if (isNewDay) {
       prefs.setInt('read_count', 0);
       prefs.setString('read_last_date', today.toIso8601String());
