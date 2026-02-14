@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<full-backup-content>
+    <!-- Include all shared preferences (the "." means everything) -->
+    <include domain="sharedpref" path="." />
+    
+    <!-- Exclude Flutter Secure Storage to prevent decryption issues on reinstall -->
+    <exclude domain="sharedpref" path="FlutterSecureStorage" />
+</full-backup-content>

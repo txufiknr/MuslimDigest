@@ -105,7 +105,7 @@ class _FeedSwiperState extends State<FeedSwiper> {
         log('[feed] Swipe direction: $direction, previousIndex: $previousIndex, currentIndex: $currentIndex');
         if (direction == CardSwiperDirection.top) {
           final swipedItem = feedItems[previousIndex];
-          log('[feed] Swiped item: $swipedItem');
+          log('[feed] Swiped item: ${swipedItem.title}');
           _incrementReadCount(swipedItem.cluster.id);
         } else if (direction == CardSwiperDirection.bottom) {
           _decreaseReadCount();
@@ -324,39 +324,39 @@ class _FeedFooterSource extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         // Source site icon
-          Container(
-            width: 24,
-            height: 24,
-            decoration: BoxDecoration(
-              color: Colors.grey[300],
-              borderRadius: BorderRadius.circular(4),
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(4),
-              child: CachedImageWidget(
-                imageUrl: feedItem.source.siteIcon,
-                width: 24,
-                height: 24,
-                fit: BoxFit.contain,
-                errorWidget: (context, url, error) => const Icon(
-                  CupertinoIcons.globe,
-                  size: 16,
-                  color: Colors.grey,
-                ),
+        Container(
+          width: 24,
+          height: 24,
+          decoration: BoxDecoration(
+            color: Colors.grey[300],
+            borderRadius: BorderRadius.circular(4),
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: CachedImageWidget(
+              imageUrl: feedItem.source.siteIcon,
+              width: 24,
+              height: 24,
+              fit: BoxFit.contain,
+              errorWidget: (context, url, error) => const Icon(
+                CupertinoIcons.globe,
+                size: 16,
+                color: Colors.grey,
               ),
             ),
           ),
-          const SizedBox(width: 8),
-          
-          // Source site name
-          Text(
-            feedItem.sourceLabel,
-            style: const TextStyle(
-              fontSize: 12,
-              color: Colors.black87,
-              fontWeight: FontWeight.w500,
-            ),
+        ),
+        const SizedBox(width: 8),
+        
+        // Source site name
+        Text(
+          feedItem.sourceLabel,
+          style: const TextStyle(
+            fontSize: 12,
+            color: Colors.black87,
+            fontWeight: FontWeight.w500,
           ),
+        ),
       ],
     ).onTap(sourceLink == null ? null : () => openUrl(sourceLink));
   }

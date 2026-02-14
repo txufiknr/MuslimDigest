@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<data-extraction-rules>
+    <cloud-backup>
+        <!-- Include everything in shared preferences -->
+        <include domain="sharedpref" path="." />
+
+        <!-- Exclude Flutter Secure Storage to prevent decryption issues on reinstall -->
+        <exclude domain="sharedpref" path="FlutterSecureStorage" />
+    </cloud-backup>
+    <device-to-device-transfer>
+        <!-- You might allow more data during direct phone transfers -->
+        <include domain="file" path="." />
+    </device-to-device-transfer>
+</data-extraction-rules>
