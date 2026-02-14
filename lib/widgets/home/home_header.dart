@@ -7,7 +7,7 @@ import 'package:muslimdigest/utils/extensions.dart';
 import 'package:muslimdigest/variables/app.dart';
 import 'package:muslimdigest/variables/feed.dart';
 import 'package:muslimdigest/variables/user.dart';
-import '../components/my_icon_button.dart';
+import '../components/icon_button.dart';
 
 const TAB_HEIGHT = AppThemes.buttonHeight;
 const TAB_RADIUS = 20.0;
@@ -40,8 +40,7 @@ class HomeHeader extends StatelessWidget {
         children: [
           // Hamburger menu button
           MyIconButton(
-            icon: CupertinoIcons.bars,
-            // iconSize: 16,
+            icon: CupertinoIcons.line_horizontal_3_decrease,
             tooltip: "Settings",
             onPressed: () => context.push('/settings'),
             backgroundColor: Colors.grey[100],
@@ -89,7 +88,6 @@ class HomeHeader extends StatelessWidget {
                 size: TAB_HEIGHT,
                 radius: TAB_RADIUS,
               ),
-              // TODO: add "+ Add topic" as the last button (go to "/settings")
             ].addItemInBetween(SizedBox(width: 8,)),
           ).expand(),
         ],

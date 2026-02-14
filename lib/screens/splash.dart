@@ -7,7 +7,6 @@ import 'package:muslimdigest/utils/extensions.dart';
 import 'package:muslimdigest/utils/feeds.dart';
 import 'package:muslimdigest/utils/functions.dart';
 import 'package:muslimdigest/utils/helpers.dart';
-import 'package:muslimdigest/variables/feed.dart';
 import 'package:muslimdigest/variables/user.dart';
 import '../config/constants.dart';
 import '../config/colors.dart';
@@ -39,7 +38,7 @@ class _SplashPageState extends State<SplashPage> {
   Future<bool> _loadFeeds() async {
     // Maximum double duration of splash screen
     if (isFirstRun) return false; // Don't load feed yet for new user
-    if (!isNewDay && feedItems.isNotEmpty) return true; // Already have feeds for today
+    if (!shouldLoadFeedToday) return true; // Already have feeds for today
     return loadFeeds(timeoutMs: SPLASH_DURATION_MS * 2);
   }
 

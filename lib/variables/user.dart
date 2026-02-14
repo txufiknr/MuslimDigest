@@ -4,6 +4,7 @@ import 'package:muslimdigest/models/user.dart';
 import 'package:muslimdigest/utils/time.dart';
 import 'package:muslimdigest/utils/users.dart';
 import 'package:muslimdigest/variables/app.dart';
+import 'package:muslimdigest/variables/feed.dart';
 import 'package:muslimdigest/variables/time.dart';
 import 'package:uuid/uuid.dart';
 
@@ -132,3 +133,5 @@ int get readCount => prefs.getInt('read_count') ?? 0;
 bool get isNewDay => !isSameDay(today, readLastDate);
 
 bool get isFirstRun => user == null;
+
+bool get shouldLoadFeedToday => isNewDay || feedItems.isEmpty;

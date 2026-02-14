@@ -86,13 +86,13 @@ class _FeedSwiperState extends State<FeedSwiper> {
   @override
   Widget build(BuildContext context) {
 
-
+    // When feed is empty
     if (feedItems.isEmpty) {
       if (widget.isLoading) {
         return MyLoader().center();
       }
 
-      // Empty feed placeholder
+      // Display empty feed placeholder
       return MyPlaceholder(
         'No articles available',
         icon: Icon(CupertinoIcons.news, size: 80, color: AppColors.accent),
@@ -102,7 +102,7 @@ class _FeedSwiperState extends State<FeedSwiper> {
     }
 
     if (widget.isLoading) {
-      // TODO: small non-distruptive loader
+      // TODO: small non-disruptive loader
       return MyLoader().center();
     }
 
@@ -129,7 +129,7 @@ class _FeedSwiperState extends State<FeedSwiper> {
         // When an undo swipe is detected
         if (direction == UNDO_DIRECTION) {
           // Trigger the undo action on the controller
-          _controller.undo();
+          // _controller.undo();
           _decreaseReadCount();
           
           // Return false to prevent the default swipe action
@@ -269,25 +269,7 @@ class _FeedContent extends StatelessWidget {
               spacing: 8,
               runSpacing: 4,
               children: feedItem.badges.map((badge) {
-                return Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.blue[50],
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.blue[200]!),
-                  ),
-                  child: Text(
-                    badge,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.blue[700],
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                );
+                return _FeedBadgeChip(badge);
               }).toList(),
             ),
           ],
@@ -389,5 +371,56 @@ class _FeedFooterSource extends StatelessWidget {
         ),
       ],
     ).onTap(sourceLink == null ? null : () => openUrl(sourceLink));
+  }
+}
+
+class _FeedBadgeChip extends StatelessWidget {
+  final String badge;
+  
+  const _FeedBadgeChip(this.badge);
+
+  List<String> get _badgeSplit => badge.split(':');
+  String get _badgeLabel => _badgeSplit[0];
+  String get _badgeValue => _badgeSplit[1];
+
+  String get _badgeText {
+    final valueCapitalized = _badgeValue.toCapitalized();
+    if (_badgeLabel == 'risk_level') {
+      return '$valueCapitalized Risk';
+    }
+    return valueCapitalized;
+  }
+
+  MaterialColor get _badgeColor {
+    // TODO: Implement color logic based on _badgeLabel and _badgeValue
+    switch (_badgeValue) {
+      case 'high': return Colors.red;
+      case 'medium': return Colors.orange;
+      case 'low': return Colors.green;
+      default: return Colors.blue;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: 8,
+        vertical: 4,
+      ),
+      decoration: BoxDecoration(
+        color: _badgeColor[50],
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: _badgeColor[200]!),
+      ),
+      child: Text(
+        _badgeText,
+        style: TextStyle(
+          fontSize: 12,
+          color: _badgeColor[700],
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+    );
   }
 }

@@ -22,8 +22,6 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  // late final _isFeedLoaded = widget.args['feedLoaded'] as bool? ?? true;
-  // late var _isLoading = !_isFeedLoaded;
   var _isLoading = false;
   var _isWillExit = false;
 
@@ -35,8 +33,8 @@ class _HomePageState extends State<HomePage> {
       if (!isFeedLoaded) {
         _showLoadFeedFailed(_loadFeeds);
       }
-    } else {
-      _loadFeeds(); // TODO: only load feed when `isNewDay` or topic/prefs changed
+    } else if (shouldLoadFeedToday) {
+      _loadFeeds();
     }
     _initReadCount();
   }

@@ -13,7 +13,7 @@ import 'package:muslimdigest/utils/helpers.dart';
 import 'package:muslimdigest/variables/user.dart';
 import 'package:muslimdigest/widgets/components/button.dart';
 import 'package:muslimdigest/widgets/components/logo.dart';
-import 'package:muslimdigest/widgets/components/my_icon_button.dart';
+import 'package:muslimdigest/widgets/components/icon_button.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -51,7 +51,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 children: [
                   Logo(size: 40,),
                   Spacer(),
-                  MyIconButton(icon: CupertinoIcons.back, iconColor: Colors.white, onPressed: context.pop),
+                  MyIconButton(icon: CupertinoIcons.chevron_left_2, iconColor: Colors.white, onPressed: context.pop),
                 ],
               ).withPadding(horizontal: 16, bottom: 8),
               ListView(
@@ -409,45 +409,3 @@ class SettingsFooter extends StatelessWidget {
     );
   }
 }
-
-// class ResetDataDialog extends StatelessWidget {
-//   const ResetDataDialog({super.key});
-
-//   @override
-//   Widget build(BuildContext context) {
-//     final h = MyHelper(context);
-//     return AlertDialog(
-//       title: Text(
-//         'Reset Data',
-//         style: h.currentTextTheme.titleLarge,
-//       ),
-//       content: Text(
-//         'Are you sure you want to reset all data? This action cannot be undone.',
-//         style: h.currentTextTheme.bodyMedium,
-//       ),
-//       actions: [
-//         MyButton(
-//           text: 'Cancel',
-//           onPressed: () {
-//             Navigator.of(context).pop();
-//           },
-//           outlined: true,
-//         ),
-//         MyButton(
-//           text: 'Reset',
-//           onPressed: () {
-//             // TODO: Implement data reset
-//             Navigator.of(context).pop();
-//             ScaffoldMessenger.of(context).showSnackBar(
-//               SnackBar(
-//                 content: const Text('Data reset successfully'),
-//                 backgroundColor: AppColors.success,
-//               ),
-//             );
-//           },
-//           variant: MyButtonVariant.error,
-//         ),
-//       ],
-//     );
-//   }
-// }
