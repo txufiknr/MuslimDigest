@@ -33,6 +33,7 @@ Future<void> main() async {
         'read_count', // Daily read count (number)
         'streaks', // User streaks data (JSON string)
         'feed_items', // Cached feed items (JSON string)
+        'topic', // Selected topic (string)
       },
     ),
   );

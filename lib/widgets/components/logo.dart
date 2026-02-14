@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:muslimdigest/config/constants.dart';
 
 class Logo extends StatelessWidget {
   final double size;
@@ -11,7 +12,7 @@ class Logo extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Image.asset(
-      'assets/images/icons/logo.png',
+      APP_ASSETS_LOGO,
       width: size,
       height: size,
       fit: BoxFit.contain,

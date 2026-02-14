@@ -126,3 +126,5 @@ DateTime get readLastDate {
 /// print('Articles read today: $count');
 /// ```
 int get readCount => prefs.getInt('read_count') ?? 0;
+
+bool get isFirstRun => user == null;

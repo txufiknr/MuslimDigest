@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:developer' show log;
 
 import 'package:flutter/cupertino.dart';
@@ -6,13 +7,11 @@ import 'package:flutter_card_swiper/flutter_card_swiper.dart';
 import 'package:muslimdigest/config/feeds.dart';
 import 'package:muslimdigest/services/api.dart';
 import 'package:muslimdigest/utils/extensions.dart';
+import 'package:muslimdigest/utils/functions.dart';
 import 'package:muslimdigest/utils/helpers.dart';
 import 'package:muslimdigest/widgets/animations/loader.dart';
 import '../../models/feed.dart';
 import '../components/cached_image.dart';
-import 'package:muslimdigest/utils/dialogs.dart';
-import 'package:muslimdigest/utils/feeds.dart';
-import 'package:muslimdigest/utils/users.dart';
 import 'package:muslimdigest/variables/app.dart';
 import 'package:muslimdigest/variables/feed.dart';
 import 'package:muslimdigest/variables/time.dart';
@@ -20,74 +19,46 @@ import 'package:muslimdigest/variables/user.dart';
 
 /// Feed swiper widget for displaying news cards with vertical swipe navigation
 class FeedSwiper extends StatefulWidget {
-  final String? topic;
-
-  const FeedSwiper({
-    this.topic,
-    super.key,
-  });
+  final bool isLoading;
+  const FeedSwiper({this.isLoading = false, super.key});
 
   @override
   State<FeedSwiper> createState() => _FeedSwiperState();
 }
 
 class _FeedSwiperState extends State<FeedSwiper> {
-  var _isLoading = true;
 
-  /// Load feeds from API
-  Future<void> _loadFeeds() async {
-    final response = await ApiService.get('feed', queryParams: <String, String>{
-      if (widget.topic != null) 'topic': widget.topic!,
-      'limit': DAILY_READ_TARGET.toString(),
-    });
-
-    if (response.success && response.data != null) {
-      // TODO: fix type conversion issue
-      // Unhandled Exception: type '(Map<String, dynamic>) => FeedItem' is not a subtype of type '(dynamic) => dynamic' of 'f'
-      // E/flutter ( 8161): #0      _FeedSwiperState._loadFeeds (package:muslimdigest/widgets/home/feed_swiper.dart:45:59)
-      final feedItems = List<FeedItem>.from(response.data.map((item) => FeedItem.fromJson(item as Map<String, dynamic>)));
-      debugPrint('[_loadFeed] ${feedItems.length} feed items obtained successfully');
-
-      // Cache feed items locally
-      await setFeedItems(feedItems);
-    } else {
-      debugPrint('[_loadFeed] Failed to fetch feed items: ${response.error}');
-      if (!mounted) return;
-      final shouldRetry = await showRetryableError(
-        context,
-        title: 'Failed to fetch feed items.',
-        message: 'Failed to load feed. Would you like to retry?',
-        footer: 'You can always pull to refresh to reload your feed.',
-      );
-      if (shouldRetry) {
-        return _loadFeeds();
+  @override
+  void didUpdateWidget(FeedSwiper oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.isLoading != oldWidget.isLoading) {
+      // Future.microtask(() => setState(() {}));
+      if (!widget.isLoading) {
+        // Fresh feeds loaded
       }
     }
+  }
 
-    setState(() {
-      _isLoading = false;
-    });
+  void _markRead(String clusterId) {
+    fireAndForget(() => ApiService.post('history', {'clusterId': clusterId}));
+  }
+
+  void _updateStreak() {
+    fireAndForget(() => ApiService.post('streaks/update', {}));
   }
 
   Future<void> _incrementReadCount(String lastClusterId) async {
-    // Increment count
+    // Increment read count
     final newCount = (readCount + 1).clamp(0, DAILY_READ_TARGET);
-    await prefs.setInt('read_count', newCount);
-    await prefs.setString('read_last_date', today.toIso8601String());
+    if (newCount == DAILY_READ_TARGET) _updateStreak();
+    await Future.wait([
+      prefs.setInt('read_count', newCount),
+      prefs.setString('read_last_date', today.toIso8601String()),
+    ]);
     setState(() {});
     
-    // Track reading progress to backend for analytics and user engagement
-    try {
-      final responses = await Future.wait([
-        ApiService.post('streaks/increment', {}),
-        ApiService.post('history', {'clusterId': lastClusterId}),
-      ]);
-      await handleStreaksResponse(responses[0]);
-      setState(() {});
-    } catch (e) {
-      // Ignore errors for history tracking - not critical
-      debugPrint('Failed to track reading history: $e');
-    }
+    // Track reading history to backend
+    _markRead(lastClusterId);
   }
 
   void _decreaseReadCount() {
@@ -96,22 +67,17 @@ class _FeedSwiperState extends State<FeedSwiper> {
       setState(() {});
     }
   }
-  
-  @override
-  void initState() {
-    super.initState();
-    _loadFeeds();
-  }
 
   @override
   Widget build(BuildContext context) {
 
-    if (_isLoading) {
-      return const Center(child: MyLoader());
-    }
 
-    // TODO: placeholder widget
     if (feedItems.isEmpty) {
+      if (widget.isLoading) {
+        return const Center(child: MyLoader());
+      }
+
+      // TODO: placeholder widget
       return const Center(
         child: Text(
           'No articles available',
@@ -121,6 +87,11 @@ class _FeedSwiperState extends State<FeedSwiper> {
           ),
         ),
       );
+    }
+
+    if (widget.isLoading) {
+      // TODO: small non-distruptive loader
+      return const Center(child: MyLoader());
     }
 
     return CardSwiper(
@@ -229,11 +200,6 @@ class _FeedHeader extends StatelessWidget {
                 style: h.currentTextTheme.titleLarge?.copyWith(
                   color: Colors.white,
                 ),
-                // style: const TextStyle(
-                //   color: Colors.white,
-                //   fontSize: 18,
-                //   fontWeight: FontWeight.bold,
-                // ),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),

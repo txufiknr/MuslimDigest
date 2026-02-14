@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:muslimdigest/models/user.dart';
-import 'package:muslimdigest/utils/dialogs.dart';
+import 'package:muslimdigest/utils/app.dart';
 import 'package:muslimdigest/utils/extensions.dart';
 import 'package:muslimdigest/utils/functions.dart';
 import 'package:muslimdigest/utils/users.dart';
@@ -118,46 +118,18 @@ class _WelcomePageState extends State<WelcomePage> {
     final newUser = User(userId: userId, name: _userName, gender: _gender, ageGroup: _ageGroup);
     final newUserPreferences = UserPreferences(userId: userId, topics: _selectedTopics);
 
-    // 2. Post user data and preferences to backend API
-    debugPrint('[welcome] Registering user: $newUser');
-    debugPrint('[welcome] Registering preferences: $newUserPreferences');
-    final responses = await Future.wait([
-      ApiService.post('user', newUser.toJson()),
-      ApiService.post('preferences', newUserPreferences.toJson()),
+    // 2. Save to shared preferences
+    await Future.wait([
+      setUser(newUser),
+      setUserPreferences(newUserPreferences),
     ]);
+    if (!mounted) return;
 
-    // 3. Process responses using the utility function
-    await handleUserResponses(responses, newUser: newUser, newUserPreferences: newUserPreferences);
+    // 3. Sync to backend
+    unawaited(saveAllData());
 
-    // 4. Check if all API calls were successful
-    final successCount = responses.where((result) => result.success).length;
-    debugPrint('[welcome] Registration result: $successCount/${responses.length} success');
-    final isSuccess = successCount == responses.length;
-    if (isSuccess) {
-      debugPrint('[welcome] User registered successfully');
-    } else {
-      debugPrint('[welcome] Registration failed');
-      // Show bottom modal sheet with error details and retry options
-      if (mounted) {
-        final shouldRetry = await showRetryableError(
-          context,
-          title: 'Failed to save your data',
-          message: 'Please check your internet connection and try again.',
-          footer: 'We\'ll save your progress locally for now.',
-        );
-        if (shouldRetry && mounted) {
-          return _complete();
-        }
-      }
-    }
-
-    // 5. Navigate to home screen
-    if (mounted) context.go('/home');
-    // if (!mounted) return;
-    // if (isSuccess) return context.go('/home');
-    // setState(() {
-    //   _isLoading = false;
-    // });
+    // 4. Navigate to home screen
+    context.go('/home');
   }
 
   /// Check if the current step can proceed

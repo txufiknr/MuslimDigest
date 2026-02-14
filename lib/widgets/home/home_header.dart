@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:muslimdigest/config/colors.dart';
 import 'package:muslimdigest/utils/extensions.dart';
+import 'package:muslimdigest/variables/app.dart';
+import 'package:muslimdigest/variables/feed.dart';
 import 'package:muslimdigest/variables/user.dart';
 import '../components/my_icon_button.dart';
 
@@ -12,13 +14,19 @@ const TAB_RADIUS = 20.0;
 /// Header widget for the home page containing hamburger menu and topic tabs
 class HomeHeader extends StatelessWidget {
   final Function(String?) onTopicChanged;
-  final String? currentTopic;
-
   const HomeHeader({
     super.key,
     required this.onTopicChanged,
-    this.currentTopic,
   });
+
+  void _onTopicChanged(String? topic) {
+    if (topic == null) {
+      prefs.remove('topic');
+    } else {
+      prefs.setString('topic', topic);
+    }
+    onTopicChanged(topic);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -60,14 +68,14 @@ class HomeHeader extends StatelessWidget {
               _TopicTab(
                 title: 'My Digest',
                 isSelected: currentTopic == null,
-                onTap: () => onTopicChanged(null),
+                onTap: () => _onTopicChanged(null),
               ),
               ...List.generate(
                 topics.length,
                 (index) => _TopicTab(
                   title: topics[index],
                   isSelected: topics[index] == currentTopic,
-                  onTap: () => onTopicChanged(topics[index]),
+                  onTap: () => _onTopicChanged(topics[index]),
                 ),
               ),
               // Add topic menu button

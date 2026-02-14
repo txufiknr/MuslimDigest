@@ -6,6 +6,17 @@ import 'package:muslimdigest/models/user.dart';
 import 'package:muslimdigest/services/api.dart';
 import 'package:muslimdigest/variables/app.dart';
 
+// Future<void> getUser() async {
+//   final responses = await Future.wait([
+//     ApiService.get('user'), // Get user data
+//     ApiService.get('preferences'), // Get user preferences
+//     ApiService.get('streaks'), // Get user reading streaks
+//   ]);
+
+//   // Process responses using the utility function
+//   await handleUserResponses(responses);
+// }
+
 /// Handle user data and preferences responses from API
 /// 
 /// This function processes the responses from concurrent API calls to fetch

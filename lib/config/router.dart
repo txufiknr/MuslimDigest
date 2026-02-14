@@ -27,7 +27,13 @@ class AppRouter {
       GoRoute(
         path: '/home',
         name: 'home',
-        builder: (context, state) => const HomePage(),
+        builder: (context, state) {
+          return HomePage(args: state.extra as Map<String, dynamic>);
+        },
+        // onExit: (context, state) async {
+        //   unawaited(saveAllData());
+        //   return true;
+        // },
       ),
       GoRoute(
         path: '/settings',

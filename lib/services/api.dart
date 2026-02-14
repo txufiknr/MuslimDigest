@@ -38,6 +38,12 @@ class ApiResponse {
   ApiResponse({required this.success, this.data, this.error, required this.statusCode});
 }
 
+class ApiOptions {
+  Duration? timeout;
+
+  ApiOptions({this.timeout});
+}
+
 /// Service class for handling HTTP API communications
 /// 
 /// This class provides static methods for making HTTP requests (GET, POST, PUT)
@@ -201,7 +207,7 @@ class ApiService {
   /// [queryParams] - Optional query parameters to include in the request
   /// 
   /// Returns [ApiResponse] with success status, data, or error information
-  static Future<ApiResponse> get(String path, {Map<String, String>? queryParams}) async {
+  static Future<ApiResponse> get(String path, {Map<String, String>? queryParams, ApiOptions? options}) async {
     try {
       log('[api] GET $baseUrl/$path${queryParams != null ? '?${Uri(queryParameters: queryParams).query}' : ''}');
 
@@ -218,7 +224,7 @@ class ApiService {
       final response = await http.get(
         uri,
         headers: headers,
-      ).timeout(timeout);
+      ).timeout(options?.timeout ?? timeout);
 
       final result = jsonDecode(response.body) as Map<String, dynamic>;
 

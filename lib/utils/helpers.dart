@@ -20,4 +20,19 @@ class MyHelper {
   // Theme helpers
   Color pickColor(Color light, Color dark) => isLightTheme ? light : dark;
   void nextTheme() => ThemeProvider.controllerOf(context).nextTheme();
+
+  ScaffoldMessengerState? get _scaffoldMessenger => context.mounted ? ScaffoldMessenger.of(context) : null;
+  NavigatorState get _navigator => Navigator.of(context);
+  
+  void pop([dynamic result]) => _navigator.pop(result);
+  
+  void showSnackBar(String message, {bool showAction = false, String? actionLabel, VoidCallback? action}) {
+    _scaffoldMessenger?.showSnackBar(
+      SnackBar(
+        content: Text(message),
+        action: showAction ? SnackBarAction(label: actionLabel ?? "Close", onPressed: action ?? pop) : null,
+      ),
+    );
+  }
+  void hideSnackBar() => _scaffoldMessenger?.hideCurrentSnackBar();
 }
