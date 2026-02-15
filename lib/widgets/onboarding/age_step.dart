@@ -1,16 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:muslimdigest/utils/extensions.dart';
+import 'package:muslimdigest/utils/users.dart';
+import 'package:muslimdigest/variables/user.dart';
 import '../../utils/helpers.dart';
 
 /// Age selection step widget for onboarding
-class OnboardingAgeStep extends StatelessWidget {
-  final String? selectedAgeGroup;
-  final ValueChanged<String> onAgeGroupChanged;
-
-  const OnboardingAgeStep({
-    super.key,
-    this.selectedAgeGroup,
-    required this.onAgeGroupChanged,
-  });
+class OnboardingAgeStep extends StatefulWidget {
+  const OnboardingAgeStep({super.key});
 
   static const List<Map<String, String>> _ageGroups = [
     {'label': '0-12', 'value': '0-12'},
@@ -19,40 +15,45 @@ class OnboardingAgeStep extends StatelessWidget {
     {'label': '46+', 'value': '46+'},
   ];
 
+  @override
+  State<OnboardingAgeStep> createState() => _OnboardingAgeStepState();
+}
+
+class _OnboardingAgeStepState extends State<OnboardingAgeStep> {
   /// Build individual age group option
   Widget _buildAgeGroupOption(
     MyHelper h,
     Map<String, String> group,
     bool isSelected,
   ) {
-    return GestureDetector(
-      onTap: () => onAgeGroupChanged(group['value']!),
-      child: Container(
-        decoration: BoxDecoration(
+    return Container(
+      decoration: BoxDecoration(
+        color: isSelected 
+            ? Colors.white.withValues(alpha: 0.3)
+            : Colors.white.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
           color: isSelected 
-              ? Colors.white.withValues(alpha: 0.3)
-              : Colors.white.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: isSelected 
-                  ? Colors.white 
-                  : Colors.white.withValues(alpha: 0.3),
-            width: isSelected ? 2 : 1,
-          ),
-        ),
-        child: Center(
-          child: Text(
-            group['label']!,
-            style: h.currentTextTheme.bodyLarge?.copyWith(
-              color: Colors.white,
-              fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
-              fontSize: 24,
-            ),
-            textAlign: TextAlign.center,
-          ),
+                ? Colors.white 
+                : Colors.white.withValues(alpha: 0.3),
+          width: isSelected ? 2 : 1,
         ),
       ),
-    );
+      child: Center(
+        child: Text(
+          group['label']!,
+          style: h.currentTextTheme.bodyLarge?.copyWith(
+            color: Colors.white,
+            fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+            fontSize: 24,
+          ),
+          textAlign: TextAlign.center,
+        ),
+      ),
+    ).onTap(() async {
+      await setUser(user?.copyWith(ageGroup: group['value']!));
+      setState(() {});
+    });
   }
 
   @override
@@ -82,11 +83,10 @@ class OnboardingAgeStep extends StatelessWidget {
             mainAxisSpacing: 16,
             childAspectRatio: 1.5,
           ),
-          itemCount: _ageGroups.length,
+          itemCount: OnboardingAgeStep._ageGroups.length,
           itemBuilder: (context, index) {
-            final group = _ageGroups[index];
-            final isSelected = selectedAgeGroup == group['value'];
-            
+            final group = OnboardingAgeStep._ageGroups[index];
+            final isSelected = user?.ageGroup == group['value'];
             return _buildAgeGroupOption(h, group, isSelected);
           },
         ),

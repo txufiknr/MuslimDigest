@@ -1,10 +1,12 @@
 import 'dart:convert';
+import 'dart:math';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:muslimdigest/models/user.dart';
 import 'package:muslimdigest/services/api.dart';
 import 'package:muslimdigest/variables/app.dart';
+import 'package:muslimdigest/variables/user.dart';
 
 // Future<void> getUser() async {
 //   final responses = await Future.wait([
@@ -64,7 +66,7 @@ Future<void> handleUserResponses(List<ApiResponse> responses, {User? newUser, Us
 
 Future<void> handleUserResponse(ApiResponse? response, User? newData) async {
   if (response == null) return;
-  if (response.success && response.data != null) {
+  if (response.successful) {
     debugPrint('[handleUserResponses] User data obtained successfully');
     // Cache user data locally for offline access
     await setUser(User.fromJson(response.data));
@@ -76,7 +78,7 @@ Future<void> handleUserResponse(ApiResponse? response, User? newData) async {
 
 Future<void> handlePreferencesResponse(ApiResponse? response, UserPreferences? newData) async {
   if (response == null) return;
-  if (response.success && response.data != null) {
+  if (response.successful) {
     debugPrint('[handleUserResponses] User preferences obtained successfully');
     // Cache preferences locally
     final preferences = UserPreferences.fromJson(response.data);
@@ -89,7 +91,7 @@ Future<void> handlePreferencesResponse(ApiResponse? response, UserPreferences? n
 
 Future<void> handleStreaksResponse(ApiResponse? response) async {
   if (response == null) return;
-  if (response.success && response.data != null) {
+  if (response.successful) {
     debugPrint('[handleUserResponses] User streaks obtained successfully');
     debugPrint('[handleUserResponses] User streaks: ${response.data}');
     // Cache streaks locally
@@ -100,12 +102,26 @@ Future<void> handleStreaksResponse(ApiResponse? response) async {
   }
 }
 
-Future<void> setUser(User user) async {
+Future<void> setUser(User? user) async {
+  if (user == null) return prefs.remove('user');
   await prefs.setString('user', jsonEncode(user.toJson()));
 }
 
-Future<void> setUserPreferences(UserPreferences preferences) async {
+Future<void> setUserPreferences(UserPreferences? preferences) async {
+  if (preferences == null) return prefs.remove('preferences');
   await prefs.setString('preferences', jsonEncode(preferences.toJson()));
+}
+
+Future<void> logStreak() async {
+  final currentStreak = streaks?.currentStreak ?? 0;
+  final longestStreak = streaks?.longestStreak ?? 0;
+  final newCurrentStreak = currentStreak + 1;
+  final newLongestStreak = max(longestStreak, newCurrentStreak);
+  final newStreaks = UserStreaks(
+    currentStreak: newCurrentStreak,
+    longestStreak: newLongestStreak,
+  );
+  await prefs.setString('streaks', jsonEncode(newStreaks.toJson()));
 }
 
 /// Extracts the first name from a full name string

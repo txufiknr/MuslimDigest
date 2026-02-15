@@ -21,13 +21,14 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> {
+class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   var _isLoading = false;
   var _isWillExit = false;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     if (widget.args['feedLoaded'] != null) {
       final isFeedLoaded = widget.args['feedLoaded'] as bool;
       if (!isFeedLoaded) {
@@ -37,6 +38,20 @@ class _HomePageState extends State<HomePage> {
       _loadFeeds();
     }
     _initReadCount();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    if (state == AppLifecycleState.inactive) {
+      fireAndForget(saveAllData);
+    }
   }
 
   /// Reset read count for new day
@@ -70,6 +85,10 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  void _onStreak() {
+    setState(() {});
+  }
+
   @override
   void setState(VoidCallback fn) {
     if (mounted) super.setState(fn);
@@ -101,7 +120,11 @@ class _HomePageState extends State<HomePage> {
               HomeHeader(
                 onTopicChanged: _loadFeeds,
               ),
-              FeedSwiper(isLoading: _isLoading, onReload: _loadFeeds).expand(),
+              FeedSwiper(
+                isLoading: _isLoading,
+                onReload: _loadFeeds,
+                onStreak: _onStreak
+              ).expand(),
               ReadingStreakFooter(),
             ],
           ),

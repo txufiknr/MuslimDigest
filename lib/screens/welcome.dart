@@ -29,24 +29,20 @@ class WelcomePage extends StatefulWidget {
 class _WelcomePageState extends State<WelcomePage> {
   final _pageController = PageController();
   final _steps = <String>['Gender', 'Age', 'Interests', 'Name'];
+  // final _availableTopics = <String>[]; // TODO: pindah ke global variable
   var _currentStep = 0;
-  var _isLoading = false;
 
   bool get _isLastStep => _currentStep == _steps.length - 1;
-  
-  // Form data
-  var _userName = '';
-  var _gender = ''; // male / female
-  var _ageGroup = '';
-  final _availableTopics = <String>[];
-  final _selectedTopics = <String>[];
+  User get _newUser => user ?? User(userId: userId);
+  UserPreferences get _newPreferences => preferences ?? UserPreferences(userId: userId);
 
+  // TODO: load on splash
   Future<void> _initForm() async {
     final response = await ApiService.get('topics');
-    if (response.success && response.data != null) {
+    if (response.successful) {
       debugPrint('[welcome] Available topics: ${response.data}');
       setState(() {
-        _availableTopics.addAll(List<String>.from(response.data));
+        availableTopics.addAll(List<String>.from(response.data));
       });
     }
   }
@@ -65,7 +61,7 @@ class _WelcomePageState extends State<WelcomePage> {
 
   /// Move to the next step
   void _nextStep() {
-    if (_isLastStep) return unawaited(_complete());
+    if (_isLastStep) return _complete();
     _pageController.nextPage(
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeInOut,
@@ -97,10 +93,10 @@ class _WelcomePageState extends State<WelcomePage> {
 
     // Reset form data for current step when skipping
     switch (_currentStep) {
-      case 0: _gender = ''; break;
-      case 1: _ageGroup = ''; break;
-      case 2: _selectedTopics.clear(); break;
-      case 3: _userName = ''; break;
+      case 0: setUser(_newUser.copyWith(gender: '')); break;
+      case 1: setUser(_newUser.copyWith(ageGroup: '')); break;
+      case 2: setUserPreferences(_newPreferences.copyWith(topics: [])); break;
+      case 3: setUser(_newUser.copyWith(name: '')); break;
     }
     if (_isLastStep) {
       _complete();
@@ -110,37 +106,18 @@ class _WelcomePageState extends State<WelcomePage> {
   }
 
   /// Complete the welcome process
-  Future<void> _complete() async {
-    setState(() {
-      _isLoading = true;
-    });
-
-    // 1. Prepare user data and preferences
-    final newUser = User(userId: userId, name: _userName, gender: _gender, ageGroup: _ageGroup);
-    final newUserPreferences = UserPreferences(userId: userId, topics: _selectedTopics);
-
-    // 2. Save to shared preferences
-    await Future.wait([
-      setUser(newUser),
-      setUserPreferences(newUserPreferences),
-    ]);
-    if (!mounted) return;
-
-    // 3. Sync to backend
+  void _complete() {
     fireAndForget(saveAllData);
-
-    // 4. Navigate to home screen
     context.go('/home');
   }
 
   /// Check if the current step can proceed
   bool get _canProceed {
-    if (_isLoading) return false;
     switch (_currentStep) {
-      case 0: return _gender.isNotEmpty;
-      case 1: return _ageGroup.isNotEmpty;
-      case 2: return _selectedTopics.isNotEmpty;
-      case 3: return _userName.trim().isNotEmpty;
+      case 0: return _newUser.gender?.isNotEmpty == true;
+      case 1: return _newUser.ageGroup?.isNotEmpty == true;
+      case 2: return _newPreferences.topics.isNotEmpty;
+      case 3: return _newUser.name?.trim().isNotEmpty == true;
       default: return false;
     }
   }
@@ -219,7 +196,6 @@ class _WelcomePageState extends State<WelcomePage> {
                         onSkipPressed: _skipStep,
                         onNextPressed: _nextStep,
                         canProceed: _canProceed,
-                        isLoading: _isLoading,
                       ).withPaddingHorizontal(32),
                     ],
                   ),
@@ -242,51 +218,23 @@ class _WelcomePageState extends State<WelcomePage> {
 
   /// Build name input step
   Widget _buildNameStep() {
-    return OnboardingNameStep(
-      userName: _userName,
-      onNameChanged: (value) {
-        setState(() {
-          _userName = value;
-        });
-      },
-      isLoading: _isLoading,
-    );
+    return OnboardingNameStep();
   }
 
   /// Build gender selection step
   Widget _buildGenderStep() {
-    return OnboardingGenderStep(
-      selectedGender: _gender,
-      onGenderChanged: (value) {
-        setState(() {
-          _gender = value;
-        });
-      },
-    );
+    return OnboardingGenderStep();
   }
 
   /// Build age selection step
   Widget _buildAgeStep() {
-    return OnboardingAgeStep(
-      selectedAgeGroup: _ageGroup,
-      onAgeGroupChanged: (value) {
-        setState(() {
-          _ageGroup = value;
-        });
-      },
-    );
+    return OnboardingAgeStep();
   }
 
   /// Build interests step
   Widget _buildInterestsStep() {
     return OnboardingInterestsStep(
-      availableTopics: _availableTopics,
-      selectedTopics: _selectedTopics,
-      onTopicsChanged: (value) {
-        setState(() {
-          _selectedTopics..clear()..addAll(value);
-        });
-      },
+      availableTopics: availableTopics, // TODO: use from global variable
     );
   }
 }

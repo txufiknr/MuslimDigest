@@ -1,35 +1,41 @@
 import 'package:flutter/material.dart';
 import 'package:muslimdigest/utils/extensions.dart';
 import 'package:muslimdigest/utils/helpers.dart';
+import 'package:muslimdigest/utils/users.dart';
+import 'package:muslimdigest/variables/user.dart';
 import 'package:muslimdigest/widgets/animations/loader.dart';
 import 'topic_chip.dart';
 
 /// Interests selection step widget for onboarding
-class OnboardingInterestsStep extends StatelessWidget {
+class OnboardingInterestsStep extends StatefulWidget {
   final List<String> availableTopics;
-  final List<String> selectedTopics;
-  final ValueChanged<List<String>> onTopicsChanged;
 
   const OnboardingInterestsStep({
     super.key,
     required this.availableTopics,
-    required this.selectedTopics,
-    required this.onTopicsChanged,
   });
+
+  @override
+  State<OnboardingInterestsStep> createState() => _OnboardingInterestsStepState();
+}
+
+class _OnboardingInterestsStepState extends State<OnboardingInterestsStep> {
+  List<String> get _selectedTopics => preferredTopics;
 
   /// Build individual topic chip
   Widget _buildTopicChip(MyHelper h, String topic, bool isSelected) {
     return TopicChip(
       topic: topic,
       isSelected: isSelected,
-      onSelected: (selected) {
-        final newSelectedTopics = List<String>.from(selectedTopics);
+      onSelected: (selected) async {
+        final newSelectedTopics = List<String>.from(_selectedTopics);
         if (selected) {
           newSelectedTopics.add(topic);
         } else {
           newSelectedTopics.remove(topic);
         }
-        onTopicsChanged(newSelectedTopics);
+        await setUserPreferences(preferences?.copyWith(topics: newSelectedTopics));
+        setState(() {});
       },
     );
   }
@@ -61,14 +67,14 @@ class OnboardingInterestsStep extends StatelessWidget {
         
         const SizedBox(height: 32),
         
-        if (availableTopics.isEmpty) MyLoader(color: Colors.white).center()
+        if (widget.availableTopics.isEmpty) MyLoader(color: Colors.white).center()
         else
           Wrap(
             spacing: 6,
             runSpacing: 6,
             alignment: WrapAlignment.center,
-            children: availableTopics.map((topic) {
-              final isSelected = selectedTopics.contains(topic);
+            children: widget.availableTopics.map((topic) {
+              final isSelected = _selectedTopics.contains(topic);
               return _buildTopicChip(h, topic, isSelected);
             }).toList(),
           ).withPaddingHorizontal(16),

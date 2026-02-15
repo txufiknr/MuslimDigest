@@ -12,6 +12,7 @@ class AppThemes {
   static const double headlineLargeSize = 24;
   static const double headlineMediumSize = 20;
   static const double titleLargeSize = 22;
+  static const double titleMediumSize = 21;
   static const double bodyLargeSize = 22;
   static const double bodyMediumSize = 17.5;
   static const double bodySmallSize = 14;
@@ -21,6 +22,7 @@ class AppThemes {
   static const double buttonSmallSize = 16;
 
   static const double buttonHeight = 50.0;
+  static const double contentPadding = 22.0;
   
   // Color Schemes
   static ColorScheme get lightColorScheme => ColorScheme.fromSeed(
@@ -162,6 +164,12 @@ class AppThemes {
         fontSize: titleLargeSize,
         height: textHeightMultiplier,
       ),
+      titleMedium: TextStyle(
+        color: AppColors.textPrimaryLight,
+        fontWeight: FontWeight.w600,
+        fontSize: titleMediumSize,
+        height: textHeightMultiplier,
+      ),
       bodyLarge: TextStyle(
         color: AppColors.textPrimaryLight,
         fontSize: bodyLargeSize,
@@ -222,6 +230,12 @@ class AppThemes {
         color: AppColors.textPrimaryDark,
         fontWeight: FontWeight.w600,
         fontSize: titleLargeSize,
+        height: textHeightMultiplier,
+      ),
+      titleMedium: TextStyle(
+        color: AppColors.textPrimaryDark,
+        fontWeight: FontWeight.w600,
+        fontSize: titleMediumSize,
         height: textHeightMultiplier,
       ),
       bodyLarge: TextStyle(

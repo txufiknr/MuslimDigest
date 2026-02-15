@@ -42,11 +42,18 @@ class _SplashPageState extends State<SplashPage> {
     return loadFeeds(timeoutMs: SPLASH_DURATION_MS * 2);
   }
 
+  Future<bool> _loadTrendingFeeds() async {
+    final success = await loadTrendingFeeds(limit: 3);
+    if (success) setState(() {});
+    return success;
+  }
+
   /// Start the splash screen animation and navigation
   Future<void> _startSplash() async {
     // Preload user feeds within splash screen delay
     final results = await Future.wait<bool>([
       _loadFeeds(),
+      _loadTrendingFeeds(),
       delay(SPLASH_DURATION_MS).then((_) => true),
     ]);
     if (!mounted) return;

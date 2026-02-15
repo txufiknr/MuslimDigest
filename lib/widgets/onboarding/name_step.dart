@@ -1,18 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:muslimdigest/utils/users.dart';
+import 'package:muslimdigest/variables/user.dart';
 import '../../utils/helpers.dart';
 
 /// Name input step widget for onboarding
 class OnboardingNameStep extends StatelessWidget {
-  final String userName;
-  final ValueChanged<String> onNameChanged;
-  final bool isLoading;
-
-  const OnboardingNameStep({
-    super.key,
-    required this.userName,
-    required this.onNameChanged,
-    this.isLoading = false,
-  });
+  const OnboardingNameStep({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -40,7 +33,7 @@ class OnboardingNameStep extends StatelessWidget {
             ),
           ),
           child: TextField(
-            onChanged: onNameChanged,
+            onChanged: (name) => setUser(user?.copyWith(name: name)),
             style: h.currentTextTheme.bodyLarge?.copyWith(
               color: Colors.white,
             ),
@@ -56,8 +49,6 @@ class OnboardingNameStep extends StatelessWidget {
               contentPadding: const EdgeInsets.all(16),
             ),
             textAlign: TextAlign.center,
-            readOnly: isLoading,
-            enableInteractiveSelection: !isLoading,
           ),
         ),
       ],

@@ -37,6 +37,21 @@ class User {
     };
   }
 
+  User copyWith({
+    String? name,
+    String? gender,
+    String? ageGroup,
+  }) {
+    return User(
+      userId: userId,
+      name: name ?? this.name,
+      gender: gender ?? this.gender,
+      ageGroup: ageGroup ?? this.ageGroup,
+      createdAt: createdAt,
+      updatedAt: updatedAt,
+    );
+  }
+
   @override
   String toString() {
     return '''
@@ -76,6 +91,18 @@ class UserStreaks {
       'longestStreak': longestStreak,
       'lastReadAt': lastReadAt?.toIso8601String(),
     };
+  }
+
+  UserStreaks copyWith({
+    int? currentStreak,
+    int? longestStreak,
+    DateTime? lastReadAt,
+  }) {
+    return UserStreaks(
+      currentStreak: currentStreak ?? this.currentStreak,
+      longestStreak: longestStreak ?? this.longestStreak,
+      lastReadAt: lastReadAt ?? this.lastReadAt,
+    );
   }
 
   @override
@@ -134,6 +161,28 @@ class UserPreferences {
       'createdAt': createdAt?.toIso8601String(),
       'updatedAt': updatedAt?.toIso8601String(),
     };
+  }
+
+  UserPreferences copyWith({
+    String? userId,
+    List<String>? topics,
+    List<String>? madhahib,
+    List<String>? sources,
+    List<String>? avoidedTopics,
+    List<String>? avoidedSources,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) {
+    return UserPreferences(
+      userId: userId ?? this.userId,
+      topics: topics ?? this.topics,
+      madhahib: madhahib ?? this.madhahib,
+      sources: sources ?? this.sources,
+      avoidedTopics: avoidedTopics ?? this.avoidedTopics,
+      avoidedSources: avoidedSources ?? this.avoidedSources,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+    );
   }
 
   @override

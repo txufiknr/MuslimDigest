@@ -39,6 +39,7 @@ class FeedItem {
 
   String get sourceLabel => source.siteName ?? source.id;
   String? get sourceLink => canonicalUrl ?? sourceUrl;
+  List<String> get badgeToDisplay => badges.where((badge) => !badge.startsWith('content_risk') && !badge.startsWith('summary_status')).toList();
 
   factory FeedItem.fromJson(Map<String, dynamic> json) {
     return FeedItem(

@@ -36,6 +36,8 @@ class ApiResponse {
   /// [error] - Error message (optional)
   /// [statusCode] - HTTP status code from the response (required)
   ApiResponse({required this.success, this.data, this.error, required this.statusCode});
+
+  bool get successful => success && data != null;
 }
 
 class ApiOptions {

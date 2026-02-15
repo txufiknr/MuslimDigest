@@ -3,7 +3,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 
 extension NumExtension on num {
-  /// fungsi untuk menentukan min & max value
+  /// Function to determine min & max value
   num withLimit(num minimum, num maximum) => min(maximum, max(minimum, this));
 }
 
@@ -20,25 +20,20 @@ extension IterableNumExtension on Iterable<num> {
 }
 
 extension StringExtension on String {
-  /// fungsi untuk merubah huruf pertama menjadi kapital
+  /// Change the first letter to capital
   String toCapitalized() => length > 0 ? '${this[0].toUpperCase()}${substring(1)}' : '';
-  /// fungsi untuk merubah teks ke title case
-  String toTitleCase() => toLowerCase().replaceAll(RegExp(' +'), ' ').split(" ").map((str) => str.toCapitalized()).join(" ");
-  /// fungsi untuk menghitung jumlah substring di dalam string
+  /// Convert text to title case
+  String toTitleCase() => trim().replaceAll(RegExp(r'\s+'), ' ').split(' ').map((str) => str.isEmpty ? '' : str.toCapitalized()).join(' ');
+  /// Count the number of substrings in a string
   int occurrencesOf(String substring) => substring.allMatches(this).length;
-  /// fungsi untuk menghapus karakter selain angka, lalu cast ke integer
-  double get nominal {
-    try {
-      // return isEmpty ? 0 : int.parse(replaceAll(RegExp(r'\D+'), ''));
-      return double.parse(replaceAll(',', ''));
-    } catch(e) {
-      return 0;
-    }
-  }
+  /// Convert slug to regular text (e.g. "high_risk" or "high-risk" to "high risk")
+  String unslug() => replaceAll(RegExp(r'[_-]'), ' ');
+  /// Convert slug to title case (e.g. "high_risk" or "high-risk" to "High Risk")
+  String unslugTitleCase() => unslug().toTitleCase();
 }
 
 extension NullableStringExtension on String? {
-  /// fungsi untuk mencaritahu apakah string kosong atau null
+  /// Check if string is empty or null
   bool get isEmptyOrNull => this?.isEmpty ?? true;
 }
 
@@ -68,35 +63,35 @@ extension WidgetExtension on Widget {
   Widget withPaddingHorizontal(double padding) => Padding(padding: EdgeInsets.symmetric(horizontal: padding), child: this);
   Widget withPaddingVertical(double padding) => Padding(padding: EdgeInsets.symmetric(vertical: padding), child: this);
 
-  /// fungsi untuk aksi tap widget dengan gesturedetector
+  /// Function for tap widget action with GestureDetector
   Widget onTap(VoidCallback? onTap) {
     return onTap != null ? GestureDetector(onTap: onTap, child: this) : this;
   }
 
-  /// fungsi untuk merubah opacity widget
+  /// Function to change widget opacity
   Widget withOpacity([double opacity = 1.0]) => Opacity(opacity: opacity, child: this);
 
-  /// fungsi untuk animasi arrow pada widget
+  /// Function for arrow animation on widget
   Widget arrowIt({bool arrow = true, int duration = 1000, double offset = 50.0}) {
     return arrow ? ArrowIt(duration: duration, offset: offset, child: this) : this;
   }
 
-  /// fungsi untuk animasi expand pada widget
+  /// Function for expand animation on widget
   Widget expandIt({bool show = true, int delay = 0, int duration = 500, double beginValue = 0.0, double endValue = 1.0, Alignment alignment = Alignment.centerLeft, Key? key}) {
     return ExpandIt(key: key, show: show, delay: delay, duration: duration, beginValue: beginValue, endValue: endValue, alignment: alignment, child: this);
   }
 
-  /// fungsi untuk animasi pulse pada widget
+  /// Function for pulse animation on widget
   Widget pulseIt({bool pulse = true, double scaleBegin = 1.0, double scaleEnd = 1.2, int duration = 500}) {
     return pulse ? PulseIt(scaleBegin: scaleBegin, scaleEnd: scaleEnd, duration: duration, child: this) : this;
   }
 
-  /// fungsi untuk animasi rise pada widget
+  /// Function for rise animation on widget
   Widget riseIn({bool show = true, double offsetBegin = 30.0, int delay = 0, int duration = 200, Curve ease = Curves.easeInOutBack, Key? key}) {
     return RiseIn(show: show, offsetBegin: offsetBegin, delay: delay, duration: duration, ease: ease, key: key, child: this);
   }
 
-  /// fungsi untuk animasi fade pada widget
+  /// Function for fade animation on widget
   Widget fadeOut({bool hide = true, int duration = 500}) => AnimatedOpacity(
     opacity: hide ? 0 : 1,
     duration: Duration(milliseconds: duration),
@@ -104,7 +99,7 @@ extension WidgetExtension on Widget {
     child: this,
   ).ignore(hide);
 
-  /// fungsi untuk shader mask transparent gradient
+  /// Function for shader mask transparent gradient
   Widget maskIt({bool enable = true, Alignment begin = Alignment.topCenter, Alignment end = Alignment.bottomCenter, List<double> opacities = const [1, 0],}) {
     return enable ? ShaderMask(
       shaderCallback: (rect) {

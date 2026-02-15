@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lottie/lottie.dart';
 
 class MyLoader extends StatelessWidget {
   final Color? color;
@@ -6,8 +7,14 @@ class MyLoader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return CircularProgressIndicator(
-      valueColor: color == null ? null : AlwaysStoppedAnimation<Color>(Colors.white),
+    final loader = Lottie.asset('assets/lottie/loader.json');
+    if (color == null) return loader;
+    return ColorFiltered(
+      colorFilter: ColorFilter.mode(
+        color!,
+        BlendMode.srcATop,
+      ),
+      child: loader,
     );
   }
 }

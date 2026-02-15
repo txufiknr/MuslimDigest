@@ -54,19 +54,28 @@ class HomeHeader extends StatelessWidget {
             padding: EdgeInsets.only(left: 8, right: 16),
             children: <Widget>[
               if (streaks != null) 
-                Container(
-                  height: TAB_HEIGHT,
-                  decoration: BoxDecoration(
-                    color: Colors.orange[100],
-                    borderRadius: BorderRadius.circular(TAB_RADIUS),
-                  ),
-                  child: Text(
-                    '🔥 ${streaks!.currentStreak}',
-                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-                  ),
-                ),
+                // Container(
+                //   height: TAB_HEIGHT,
+                //   decoration: BoxDecoration(
+                //     color: Colors.orange[100],
+                //     borderRadius: BorderRadius.circular(TAB_RADIUS),
+                //   ),
+                //   child: Text(
+                //     '🔥 ${streaks!.currentStreak}',
+                //     style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                //   ),
+                // ),
+              _TopicTab(
+                title: '${streaks!.currentStreak}',
+                icon: CupertinoIcons.flame_fill,
+                isSelected: false,
+                onTap: () {
+                  // TODO: show reading streak bottom sheet
+                },
+              ),
               _TopicTab(
                 title: 'My Digest',
+                icon: CupertinoIcons.antenna_radiowaves_left_right,
                 isSelected: currentTopic == null,
                 onTap: () => _onTopicChanged(null),
               ),
@@ -99,34 +108,43 @@ class HomeHeader extends StatelessWidget {
 /// Individual topic tab widget
 class _TopicTab extends StatelessWidget {
   final String title;
+  final IconData? icon;
   final bool isSelected;
   final VoidCallback onTap;
 
   const _TopicTab({
     required this.title,
+    this.icon,
     required this.isSelected,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        alignment: Alignment.center,
-        height: TAB_HEIGHT,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: BoxDecoration(
-          color: isSelected ? AppColors.primary : Colors.grey[100],
-          borderRadius: BorderRadius.circular(TAB_RADIUS),
-        ),
-        child: Text(
-          title.toCapitalized(),
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            color: isSelected ? Colors.white : Colors.black87,
-            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-            fontSize: 14,
+    final tabColor = isSelected ? AppColors.primary : Colors.grey[100];
+    final textColor = isSelected ? Colors.white : Colors.black87;
+    return Material(
+      color: tabColor,
+      borderRadius: BorderRadius.circular(TAB_RADIUS),
+      child: InkWell(
+        onTap: onTap,
+        child: Container(
+          alignment: Alignment.center,
+          height: TAB_HEIGHT,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: Row(
+            children: <Widget>[
+              if (icon != null) Icon(icon, color: textColor, size: 16,),
+              Text(
+                title.toCapitalized(),
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: textColor,
+                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                  fontSize: 14,
+                ),
+              ),
+            ].addItemInBetween(SizedBox(width: 8,)),
           ),
         ),
       ),

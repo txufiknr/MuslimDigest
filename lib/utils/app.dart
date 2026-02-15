@@ -22,6 +22,7 @@ Future<bool> saveAllData() async {
   final responses = await Future.wait([
     if (user != null) ApiService.post('user', user!.toJson()),
     if (preferences != null) ApiService.post('preferences', preferences!.toJson()),
+    if (streaks != null) ApiService.post('streaks', streaks!.toJson()),
   ]);
   final successCount = responses.where((result) => result.success).length;
   debugPrint('[saveAllData] Save result: $successCount/${responses.length} success');

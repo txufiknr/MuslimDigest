@@ -134,4 +134,8 @@ bool get isNewDay => !isSameDay(today, readLastDate);
 
 bool get isFirstRun => user == null;
 
-bool get shouldLoadFeedToday => isNewDay || feedItems.isEmpty;
+bool get shouldLoadFeedToday => isNewDay || feedDigest.isEmpty;
+
+List<String> get preferredTopics => preferences?.topics ?? [];
+
+final availableTopics = <String>[];
