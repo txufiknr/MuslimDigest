@@ -1,9 +1,11 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:muslimdigest/models/feed.dart';
+// import 'package:muslimdigest/models/feed.dart';
 import 'package:muslimdigest/models/user.dart';
 import 'package:muslimdigest/providers/feed.dart';
-import 'package:muslimdigest/providers/feed_latest.dart';
-import 'package:muslimdigest/providers/feed_trending.dart';
+// import 'package:muslimdigest/providers/feed_latest.dart';
+// import 'package:muslimdigest/providers/feed_liked.dart';
+// import 'package:muslimdigest/providers/feed_saved.dart';
+// import 'package:muslimdigest/providers/feed_trending.dart';
 import 'package:muslimdigest/providers/preferences.dart';
 import 'package:muslimdigest/providers/read_count.dart';
 import 'package:muslimdigest/providers/read_last_date.dart';
@@ -19,18 +21,22 @@ class AppRepository {
 
   final Ref _ref;
 
-  List<FeedItem> get feedDigest => _ref.read(feedProvider).items ?? [];
-  List<FeedItem> get feedLatest => _ref.read(feedLatestProvider).items ?? [];
-  List<FeedItem> get feedTrending => _ref.read(feedTrendingProvider).items ?? [];
+  // List<FeedItem> get feedDigest => _ref.read(feedProvider).items ?? [];
+  // List<FeedItem> get feedLatest => _ref.read(feedLatestProvider).items ?? [];
+  // List<FeedItem> get feedTrending => _ref.read(feedTrendingProvider).items ?? [];
+  // List<FeedItem> get feedLiked => _ref.read(feedLikedProvider).items ?? [];
+  // List<FeedItem> get feedSaved => _ref.read(feedSavedProvider).items ?? [];
 
   User? get user => _ref.read(userProvider);
   UserPreferences? get preferences => _ref.read(preferencesProvider);
-  DateTime get readLastDate => _ref.read(readLastDateProvider) ?? DateTime.now();
+  DateTime get readLastDate => _ref.read(readLastDateProvider) ?? today;
   int get readCount => _ref.read(readCountProvider);
 
   bool get isFirstRun => user == null;
-  bool get isNewDay => !isSameDay(today, readLastDate);
-  bool get shouldLoadFeedToday => isNewDay || feedDigest.isEmpty;
+  bool get isNewDay => !isToday(readLastDate);
+  // bool get shouldLoadFeedToday => isNewDay || feedDigest.isEmpty;
+  bool get shouldLoadFeedToday => isNewDay || _ref.read(feedProvider).isEmpty;
+  bool get shouldLoadFeedTodayAndStillNone => shouldLoadFeedToday && _ref.read(feedProvider).isNone;
 
   String get firstName {
     final name = extractFirstName(user?.name);

@@ -1,0 +1,117 @@
+import 'dart:convert';
+
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:muslimdigest/models/feed.dart';
+import 'package:muslimdigest/services/api.dart';
+import 'package:muslimdigest/utils/repository.dart';
+import 'package:muslimdigest/utils/functions.dart';
+import 'package:muslimdigest/api/feeds.dart';
+import 'package:muslimdigest/utils/extensions.dart';
+
+class BaseFeedState {
+  final List<FeedItem>? items;
+  final bool isLoading;
+  final String? error;
+
+  bool get isEmpty => items?.isEmpty ?? true;
+  bool get isGetting => isEmpty && isLoading;
+  bool get isNone => isEmpty && !isLoading;
+
+  const BaseFeedState({
+    this.items,
+    this.isLoading = false,
+    this.error,
+  });
+
+  BaseFeedState copyWith({
+    List<FeedItem>? items,
+    bool? isLoading,
+    String? error,
+  }) {
+    return BaseFeedState(
+      items: items ?? this.items,
+      isLoading: isLoading ?? this.isLoading,
+      error: error ?? this.error,
+    );
+  }
+
+  /// Get a specific feed item by ID, returns null if not found
+  FeedItem? getItem(String feedId) {
+    return items?.firstWhereOrNull((item) => item.id == feedId);
+  }
+}
+
+abstract class BaseFeedNotifier extends Notifier<BaseFeedState> {
+  String get cacheKey;
+  
+  @override
+  BaseFeedState build() {
+    final jsonString = ref.watch(preferencesRepositoryProvider).getString(cacheKey);
+    if (jsonString == null) return const BaseFeedState();
+    final feedItems = List<FeedItem>.from(List<Map<String, dynamic>>.from(jsonDecode(jsonString)).map(FeedItem.fromJson));
+    return BaseFeedState(items: feedItems);
+  }
+
+  Future<void> setValue(List<FeedItem>? value) async {
+    state = state.copyWith(items: value);
+    final feedItemsString = value == null ? null : jsonEncode(value.map((item) => item.toJson()).toList());
+    await ref.read(preferencesRepositoryProvider).setString(cacheKey, feedItemsString);
+  }
+
+  Future<void> clear() async {
+    state = const BaseFeedState();
+    await ref.read(preferencesRepositoryProvider).remove(cacheKey);
+  }
+
+  Future<void> update(String feedId, {bool? isLiked, bool? isSaved}) async {
+    final currentItem = state.items?.firstWhere((item) => item.id == feedId);
+    if (currentItem == null) return;
+
+    // Fire and forget API calls
+    if (isLiked != null && isLiked != currentItem.isLiked) {
+      fireAndForget(() => like(feedId, isLiked));
+    }
+    if (isSaved != null && isSaved != currentItem.isSaved) {
+      fireAndForget(() => save(feedId, isSaved));
+    }
+
+    final updatedItems = state.items?.map((item) {
+      if (item.id == feedId) {
+        return item.copyWith(
+          isLiked: isLiked ?? item.isLiked,
+          isSaved: isSaved ?? item.isSaved,
+        );
+      }
+      return item;
+    }).toList();
+    
+    state = state.copyWith(items: updatedItems);
+    
+    // Update cached data
+    final feedItemsString = updatedItems == null ? null : jsonEncode(updatedItems.map((item) => item.toJson()).toList());
+    await ref.read(preferencesRepositoryProvider).setString(cacheKey, feedItemsString);
+  }
+
+  Future<bool> loadFromEndpoint(String endpoint, {Map<String, String>? queryParams, ApiOptions? options}) async {
+    state = state.copyWith(isLoading: true, error: null);
+    
+    try {
+      final response = await ApiService.get(endpoint, queryParams: queryParams, options: options);
+
+      if (response.successful) {
+        final feedItems = List<FeedItem>.from(
+          response.data.map((item) => FeedItem.fromJson(item as Map<String, dynamic>))
+        );
+        await setValue(feedItems);
+        state = state.copyWith(isLoading: false);
+        return true;
+      } else {
+        state = state.copyWith(isLoading: false, error: response.error);
+        return false;
+      }
+    } catch (e) {
+      state = state.copyWith(isLoading: false, error: e.toString());
+      return false;
+    }
+  }
+}

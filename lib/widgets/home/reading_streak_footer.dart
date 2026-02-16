@@ -18,8 +18,8 @@ class ReadingStreakFooter extends ConsumerWidget {
     return AnimatedProgressBar(
       progress: progress,
       height: 6,
-      // backgroundColor: h.currentTheme.colorScheme.outline,
-      backgroundColor: h.currentTheme.colorScheme.surface,
+      backgroundColor: h.currentTheme.colorScheme.outline,
+      // backgroundColor: h.currentTheme.colorScheme.surface,
       animationDuration: const Duration(milliseconds: 300),
     );
   }
