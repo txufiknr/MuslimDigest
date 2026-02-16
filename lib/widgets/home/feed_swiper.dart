@@ -5,24 +5,35 @@ import 'package:flutter/material.dart';
 import 'package:flutter_card_swiper/flutter_card_swiper.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:muslimdigest/config/colors.dart';
+import 'package:muslimdigest/config/constants.dart';
 import 'package:muslimdigest/config/feeds.dart';
 import 'package:muslimdigest/config/themes.dart';
 import 'package:muslimdigest/providers/feed.dart' show feedProvider;
+import 'package:muslimdigest/providers/feed_latest.dart';
+import 'package:muslimdigest/providers/feed_trending.dart';
+import 'package:muslimdigest/providers/feed_liked.dart';
+import 'package:muslimdigest/providers/feed_saved.dart';
 import 'package:muslimdigest/providers/read_count.dart';
 import 'package:muslimdigest/providers/read_last_date.dart';
 import 'package:muslimdigest/utils/app_repository.dart';
+import 'package:muslimdigest/utils/dialogs.dart';
 import 'package:muslimdigest/utils/extensions.dart';
-import 'package:muslimdigest/utils/feeds.dart';
+import 'package:muslimdigest/api/feeds.dart';
 import 'package:muslimdigest/utils/format.dart';
 import 'package:muslimdigest/utils/functions.dart';
 import 'package:muslimdigest/utils/helpers.dart';
 import 'package:muslimdigest/utils/users.dart';
+import 'package:muslimdigest/variables/app.dart';
+import 'package:muslimdigest/variables/feed.dart';
 import 'package:muslimdigest/variables/time.dart';
 import 'package:muslimdigest/widgets/components/cached_image.dart';
 import 'package:muslimdigest/widgets/components/icon_button.dart';
+import 'package:path_provider/path_provider.dart';
 import '../../widgets/animations/loader.dart';
 import '../../widgets/components/placeholder.dart';
 import '../../models/feed.dart';
+import 'package:screenshot/screenshot.dart';
+import 'package:share_plus/share_plus.dart';
 
 final SWIPE_DIRECTION = CardSwiperDirection.left;
 final UNDO_DIRECTION = SWIPE_DIRECTION == CardSwiperDirection.left ? CardSwiperDirection.right : CardSwiperDirection.left;
@@ -41,8 +52,19 @@ class FeedSwiper extends ConsumerStatefulWidget {
 
 class FeedSwiperState extends ConsumerState<FeedSwiper> {
   final _controller = CardSwiperController();
+  var _feedType = FeedType.digest;
 
   AppRepository get r => ref.read(appRepositoryProvider);
+  List<FeedItem> get _feedItems {
+    switch (_feedType) {
+      case FeedType.digest:
+      case FeedType.latest:
+      case FeedType.trending:
+      case FeedType.liked:
+      case FeedType.saved:
+        return r.feedDigest;
+    }
+  }
 
   bool get _isFeedLoading => ref.watch(feedProvider).isLoading;
   int get _readCount => ref.watch(readCountProvider);
@@ -64,7 +86,7 @@ class FeedSwiperState extends ConsumerState<FeedSwiper> {
     ]);
     
     // Track reading history to backend
-    markRead(lastClusterId);
+    fireAndForget(() => markRead(lastClusterId));
   }
 
   Future<void> _decreaseReadCount() async {
@@ -77,7 +99,7 @@ class FeedSwiperState extends ConsumerState<FeedSwiper> {
   Widget build(BuildContext context) {
 
     // When feed is empty
-    if (r.feedDigest.isEmpty) {
+    if (_feedItems.isEmpty) {
       if (_isFeedLoading) {
         return MyLoader().center();
       }
@@ -96,7 +118,7 @@ class FeedSwiperState extends ConsumerState<FeedSwiper> {
       return MyLoader().center();
     }
 
-    final cardsCount = r.feedDigest.length + 1;
+    final cardsCount = _feedItems.length + 1;
 
     return CardSwiper(
       key: Key("CardSwiper_$_readCount"),
@@ -113,9 +135,9 @@ class FeedSwiperState extends ConsumerState<FeedSwiper> {
       cardsCount: cardsCount,
       cardBuilder: (context, index, percentThresholdX, percentThresholdY) {
         if (index == cardsCount - 1) {
-          return FeedCard();
+          return FeedCard(ref, _feedType);
         }
-        return FeedCard(feedItem: r.feedDigest[index]);
+        return FeedCard(ref, _feedType, feedItem: _feedItems[index]);
       },
       isDisabled: false,
       isLoop: false,
@@ -123,7 +145,7 @@ class FeedSwiperState extends ConsumerState<FeedSwiper> {
         log('[feed] ENDED!');
       },
       onSwipe: (previousIndex, currentIndex, direction) async {
-        final previousItem = r.feedDigest[previousIndex];
+        final previousItem = _feedItems[previousIndex];
         log('[feed] Swipe direction: $direction, previousItem: ${previousItem.title}');
 
         // When an undo swipe is detected
@@ -147,13 +169,120 @@ class FeedSwiperState extends ConsumerState<FeedSwiper> {
 }
 
 /// Individual feed card widget
-class FeedCard extends StatelessWidget {
+class FeedCard extends StatefulWidget {
+  final WidgetRef ref;
+  final FeedType feedType;
   final FeedItem? feedItem;
 
-  const FeedCard({
+  const FeedCard(this.ref, this.feedType, {
     super.key,
     this.feedItem,
   });
+
+  @override
+  State<FeedCard> createState() => _FeedCardState();
+}
+
+class _FeedCardState extends State<FeedCard> {
+  final _screenshotController = ScreenshotController();
+  late final _feedId = widget.feedItem?.id;
+  bool _isTakingScreenshot = false;
+
+  void _like() {
+    if (_feedId == null) return;
+    final isLiked = widget.feedItem!.isLiked;
+    fireAndForget(() => like(_feedId, !isLiked));
+    
+    switch (widget.feedType) {
+      case FeedType.trending:
+        final trendingNotifier = widget.ref.read(feedTrendingProvider.notifier);
+        trendingNotifier.update(_feedId, isLiked: !isLiked);
+        break;
+      case FeedType.latest:
+        final latestNotifier = widget.ref.read(feedLatestProvider.notifier);
+        latestNotifier.update(_feedId, isLiked: !isLiked);
+        break;
+      case FeedType.liked:
+        final likedNotifier = widget.ref.read(feedLikedProvider.notifier);
+        likedNotifier.update(_feedId, isLiked: !isLiked);
+        break;
+      case FeedType.saved:
+        final savedNotifier = widget.ref.read(feedSavedProvider.notifier);
+        savedNotifier.update(_feedId, isLiked: !isLiked);
+        break;
+      default:
+        final feedNotifier = widget.ref.read(feedProvider.notifier);
+        feedNotifier.update(_feedId, isLiked: !isLiked);
+        break;
+    }
+  }
+
+  void _save() {
+    if (_feedId == null) return;
+    final isSaved = widget.feedItem!.isSaved;
+    fireAndForget(() => save(_feedId, !isSaved));
+    
+    switch (widget.feedType) {
+      case FeedType.trending:
+        final trendingNotifier = widget.ref.read(feedTrendingProvider.notifier);
+        trendingNotifier.update(_feedId, isSaved: !isSaved);
+        break;
+      case FeedType.latest:
+        final latestNotifier = widget.ref.read(feedLatestProvider.notifier);
+        latestNotifier.update(_feedId, isSaved: !isSaved);
+        break;
+      case FeedType.liked:
+        final likedNotifier = widget.ref.read(feedLikedProvider.notifier);
+        likedNotifier.update(_feedId, isSaved: !isSaved);
+        break;
+      case FeedType.saved:
+        final savedNotifier = widget.ref.read(feedSavedProvider.notifier);
+        savedNotifier.update(_feedId, isSaved: !isSaved);
+        break;
+      default:
+        final feedNotifier = widget.ref.read(feedProvider.notifier);
+        feedNotifier.update(_feedId, isSaved: !isSaved);
+        break;
+    }
+  }
+
+  Future<void> _share() async {
+    if (_feedId == null) return;
+
+    setState(() => _isTakingScreenshot = true);
+
+    // Wait for the feed to be fully rendered
+    await delay(100);
+
+    // Take the screenshot of feed
+    final imagePath = await _screenshot();
+    if (!mounted) return;
+
+    setState(() => _isTakingScreenshot = false);
+    if (imagePath == null) return;
+
+    // Share the feed
+    await sharePlus.share(
+      ShareParams(
+        title: widget.feedItem!.title,
+        subject: 'Read "${widget.feedItem!.title}" in $APP_NAME',
+        files: [XFile(imagePath)],
+        text:
+          'Hi, I just read "${widget.feedItem!.title}" in $APP_NAME\n'
+          'Download the app now: $APP_URL_PLAYSTORE',
+      ),
+    );
+  }
+
+  Future<String?> _screenshot() async {
+    final imageName = "$_feedId.png";
+    final directory = await getApplicationDocumentsDirectory();
+    final imagePath = await _screenshotController.captureAndSave(directory.path, fileName: imageName);
+    if (mounted && imagePath == null) {
+      showSnackBar(context, "Cannot save feed image.");
+    }
+    return imagePath;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -171,7 +300,7 @@ class FeedCard extends StatelessWidget {
           ),
         ],
       ),
-      child: feedItem == null ? Column(
+      child: widget.feedItem == null ? Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
@@ -182,13 +311,19 @@ class FeedCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Header with image and title
-          _FeedHeader(feedItem: feedItem!),
+          _FeedHeader(feedItem: widget.feedItem!),
           
           // Content with article text and badges
-          _FeedContent(feedItem: feedItem!).expand(),
+          _FeedContent(feedItem: widget.feedItem!).expand(),
           
           // Footer with source and actions buttons
-          _FeedFooter(feedItem: feedItem!),
+          _FeedFooter(
+            feedItem: widget.feedItem!,
+            isTakingScreenshot: _isTakingScreenshot,
+            onShare: _share,
+            onSave: _save,
+            onLike: _like,
+          ),
         ],
       ),
     );
@@ -291,12 +426,24 @@ class _FeedContent extends StatelessWidget {
 /// Feed footer with source and summarizer information
 class _FeedFooter extends StatelessWidget {
   final FeedItem feedItem;
+  final bool isTakingScreenshot;
+  final VoidCallback onShare;
+  final VoidCallback onSave;
+  final VoidCallback onLike;
 
-  const _FeedFooter({required this.feedItem});
+  const _FeedFooter({
+    required this.feedItem,
+    required this.isTakingScreenshot,
+    required this.onShare,
+    required this.onSave,
+    required this.onLike,
+  });
 
   @override
   Widget build(BuildContext context) {
     final h = MyHelper(context);
+    final isLiked = feedItem.isLiked;
+    final isSaved = feedItem.isSaved;
     
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -329,10 +476,10 @@ class _FeedFooter extends StatelessWidget {
           const Spacer(),
 
           // Action buttons
-          ...<Widget>[
-            MyIconButton(icon: CupertinoIcons.heart, size: 50, outlined: true, onPressed: () {},),
-            MyIconButton(icon: CupertinoIcons.bookmark, size: 50, outlined: true, onPressed: () {},),
-            MyIconButton(icon: CupertinoIcons.share, size: 50, outlined: true, onPressed: () {},),
+          if (!isTakingScreenshot) ...<Widget>[
+            MyIconButton(icon: isLiked ? CupertinoIcons.heart_fill : CupertinoIcons.heart, size: 50, outlined: true, onPressed: onLike, iconColor: isLiked ? AppColors.primary : null),
+            MyIconButton(icon: isSaved ? CupertinoIcons.bookmark_fill : CupertinoIcons.bookmark, size: 50, outlined: true, onPressed: onSave, iconColor: isSaved ? AppColors.primary : null),
+            MyIconButton(icon: CupertinoIcons.share, size: 50, outlined: true, onPressed: onShare,),
           ].addItemInBetween(SizedBox(width: 8)),
         ],)
       ],

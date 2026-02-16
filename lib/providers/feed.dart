@@ -59,6 +59,24 @@ class FeedNotifier extends Notifier<FeedState> {
     await ref.read(preferencesRepositoryProvider).remove(_key);
   }
 
+  Future<void> update(String feedId, {bool? isLiked, bool? isSaved}) async {
+    final updatedItems = state.items?.map((item) {
+      if (item.id == feedId) {
+        return item.copyWith(
+          isLiked: isLiked ?? item.isLiked,
+          isSaved: isSaved ?? item.isSaved,
+        );
+      }
+      return item;
+    }).toList();
+    
+    state = state.copyWith(items: updatedItems);
+    
+    // Update cached data
+    final feedItemsString = updatedItems == null ? null : jsonEncode(updatedItems.map((item) => item.toJson()).toList());
+    await ref.read(preferencesRepositoryProvider).setString(_key, feedItemsString);
+  }
+
   Future<bool> load({String? topic, int? timeoutMs}) async {
     state = state.copyWith(isLoading: true, error: null);
     

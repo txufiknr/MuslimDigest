@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:in_app_review/in_app_review.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Application-level variables and singleton instances
@@ -46,3 +47,5 @@ var appVersion = '1.0.0';
 late final SharedPreferencesWithCache prefs;
 
 final inAppReview = InAppReview.instance;
+final sharePlus = SharePlus.instance;
+

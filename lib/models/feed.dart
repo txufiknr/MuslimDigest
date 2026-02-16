@@ -16,6 +16,8 @@ class FeedItem {
   final List<String> badges;
   final Source source;
   final bool isBreaking;
+  final bool isLiked;
+  final bool isSaved;
 
   FeedItem({
     required this.id,
@@ -35,6 +37,8 @@ class FeedItem {
     this.badges = const [],
     required this.source,
     this.isBreaking = false,
+    this.isLiked = false,
+    this.isSaved = false,
   });
 
   String get sourceLabel => source.siteName ?? source.id;
@@ -60,6 +64,8 @@ class FeedItem {
       badges: List<String>.from(json['badges'] ?? []),
       source: Source.fromJson(json['source']),
       isBreaking: json['isBreaking'] ?? false,
+      isLiked: json['isLiked'] ?? false,
+      isSaved: json['isSaved'] ?? false,
     );
   }
 
@@ -82,7 +88,53 @@ class FeedItem {
       'badges': badges,
       'source': source.toJson(),
       'isBreaking': isBreaking,
+      'isLiked': isLiked,
+      'isSaved': isSaved,
     };
+  }
+
+  FeedItem copyWith({
+    String? id,
+    String? title,
+    String? summary,
+    String? summaryProvider,
+    String? summaryStatus,
+    String? sourceUrl,
+    String? canonicalUrl,
+    String? topic,
+    String? image,
+    String? video,
+    String? riskLevel,
+    DateTime? publishedAt,
+    List<String>? sources,
+    Cluster? cluster,
+    List<String>? badges,
+    Source? source,
+    bool? isBreaking,
+    bool? isLiked,
+    bool? isSaved,
+  }) {
+    return FeedItem(
+      id: id ?? this.id,
+      title: title ?? this.title,
+      summary: summary ?? this.summary,
+      summaryProvider: summaryProvider ?? this.summaryProvider,
+      summaryStatus: summaryStatus ?? this.summaryStatus,
+      sourceUrl: sourceUrl ?? this.sourceUrl,
+      canonicalUrl: canonicalUrl ?? this.canonicalUrl,
+      topic: topic ?? this.topic,
+      image: image ?? this.image,
+      video: video ?? this.video,
+      riskLevel: riskLevel ?? this.riskLevel,
+      publishedAt: publishedAt ?? this.publishedAt,
+      sources: sources ?? this.sources,
+      cluster: cluster ?? this.cluster,
+      badges: badges ?? this.badges,
+      source: source ?? this.source,
+      isBreaking: isBreaking ?? this.isBreaking,
+      isLiked: isLiked ?? this.isLiked,
+      isSaved: isSaved ?? this.isSaved,
+    );
   }
 
   @override
@@ -104,7 +156,9 @@ FeedItem(
   cluster: $cluster,
   badges: $badges,
   source: $source,
-  isBreaking: $isBreaking
+  isBreaking: $isBreaking,
+  isLiked: $isLiked,
+  isSaved: $isSaved,
 )''';
   }
 }

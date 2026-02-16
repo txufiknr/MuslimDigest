@@ -1,30 +1,31 @@
 import 'dart:convert';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:muslimdigest/config/feeds.dart' show CURSOR_PAGINATION_LIMIT;
 import 'package:muslimdigest/models/feed.dart';
 import 'package:muslimdigest/services/api.dart';
 import 'package:muslimdigest/utils/repository.dart';
 
-class FeedLatestState {
+class FeedSavedState {
   final List<FeedItem>? items;
   final bool isLoading;
   final String? error;
 
   bool get isEmpty => items?.isEmpty ?? true;
+  bool get isGetting => isEmpty && isLoading;
+  bool get isNone => isEmpty && !isLoading;
 
-  const FeedLatestState({
+  const FeedSavedState({
     this.items,
     this.isLoading = false,
     this.error,
   });
 
-  FeedLatestState copyWith({
+  FeedSavedState copyWith({
     List<FeedItem>? items,
     bool? isLoading,
     String? error,
   }) {
-    return FeedLatestState(
+    return FeedSavedState(
       items: items ?? this.items,
       isLoading: isLoading ?? this.isLoading,
       error: error ?? this.error,
@@ -32,17 +33,17 @@ class FeedLatestState {
   }
 }
 
-final feedLatestProvider = NotifierProvider<FeedLatestNotifier, FeedLatestState>(FeedLatestNotifier.new);
+final feedSavedProvider = NotifierProvider<FeedSavedNotifier, FeedSavedState>(FeedSavedNotifier.new);
 
-class FeedLatestNotifier extends Notifier<FeedLatestState> {
-  static const _key = 'feed/latest';
+class FeedSavedNotifier extends Notifier<FeedSavedState> {
+  static const _key = 'feed/saved';
 
   @override
-  FeedLatestState build() {
+  FeedSavedState build() {
     final jsonString = ref.watch(preferencesRepositoryProvider).getString(_key);
-    if (jsonString == null) return const FeedLatestState();
+    if (jsonString == null) return const FeedSavedState();
     final feedItems = List<FeedItem>.from(List<Map<String, dynamic>>.from(jsonDecode(jsonString)).map(FeedItem.fromJson));
-    return FeedLatestState(items: feedItems);
+    return FeedSavedState(items: feedItems);
   }
 
   Future<void> setValue(List<FeedItem>? value) async {
@@ -52,7 +53,7 @@ class FeedLatestNotifier extends Notifier<FeedLatestState> {
   }
 
   Future<void> clear() async {
-    state = const FeedLatestState();
+    state = const FeedSavedState();
     await ref.read(preferencesRepositoryProvider).remove(_key);
   }
 
@@ -74,16 +75,11 @@ class FeedLatestNotifier extends Notifier<FeedLatestState> {
     await ref.read(preferencesRepositoryProvider).setString(_key, feedItemsString);
   }
 
-  Future<bool> load({int? limit}) async {
+  Future<bool> load() async {
     state = state.copyWith(isLoading: true, error: null);
     
     try {
-      final response = await ApiService.get(
-        'feed/latest',
-        queryParams: {
-          'limit': (limit ?? CURSOR_PAGINATION_LIMIT).toString(),
-        },
-      );
+      final response = await ApiService.get('feed/saved');
 
       if (response.successful) {
         final feedItems = List<FeedItem>.from(

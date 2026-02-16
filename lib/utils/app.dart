@@ -2,9 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:external_app_launcher/external_app_launcher.dart';
 import 'package:muslimdigest/config/constants.dart';
-import 'package:muslimdigest/services/api.dart';
 import 'package:muslimdigest/variables/app.dart';
-import 'package:muslimdigest/variables/user.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 Future<void> preCacheAssets(BuildContext context) async {
@@ -14,19 +12,6 @@ Future<void> preCacheAssets(BuildContext context) async {
 Future<void> getAppVersion() async {
   final packageInfo = await PackageInfo.fromPlatform();
   appVersion = packageInfo.version;
-}
-
-/// Save user, preferences, and streaks data
-Future<bool> saveAllData() async {
-  // TODO: save settings
-  final responses = await Future.wait([
-    if (PrefData.user != null) ApiService.post('user', PrefData.user!.toJson()),
-    if (PrefData.preferences != null) ApiService.post('preferences', PrefData.preferences!.toJson()),
-    if (PrefData.streaks != null) ApiService.post('streaks', PrefData.streaks!.toJson()),
-  ]);
-  final successCount = responses.where((result) => result.success).length;
-  debugPrint('[saveAllData] Save result: $successCount/${responses.length} success');
-  return successCount == responses.length;
 }
 
 Future<void> quit() {
