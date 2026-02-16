@@ -60,6 +60,7 @@ extension WidgetExtension on Widget {
   );
 
   Widget withPadding({double horizontal = 0, double vertical = 0, double top = 0, double right = 0, double bottom = 0, double left = 0}) => Padding(padding: EdgeInsets.symmetric(horizontal: horizontal, vertical: vertical).copyWith(top: top == 0 ? vertical : top, right: right == 0 ? horizontal : right, bottom: bottom == 0 ? vertical : bottom, left: left == 0 ? horizontal : left), child: this);
+  Widget withPaddingAll(double padding) => Padding(padding: EdgeInsets.all(padding), child: this);
   Widget withPaddingHorizontal(double padding) => Padding(padding: EdgeInsets.symmetric(horizontal: padding), child: this);
   Widget withPaddingVertical(double padding) => Padding(padding: EdgeInsets.symmetric(vertical: padding), child: this);
 

@@ -1,9 +1,30 @@
+import 'package:flutter/material.dart';
+import 'package:muslimdigest/utils/extensions.dart';
+
 const possibleBulletPoint = ['-', '*', '•'];
 
-String formatText(String rawText) {
+Widget bulletedList(List<String> lines, {String? header, TextStyle? style}) {
+  return Column(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      if (header != null) Text(header, style: style),
+      ...lines.map((line) => Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('• ', style: style),
+          Text(line, style: style).expand(),
+        ],
+      )),
+    ],
+  );
+}
+
+Widget formatText(String rawText, {TextStyle? style}) {
   // Check if there are bullet points in the middle of text (pattern: punctuation followed by bullet)
   final middleBulletPattern = RegExp(r'([.!?:])\s*([*•-])\s*');
   final match = middleBulletPattern.firstMatch(rawText);
+  final formattedLines = <String>[];
+  String? header;
   
   if (match != null) {
     // Handle bullet points in the middle of text
@@ -12,27 +33,26 @@ String formatText(String rawText) {
     
     // Split the remaining text by bullet patterns
     final segments = afterBullets.split(RegExp(r'\s*[*•-]\s*'));
-    final formattedLines = <String>[];
     
     // Add the text before bullets
     if (beforeBullets.trim().isNotEmpty) {
-      formattedLines.add(beforeBullets.trim());
+      header = beforeBullets.trim();
     }
     
     // Add each bullet point
     for (final segment in segments) {
       final trimmedSegment = segment.trim();
       if (trimmedSegment.isNotEmpty) {
-        formattedLines.add('• $trimmedSegment');
+        formattedLines.add(trimmedSegment);
       }
     }
-    
-    return formattedLines.join('\n');
   } else {
     // Handle bullet points at the start (original logic)
     final segments = rawText.split(' - ');
-    final formattedLines = <String>[];
-    
+    if (segments.length == 1) {
+      return Text(rawText, style: style);
+    }
+
     for (final segment in segments) {
       final trimmedSegment = segment.trim();
       if (trimmedSegment.isNotEmpty) {
@@ -47,7 +67,7 @@ String formatText(String rawText) {
         formattedLines.add('• $cleanText');
       }
     }
-    
-    return formattedLines.join('\n');
   }
+
+  return bulletedList(formattedLines, header: header, style: style);
 }

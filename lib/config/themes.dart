@@ -36,6 +36,7 @@ class AppThemes {
     onSecondary: Colors.white,
     onSurface: AppColors.textPrimaryLight,
     onError: Colors.white,
+    outline: Colors.grey[200]
   );
 
   static ColorScheme get darkColorScheme => ColorScheme.fromSeed(
@@ -49,6 +50,7 @@ class AppThemes {
     onSecondary: Colors.white,
     onSurface: AppColors.textPrimaryDark,
     onError: Colors.white,
+    outline: Colors.grey[800]
   );
 
   // AppBar Themes

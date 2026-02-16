@@ -19,6 +19,7 @@ import 'package:muslimdigest/utils/helpers.dart';
 import 'package:muslimdigest/utils/users.dart';
 import 'package:muslimdigest/variables/time.dart';
 import 'package:muslimdigest/widgets/components/cached_image.dart';
+import 'package:muslimdigest/widgets/components/icon_button.dart';
 import '../../widgets/animations/loader.dart';
 import '../../widgets/components/placeholder.dart';
 import '../../models/feed.dart';
@@ -265,8 +266,8 @@ class _FeedContent extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Article text
-          Text(
-            formatText(feedItem.summary),
+          formatText(
+            feedItem.summary,
             style: h.currentTextTheme.bodyMedium
           ),
           const SizedBox(height: 16),
@@ -295,65 +296,47 @@ class _FeedFooter extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      alignment: Alignment.centerLeft,
+    final h = MyHelper(context);
+    
+    return Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
-        Divider(
-          height: 1,
-          thickness: 1,
-          color: Colors.grey[300],
+        Stack(
+          alignment: Alignment.centerLeft,
+          children: [
+            Divider(height: 1, thickness: 1, color: h.currentTheme.colorScheme.outline),
+            _FeedFooterSource(feedItem).moveX(-8),
+          ],
         ),
-        _FeedFooterSource(feedItem),
+        Row(children: [
+          // Summarizer info
+          if (feedItem.summaryProvider != null) Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: Colors.green[50],
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Text(
+              'Summarizer: ${feedItem.summaryProvider!.toCapitalized()}',
+              style: TextStyle(
+                fontSize: 11,
+                color: Colors.green[700],
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+
+          const Spacer(),
+
+          // Action buttons
+          ...<Widget>[
+            MyIconButton(icon: CupertinoIcons.heart, size: 50, outlined: true, onPressed: () {},),
+            MyIconButton(icon: CupertinoIcons.bookmark, size: 50, outlined: true, onPressed: () {},),
+            MyIconButton(icon: CupertinoIcons.share, size: 50, outlined: true, onPressed: () {},),
+          ].addItemInBetween(SizedBox(width: 8)),
+        ],)
       ],
-    );
-
-
-    // return Stack(
-    //   children: [
-    //     Align(
-    //       alignment: Alignment.topLeft,
-    //       child: _FeedFooterSource(feedItem),
-    //     ),
-    //     Container(
-    //       padding: const EdgeInsets.all(16),
-    //       decoration: BoxDecoration(
-    //         border: Border(
-    //           top: BorderSide(
-    //             color: Colors.grey[300]!,
-    //             width: 1.0,
-    //           ),
-    //         ),
-    //       ),
-    //       child: Row(
-    //         children: [
-    //           // Summarizer info
-    //           if (feedItem.summaryProvider != null) Container(
-    //             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-    //             decoration: BoxDecoration(
-    //               color: Colors.green[50],
-    //               borderRadius: BorderRadius.circular(8),
-    //             ),
-    //             child: Text(
-    //               'Summarizer: ${feedItem.summaryProvider!.toCapitalized()}',
-    //               style: TextStyle(
-    //                 fontSize: 11,
-    //                 color: Colors.green[700],
-    //                 fontWeight: FontWeight.w500,
-    //               ),
-    //             ),
-    //           ),
-
-    //           const Spacer(),
-
-    //           // Action buttons
-    //           MyIconButton(icon: CupertinoIcons.heart, onPressed: () {},),
-    //           MyIconButton(icon: CupertinoIcons.bookmark, onPressed: () {},),
-    //           MyIconButton(icon: CupertinoIcons.share, onPressed: () {},),
-    //         ],
-    //       ),
-    //     ),
-    //   ],
-    // );
+    ).withPaddingAll(AppThemes.contentPadding - 8);
   }
 }
 
@@ -369,7 +352,7 @@ class _FeedFooterSource extends StatelessWidget {
 
     return Material(
       color: h.currentTheme.colorScheme.surface,
-      borderRadius: BorderRadius.circular(4),
+      borderRadius: BorderRadius.circular(8),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: sourceLink == null ? null : () => openUrl(sourceLink),

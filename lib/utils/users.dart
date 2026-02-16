@@ -43,19 +43,16 @@ String extractFirstName(String? fullName) {
   
   // Remove common honorifics and prefixes
   final prefixes = ['mr.', 'mrs.', 'ms.', 'miss.', 'dr.', 'prof.', 'sir.', 'madam.', 'brother', 'sister'];
-  var nameWithoutPrefix = trimmedName.toLowerCase();
+  var nameWithoutPrefix = trimmedName;
   
   for (final prefix in prefixes) {
-    if (nameWithoutPrefix.startsWith(prefix)) {
+    if (nameWithoutPrefix.toLowerCase().startsWith(prefix)) {
       nameWithoutPrefix = nameWithoutPrefix.substring(prefix.length).trim();
       break;
     }
   }
   
-  // If we removed a prefix, use the modified name, otherwise use original
-  final finalName = nameWithoutPrefix != trimmedName.toLowerCase() ? nameWithoutPrefix : trimmedName;
-  
   // Split by spaces and get the first word
-  final parts = finalName.split(RegExp(r'\s+'));
-  return parts.isNotEmpty ? parts.first : finalName;
+  final parts = nameWithoutPrefix.split(RegExp(r'\s+'));
+  return parts.isNotEmpty ? parts.first : nameWithoutPrefix;
 }

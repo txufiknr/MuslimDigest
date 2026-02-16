@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:muslimdigest/utils/helpers.dart';
 
 /// Custom IconButton widget with consistent styling and tooltip support
 class MyIconButton extends StatelessWidget {
@@ -10,6 +11,7 @@ class MyIconButton extends StatelessWidget {
   final double? iconSize;
   final Color? iconColor;
   final double radius;
+  final bool outlined;
 
   const MyIconButton({
     super.key,
@@ -21,10 +23,13 @@ class MyIconButton extends StatelessWidget {
     this.iconSize,
     this.iconColor,
     this.radius = 20.0,
+    this.outlined = false,
   });
 
   @override
   Widget build(BuildContext context) {
+    final h = MyHelper(context);
+
     return IconButton(
       onPressed: onPressed,
       icon: Icon(icon, color: iconColor),
@@ -34,6 +39,7 @@ class MyIconButton extends StatelessWidget {
         backgroundColor: backgroundColor,
         minimumSize: size == null ? null : Size(size!, size!),
         shape: RoundedRectangleBorder(
+          side: outlined ? BorderSide(color: h.currentTheme.colorScheme.outline) : BorderSide.none,
           borderRadius: BorderRadius.circular(radius),
         ),
         visualDensity: VisualDensity.compact,
