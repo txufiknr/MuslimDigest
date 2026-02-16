@@ -24,6 +24,7 @@ import 'package:muslimdigest/variables/feed.dart';
 import 'package:muslimdigest/variables/time.dart';
 import 'package:muslimdigest/widgets/components/cached_image.dart';
 import 'package:muslimdigest/widgets/components/icon_button.dart';
+import 'package:muslimdigest/widgets/components/logo.dart';
 import 'package:path_provider/path_provider.dart';
 import '../../widgets/animations/loader.dart';
 import '../../widgets/components/placeholder.dart';
@@ -115,6 +116,7 @@ class FeedSwiperState extends ConsumerState<FeedSwiper> {
       padding: EdgeInsets.zero,
       showBackCardOnUndo: true,
       undoSwipeThreshold: 15,
+      threshold: 70,
       undoDirection: UndoDirection.right,
       allowedSwipeDirection: AllowedSwipeDirection.only(
         left: SWIPE_DIRECTION == CardSwiperDirection.left || _canGoBack,
@@ -306,6 +308,8 @@ class _FeedHeader extends StatelessWidget {
             height: 200,
             width: double.infinity,
             fit: BoxFit.cover,
+            errorColor: h.currentTheme.colorScheme.secondary,
+            errorChild: Logo(),
           ),
           
           // Title overlay
@@ -418,6 +422,9 @@ class _FeedFooter extends ConsumerWidget {
             _FeedFooterSource(currentFeedItem).moveX(-8),
           ],
         ),
+
+        SizedBox(height: 8,),
+
         Row(children: [
           // Summarizer info
           if (feedItem.summaryProvider != null) Container(
@@ -444,7 +451,9 @@ class _FeedFooter extends ConsumerWidget {
             MyIconButton(icon: isSaved ? CupertinoIcons.bookmark_fill : CupertinoIcons.bookmark, size: 50, outlined: true, onPressed: onSave, iconColor: isSaved ? AppColors.primary : null),
             MyIconButton(icon: CupertinoIcons.share, size: 50, outlined: true, onPressed: onShare,),
           ].addItemInBetween(SizedBox(width: 8)),
-        ],)
+        ],),
+
+        SizedBox(height: 8,),
       ],
     ).withPaddingAll(AppThemes.contentPadding - 8);
   }
