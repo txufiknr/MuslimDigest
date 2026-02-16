@@ -1,45 +1,51 @@
-import 'dart:async';
 import 'dart:developer' show log;
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_card_swiper/flutter_card_swiper.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:muslimdigest/config/colors.dart';
 import 'package:muslimdigest/config/feeds.dart';
 import 'package:muslimdigest/config/themes.dart';
-import 'package:muslimdigest/services/api.dart';
+import 'package:muslimdigest/providers/feed.dart' show feedProvider;
+import 'package:muslimdigest/providers/read_count.dart';
+import 'package:muslimdigest/providers/read_last_date.dart';
+import 'package:muslimdigest/utils/app_repository.dart';
 import 'package:muslimdigest/utils/extensions.dart';
+import 'package:muslimdigest/utils/feeds.dart';
 import 'package:muslimdigest/utils/format.dart';
 import 'package:muslimdigest/utils/functions.dart';
 import 'package:muslimdigest/utils/helpers.dart';
 import 'package:muslimdigest/utils/users.dart';
-import 'package:muslimdigest/widgets/animations/loader.dart';
-import 'package:muslimdigest/widgets/components/placeholder.dart';
-import '../../models/feed.dart';
-import '../components/cached_image.dart';
-import 'package:muslimdigest/variables/app.dart';
-import 'package:muslimdigest/variables/feed.dart';
 import 'package:muslimdigest/variables/time.dart';
-import 'package:muslimdigest/variables/user.dart';
+import 'package:muslimdigest/widgets/components/cached_image.dart';
+import '../../widgets/animations/loader.dart';
+import '../../widgets/components/placeholder.dart';
+import '../../models/feed.dart';
 
 final SWIPE_DIRECTION = CardSwiperDirection.left;
 final UNDO_DIRECTION = SWIPE_DIRECTION == CardSwiperDirection.left ? CardSwiperDirection.right : CardSwiperDirection.left;
 
-/// Feed swiper widget for displaying news cards with vertical swipe navigation
-class FeedSwiper extends StatefulWidget {
-  final bool isLoading;
+/// Feed swiper widget for displaying news cards with swipe navigation
+class FeedSwiper extends ConsumerStatefulWidget {
   final VoidCallback onReload;
-  final VoidCallback onStreak;
-  const FeedSwiper({this.isLoading = false, required this.onReload, required this.onStreak, super.key});
+  
+  const FeedSwiper({super.key, 
+    required this.onReload,
+  });
 
   @override
-  State<FeedSwiper> createState() => _FeedSwiperState();
+  ConsumerState<FeedSwiper> createState() => FeedSwiperState();
 }
 
-class _FeedSwiperState extends State<FeedSwiper> {
+class FeedSwiperState extends ConsumerState<FeedSwiper> {
   final _controller = CardSwiperController();
 
-  bool get _canGoBack => readCount > 0;
+  AppRepository get r => ref.read(appRepositoryProvider);
+
+  bool get _isFeedLoading => ref.watch(feedProvider).isLoading;
+  int get _readCount => ref.watch(readCountProvider);
+  bool get _canGoBack => _readCount > 0;
 
   @override
   void dispose() {
@@ -47,53 +53,31 @@ class _FeedSwiperState extends State<FeedSwiper> {
     super.dispose();
   }
 
-  @override
-  void didUpdateWidget(FeedSwiper oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.isLoading != oldWidget.isLoading) {
-      // Future.microtask(() => setState(() {}));
-      if (!widget.isLoading) {
-        // Fresh feeds loaded
-      }
-    }
-  }
-
-  void _markRead(String clusterId) {
-    fireAndForget(() => ApiService.post('history', {'clusterId': clusterId}));
-  }
-
-  void _logStreak() async {
-    log('[feed] STREAK!');
-    await logStreak();
-    widget.onStreak();
-  }
-
   Future<void> _incrementReadCount(String lastClusterId) async {
-    // Increment read count
+    final readCount = ref.read(readCountProvider);
     final newCount = (readCount + 1).clamp(0, DAILY_READ_TARGET);
-    if (newCount == DAILY_READ_TARGET) _logStreak();
     await Future.wait([
-      prefs.setInt('read_count', newCount),
-      prefs.setString('read_last_date', today.toIso8601String()),
+      if (newCount == DAILY_READ_TARGET) logStreak(ref),
+      ref.read(readCountProvider.notifier).setValue(newCount),
+      ref.read(readLastDateProvider.notifier).setValue(today),
     ]);
-    setState(() {});
     
     // Track reading history to backend
-    _markRead(lastClusterId);
+    markRead(lastClusterId);
   }
 
   Future<void> _decreaseReadCount() async {
+    final readCount = ref.read(readCountProvider);
     if (readCount == 0) return;
-    await prefs.setInt('read_count', readCount - 1);
-    setState(() {});
+    await ref.read(readCountProvider.notifier).setValue(readCount - 1);
   }
 
   @override
   Widget build(BuildContext context) {
 
     // When feed is empty
-    if (feedDigest.isEmpty) {
-      if (widget.isLoading) {
+    if (r.feedDigest.isEmpty) {
+      if (_isFeedLoading) {
         return MyLoader().center();
       }
 
@@ -106,16 +90,15 @@ class _FeedSwiperState extends State<FeedSwiper> {
       ).center();
     }
 
-    if (widget.isLoading) {
+    if (_isFeedLoading) {
       // TODO: small non-disruptive loader
       return MyLoader().center();
     }
 
-    final cardsCount = feedDigest.length + 1;
+    final cardsCount = r.feedDigest.length + 1;
 
     return CardSwiper(
-      // key: Key("CardSwiper_$_canGoBack"),
-      key: Key("CardSwiper_$readCount"),
+      key: Key("CardSwiper_$_readCount"),
       controller: _controller,
       padding: EdgeInsets.zero,
       showBackCardOnUndo: true,
@@ -125,14 +108,13 @@ class _FeedSwiperState extends State<FeedSwiper> {
         left: SWIPE_DIRECTION == CardSwiperDirection.left || _canGoBack,
         right: SWIPE_DIRECTION == CardSwiperDirection.right || _canGoBack
       ),
-      initialIndex: readCount,
+      initialIndex: _readCount,
       cardsCount: cardsCount,
       cardBuilder: (context, index, percentThresholdX, percentThresholdY) {
         if (index == cardsCount - 1) {
-          // TODO: end card
-          return Container();
+          return FeedCard();
         }
-        return FeedCard(feedItem: feedDigest[index]);
+        return FeedCard(feedItem: r.feedDigest[index]);
       },
       isDisabled: false,
       isLoop: false,
@@ -140,7 +122,7 @@ class _FeedSwiperState extends State<FeedSwiper> {
         log('[feed] ENDED!');
       },
       onSwipe: (previousIndex, currentIndex, direction) async {
-        final previousItem = feedDigest[previousIndex];
+        final previousItem = r.feedDigest[previousIndex];
         log('[feed] Swipe direction: $direction, previousItem: ${previousItem.title}');
 
         // When an undo swipe is detected
@@ -165,11 +147,11 @@ class _FeedSwiperState extends State<FeedSwiper> {
 
 /// Individual feed card widget
 class FeedCard extends StatelessWidget {
-  final FeedItem feedItem;
+  final FeedItem? feedItem;
 
   const FeedCard({
     super.key,
-    required this.feedItem,
+    this.feedItem,
   });
 
   @override
@@ -179,7 +161,6 @@ class FeedCard extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: h.currentTheme.colorScheme.surface,
-        // color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -189,17 +170,24 @@ class FeedCard extends StatelessWidget {
           ),
         ],
       ),
-      child: Column(
+      child: feedItem == null ? Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          // TODO: end card
+          Text("End of feed", textAlign: TextAlign.center, style: h.currentTextTheme.titleMedium)
+        ],
+      ) : Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Header with image and title
-          _FeedHeader(feedItem: feedItem),
+          _FeedHeader(feedItem: feedItem!),
           
           // Content with article text and badges
-          _FeedContent(feedItem: feedItem).expand(),
+          _FeedContent(feedItem: feedItem!).expand(),
           
-          // Footer with source and summarizer info
-          _FeedFooter(feedItem: feedItem),
+          // Footer with source and actions buttons
+          _FeedFooter(feedItem: feedItem!),
         ],
       ),
     );
@@ -286,8 +274,8 @@ class _FeedContent extends StatelessWidget {
           // Badges
           if (feedItem.badges.isNotEmpty) ...[
             Wrap(
-              spacing: 8,
-              runSpacing: 4,
+              spacing: 6,
+              runSpacing: 6,
               children: feedItem.badgeToDisplay.map((badge) {
                 return _FeedBadgeChip(badge);
               }).toList(),
@@ -307,39 +295,65 @@ class _FeedFooter extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.grey[50],
-        borderRadius: const BorderRadius.vertical(
-          bottom: Radius.circular(16),
+    return Stack(
+      alignment: Alignment.centerLeft,
+      children: [
+        Divider(
+          height: 1,
+          thickness: 1,
+          color: Colors.grey[300],
         ),
-      ),
-      child: Row(
-        children: [
-          _FeedFooterSource(feedItem),
-
-          Spacer(),
-          
-          // Summarizer info
-          if (feedItem.summaryProvider != null) Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: Colors.green[50],
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Text(
-              'Summarizer: ${feedItem.summaryProvider!.toCapitalized()}',
-              style: TextStyle(
-                fontSize: 11,
-                color: Colors.green[700],
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-        ],
-      ),
+        _FeedFooterSource(feedItem),
+      ],
     );
+
+
+    // return Stack(
+    //   children: [
+    //     Align(
+    //       alignment: Alignment.topLeft,
+    //       child: _FeedFooterSource(feedItem),
+    //     ),
+    //     Container(
+    //       padding: const EdgeInsets.all(16),
+    //       decoration: BoxDecoration(
+    //         border: Border(
+    //           top: BorderSide(
+    //             color: Colors.grey[300]!,
+    //             width: 1.0,
+    //           ),
+    //         ),
+    //       ),
+    //       child: Row(
+    //         children: [
+    //           // Summarizer info
+    //           if (feedItem.summaryProvider != null) Container(
+    //             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+    //             decoration: BoxDecoration(
+    //               color: Colors.green[50],
+    //               borderRadius: BorderRadius.circular(8),
+    //             ),
+    //             child: Text(
+    //               'Summarizer: ${feedItem.summaryProvider!.toCapitalized()}',
+    //               style: TextStyle(
+    //                 fontSize: 11,
+    //                 color: Colors.green[700],
+    //                 fontWeight: FontWeight.w500,
+    //               ),
+    //             ),
+    //           ),
+
+    //           const Spacer(),
+
+    //           // Action buttons
+    //           MyIconButton(icon: CupertinoIcons.heart, onPressed: () {},),
+    //           MyIconButton(icon: CupertinoIcons.bookmark, onPressed: () {},),
+    //           MyIconButton(icon: CupertinoIcons.share, onPressed: () {},),
+    //         ],
+    //       ),
+    //     ),
+    //   ],
+    // );
   }
 }
 
@@ -351,46 +365,55 @@ class _FeedFooterSource extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final sourceLink = feedItem.sourceLink;
+    final h = MyHelper(context);
 
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        // Source site icon
-        Container(
-          width: 24,
-          height: 24,
-          decoration: BoxDecoration(
-            color: Colors.grey[300],
-            borderRadius: BorderRadius.circular(4),
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(4),
-            child: CachedImageWidget(
-              imageUrl: feedItem.source.siteIcon,
+    return Material(
+      color: h.currentTheme.colorScheme.surface,
+      borderRadius: BorderRadius.circular(4),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: sourceLink == null ? null : () => openUrl(sourceLink),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Source site icon
+            Container(
               width: 24,
               height: 24,
-              fit: BoxFit.contain,
-              errorWidget: (context, url, error) => const Icon(
-                CupertinoIcons.globe,
-                size: 16,
-                color: Colors.grey,
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(4),
+                child: CachedImageWidget(
+                  imageUrl: feedItem.source.siteIcon,
+                  width: 24,
+                  height: 24,
+                  fit: BoxFit.contain,
+                  errorWidget: (context, url, error) => const Icon(
+                    CupertinoIcons.globe,
+                    size: 16,
+                    color: Colors.grey,
+                  ),
+                ),
               ),
             ),
-          ),
-        ),
-        const SizedBox(width: 8),
-        
-        // Source site name
-        Text(
-          feedItem.sourceLabel,
-          style: const TextStyle(
-            fontSize: 12,
-            color: Colors.black87,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-      ],
-    ).onTap(sourceLink == null ? null : () => openUrl(sourceLink));
+            const SizedBox(width: 8),
+            
+            // Source site name
+            Text(
+              feedItem.sourceLabel,
+              style: h.currentTextTheme.bodySmall?.copyWith(
+                // fontSize: 12,
+                // color: Colors.black87,
+                // fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ).withPadding(horizontal: 8, vertical: 4),
+      ),
+    );
   }
 }
 

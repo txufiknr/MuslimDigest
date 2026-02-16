@@ -1,13 +1,16 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:muslimdigest/providers/feed.dart';
+import 'package:muslimdigest/providers/feed_trending.dart';
+import 'package:muslimdigest/providers/topics.dart';
 import 'package:muslimdigest/utils/app.dart';
+import 'package:muslimdigest/utils/app_repository.dart';
 import 'package:muslimdigest/utils/extensions.dart';
-import 'package:muslimdigest/utils/feeds.dart';
 import 'package:muslimdigest/utils/functions.dart';
 import 'package:muslimdigest/utils/helpers.dart';
-import 'package:muslimdigest/variables/user.dart';
 import '../config/constants.dart';
 import '../config/colors.dart';
 import '../widgets/animations/loading_indicator_bar.dart';
@@ -16,53 +19,54 @@ import '../widgets/components/logo.dart';
 /// Duration of the splash screen in seconds
 const SPLASH_DURATION_MS = 2000;
 
-class SplashPage extends StatefulWidget {
+class SplashPage extends ConsumerStatefulWidget {
   const SplashPage({super.key});
 
   @override
-  State<SplashPage> createState() => _SplashPageState();
+  ConsumerState<SplashPage> createState() => _SplashPageState();
 }
 
-class _SplashPageState extends State<SplashPage> {
+class _SplashPageState extends ConsumerState<SplashPage> {
+  AppRepository get r => ref.read(appRepositoryProvider);
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      unawaited(preCacheAssets(context));
-      unawaited(getAppVersion());
+      fireAndForget(_loadAppData);
+      fireAndForget(_loadFeedData);
       unawaited(_startSplash());
     });
   }
 
-  Future<bool> _loadFeeds() async {
-    // Maximum double duration of splash screen
-    if (isFirstRun) return false; // Don't load feed yet for new user
-    if (!shouldLoadFeedToday) return true; // Already have feeds for today
-    return loadFeeds(timeoutMs: SPLASH_DURATION_MS * 2);
+  Future<void> _loadAppData() async {
+    await Future.wait([
+      preCacheAssets(context),
+      getAppVersion(),
+    ]);
   }
 
-  Future<bool> _loadTrendingFeeds() async {
-    final success = await loadTrendingFeeds(limit: 3);
-    if (success) setState(() {});
-    return success;
+  Future<bool> _loadFeedData() async {
+    final results = await Future.wait<bool>([
+      if (r.shouldLoadFeedToday) ref.read(feedProvider.notifier).load(),
+      ref.read(feedTrendingProvider.notifier).load(),
+      ref.read(topicsProvider.notifier).load(),
+    ]);
+    final isSuccess = results.every((result) => result);
+    return isSuccess;
   }
 
   /// Start the splash screen animation and navigation
   Future<void> _startSplash() async {
-    // Preload user feeds within splash screen delay
-    final results = await Future.wait<bool>([
-      _loadFeeds(),
-      _loadTrendingFeeds(),
-      delay(SPLASH_DURATION_MS).then((_) => true),
-    ]);
+    await delay(SPLASH_DURATION_MS);
     if (!mounted) return;
 
     // Navigate to target route
-    if (isFirstRun) {
+    if (r.isFirstRun) {
       context.go('/onboarding');
     } else {
-      context.go('/home', extra: { 'feedLoaded': results[0] });
+      context.go('/home');
     }
   }
 
@@ -74,37 +78,33 @@ class _SplashPageState extends State<SplashPage> {
       body: Column(
         children: [
           // Main content area
-          Expanded(
-            child: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  // App logo
-                  const Logo(size: 180).pulseIt(duration: 3000, scaleEnd: 1.1),
-                  
-                  const SizedBox(height: 32),
-                  
-                  // App title
-                  Text(
-                    APP_NAME,
-                    style: h.currentTextTheme.headlineLarge?.copyWith(
-                      color: AppColors.primary,
-                    ),
-                  ),
-                  
-                  const SizedBox(height: 8),
-                  
-                  // App subtitle
-                  Text(
-                    APP_TAGLINE,
-                    style: h.currentTextTheme.bodyMedium?.copyWith(
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                ],
+          Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // App logo
+              const Logo(size: 180).pulseIt(duration: 3000, scaleEnd: 1.1),
+              
+              const SizedBox(height: 32),
+              
+              // App title
+              Text(
+                APP_NAME,
+                style: h.currentTextTheme.headlineLarge?.copyWith(
+                  color: AppColors.primary,
+                ),
               ),
-            ),
-          ),
+              
+              const SizedBox(height: 8),
+              
+              // App subtitle
+              Text(
+                APP_TAGLINE,
+                style: h.currentTextTheme.bodyMedium?.copyWith(
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ],
+          ).center().expand(),
           
           // Loading indicator at the bottom
           LoadingIndicatorBar(

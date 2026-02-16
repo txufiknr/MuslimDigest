@@ -1,11 +1,13 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:muslimdigest/config/colors.dart';
 import 'package:muslimdigest/config/themes.dart';
+import 'package:muslimdigest/providers/streaks.dart';
 import 'package:muslimdigest/utils/extensions.dart';
 import 'package:muslimdigest/variables/app.dart';
-import 'package:muslimdigest/variables/feed.dart';
+import 'package:muslimdigest/providers/preferences.dart';
 import 'package:muslimdigest/variables/user.dart';
 import '../components/icon_button.dart';
 
@@ -13,7 +15,7 @@ const TAB_HEIGHT = AppThemes.buttonHeight;
 const TAB_RADIUS = 20.0;
 
 /// Header widget for the home page containing hamburger menu and topic tabs
-class HomeHeader extends StatelessWidget {
+class HomeHeader extends ConsumerWidget {
   final Function(String?) onTopicChanged;
   const HomeHeader({
     super.key,
@@ -30,8 +32,9 @@ class HomeHeader extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
-    final topics = preferences?.topics ?? [];
+  Widget build(BuildContext context, WidgetRef ref) {
+    final topics = ref.watch(preferencesProvider)?.topics ?? [];
+    final streaks = ref.watch(streaksProvider);
 
     return Container(
       height: TAB_HEIGHT,
@@ -66,7 +69,7 @@ class HomeHeader extends StatelessWidget {
                 //   ),
                 // ),
               _TopicTab(
-                title: '${streaks!.currentStreak}',
+                title: '${streaks.currentStreak}',
                 icon: CupertinoIcons.flame_fill,
                 isSelected: false,
                 onTap: () {
@@ -76,14 +79,14 @@ class HomeHeader extends StatelessWidget {
               _TopicTab(
                 title: 'My Digest',
                 icon: CupertinoIcons.antenna_radiowaves_left_right,
-                isSelected: currentTopic == null,
+                isSelected: PrefData.currentTopic == null,
                 onTap: () => _onTopicChanged(null),
               ),
               ...List.generate(
                 topics.length,
                 (index) => _TopicTab(
                   title: topics[index],
-                  isSelected: topics[index] == currentTopic,
+                  isSelected: topics[index] == PrefData.currentTopic,
                   onTap: () => _onTopicChanged(topics[index]),
                 ),
               ),

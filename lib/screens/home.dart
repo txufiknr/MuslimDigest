@@ -1,43 +1,42 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:muslimdigest/providers/feed.dart';
+import 'package:muslimdigest/providers/read_count.dart';
+import 'package:muslimdigest/providers/read_last_date.dart';
 import 'package:muslimdigest/utils/app.dart';
+import 'package:muslimdigest/utils/app_repository.dart';
 import 'package:muslimdigest/utils/dialogs.dart';
 import 'package:muslimdigest/utils/extensions.dart';
-import 'package:muslimdigest/utils/feeds.dart';
 import 'package:muslimdigest/utils/functions.dart';
 import 'package:muslimdigest/variables/time.dart';
-import 'package:muslimdigest/variables/user.dart';
-import '../variables/app.dart';
 import '../widgets/home/home_header.dart';
 import '../widgets/home/feed_swiper.dart';
 import '../widgets/home/reading_streak_footer.dart';
 
-class HomePage extends StatefulWidget {
-  final Map<String, dynamic> args;
-  const HomePage({this.args = const {}, super.key});
+class HomePage extends ConsumerStatefulWidget {
+  const HomePage({super.key});
 
   @override
-  State<HomePage> createState() => _HomePageState();
+  ConsumerState<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
-  var _isLoading = false;
+class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver {
   var _isWillExit = false;
+
+  AppRepository get r => ref.read(appRepositoryProvider);
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    if (widget.args['feedLoaded'] != null) {
-      final isFeedLoaded = widget.args['feedLoaded'] as bool;
-      if (!isFeedLoaded) {
-        _showLoadFeedFailed(_loadFeeds);
-      }
-    } else if (shouldLoadFeedToday) {
-      _loadFeeds();
-    }
-    _initReadCount();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _initFeed();
+      _initReadCount();
+      fireAndForget(saveAllData);
+    });
   }
 
   @override
@@ -51,25 +50,34 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     super.didChangeAppLifecycleState(state);
     if (state == AppLifecycleState.inactive) {
       fireAndForget(saveAllData);
+    } else if (state == AppLifecycleState.resumed) {
+      _initReadCount();
+      if (r.shouldLoadFeedToday) {
+        _loadFeed();
+      }
     }
   }
 
-  /// Reset read count for new day
-  void _initReadCount() {
-    if (isNewDay) {
-      prefs.setInt('read_count', 0);
-      prefs.setString('read_last_date', today.toIso8601String());
-    }
-  }
-
-  Future<void> _loadFeeds([String? topic]) async {
-    setState(() { _isLoading = true; });
-    final loadFeedsSuccess = await loadFeeds(topic: topic);
+  Future<void> _loadFeed([String? topic]) async {
+    final success = await ref.read(feedProvider.notifier).load(topic: topic);
     if (!mounted) return;
-    setState(() { _isLoading = false; });
+    if (!success) {
+      return _showLoadFeedFailed(() => _loadFeed(topic));
+    }
+  }
 
-    if (!loadFeedsSuccess) {
-      return _showLoadFeedFailed(() => _loadFeeds(topic));
+  /// Ensure today's feed is loaded
+  void _initFeed() {
+    if (r.shouldLoadFeedToday && ref.read(feedProvider).isNone) {
+      _loadFeed();
+    }
+  }
+
+  /// Reset read count if it's a new day
+  void _initReadCount() {
+    if (r.isNewDay) {
+      ref.read(readCountProvider.notifier).setValue(0);
+      ref.read(readLastDateProvider.notifier).setValue(today);
     }
   }
 
@@ -83,10 +91,6 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     if (shouldRetry) {
       return onRetry();
     }
-  }
-
-  void _onStreak() {
-    setState(() {});
   }
 
   @override
@@ -118,12 +122,10 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
           child: Column(
             children: [
               HomeHeader(
-                onTopicChanged: _loadFeeds,
+                onTopicChanged: _loadFeed,
               ),
               FeedSwiper(
-                isLoading: _isLoading,
-                onReload: _loadFeeds,
-                onStreak: _onStreak
+                onReload: _loadFeed,
               ).expand(),
               ReadingStreakFooter(),
             ],

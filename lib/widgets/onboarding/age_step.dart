@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:muslimdigest/mock/users.dart';
+import 'package:muslimdigest/providers/user.dart';
 import 'package:muslimdigest/utils/extensions.dart';
-import 'package:muslimdigest/utils/users.dart';
-import 'package:muslimdigest/variables/user.dart';
 import '../../utils/helpers.dart';
 
 /// Age selection step widget for onboarding
-class OnboardingAgeStep extends StatefulWidget {
+class OnboardingAgeStep extends ConsumerWidget {
   const OnboardingAgeStep({super.key});
 
   static const List<Map<String, String>> _ageGroups = [
@@ -15,16 +16,12 @@ class OnboardingAgeStep extends StatefulWidget {
     {'label': '46+', 'value': '46+'},
   ];
 
-  @override
-  State<OnboardingAgeStep> createState() => _OnboardingAgeStepState();
-}
-
-class _OnboardingAgeStepState extends State<OnboardingAgeStep> {
   /// Build individual age group option
   Widget _buildAgeGroupOption(
     MyHelper h,
     Map<String, String> group,
     bool isSelected,
+    WidgetRef ref,
   ) {
     return Container(
       decoration: BoxDecoration(
@@ -51,14 +48,15 @@ class _OnboardingAgeStepState extends State<OnboardingAgeStep> {
         ),
       ),
     ).onTap(() async {
-      await setUser(user?.copyWith(ageGroup: group['value']!));
-      setState(() {});
+      final user = ref.read(userProvider) ?? newUser;
+      await ref.read(userProvider.notifier).setValue(user.copyWith(ageGroup: group['value']!));
     });
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final h = MyHelper(context);
+    final user = ref.watch(userProvider) ?? newUser;
 
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -86,8 +84,8 @@ class _OnboardingAgeStepState extends State<OnboardingAgeStep> {
           itemCount: OnboardingAgeStep._ageGroups.length,
           itemBuilder: (context, index) {
             final group = OnboardingAgeStep._ageGroups[index];
-            final isSelected = user?.ageGroup == group['value'];
-            return _buildAgeGroupOption(h, group, isSelected);
+            final isSelected = user.ageGroup == group['value'];
+            return _buildAgeGroupOption(h, group, isSelected, ref);
           },
         ),
       ],

@@ -16,13 +16,13 @@ Future<void> getAppVersion() async {
   appVersion = packageInfo.version;
 }
 
-/// Save user and preferences data
+/// Save user, preferences, and streaks data
 Future<bool> saveAllData() async {
   // TODO: save settings
   final responses = await Future.wait([
-    if (user != null) ApiService.post('user', user!.toJson()),
-    if (preferences != null) ApiService.post('preferences', preferences!.toJson()),
-    if (streaks != null) ApiService.post('streaks', streaks!.toJson()),
+    if (PrefData.user != null) ApiService.post('user', PrefData.user!.toJson()),
+    if (PrefData.preferences != null) ApiService.post('preferences', PrefData.preferences!.toJson()),
+    if (PrefData.streaks != null) ApiService.post('streaks', PrefData.streaks!.toJson()),
   ]);
   final successCount = responses.where((result) => result.success).length;
   debugPrint('[saveAllData] Save result: $successCount/${responses.length} success');

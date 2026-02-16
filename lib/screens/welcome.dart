@@ -1,57 +1,37 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:muslimdigest/config/themes.dart';
+import 'package:muslimdigest/mock/users.dart';
 import 'package:muslimdigest/models/user.dart';
-import 'package:muslimdigest/utils/app.dart';
+import 'package:muslimdigest/providers/preferences.dart';
+import 'package:muslimdigest/providers/user.dart';
 import 'package:muslimdigest/utils/extensions.dart';
 import 'package:muslimdigest/utils/functions.dart';
-import 'package:muslimdigest/utils/users.dart';
-import 'package:muslimdigest/variables/user.dart';
 import 'package:muslimdigest/widgets/onboarding/navigation_buttons.dart';
 import '../config/colors.dart';
 import '../utils/helpers.dart';
-import '../services/api.dart';
 import '../widgets/onboarding/progress_indicator.dart';
 import '../widgets/onboarding/name_step.dart';
 import '../widgets/onboarding/gender_step.dart';
 import '../widgets/onboarding/age_step.dart';
 import '../widgets/onboarding/interests_step.dart';
 
-class WelcomePage extends StatefulWidget {
+class WelcomePage extends ConsumerStatefulWidget {
   const WelcomePage({super.key});
 
   @override
-  State<WelcomePage> createState() => _WelcomePageState();
+  ConsumerState<WelcomePage> createState() => _WelcomePageState();
 }
 
-class _WelcomePageState extends State<WelcomePage> {
+class _WelcomePageState extends ConsumerState<WelcomePage> {
   final _pageController = PageController();
   final _steps = <String>['Gender', 'Age', 'Interests', 'Name'];
-  // final _availableTopics = <String>[]; // TODO: pindah ke global variable
   var _currentStep = 0;
 
   bool get _isLastStep => _currentStep == _steps.length - 1;
-  User get _newUser => user ?? User(userId: userId);
-  UserPreferences get _newPreferences => preferences ?? UserPreferences(userId: userId);
-
-  // TODO: load on splash
-  Future<void> _initForm() async {
-    final response = await ApiService.get('topics');
-    if (response.successful) {
-      debugPrint('[welcome] Available topics: ${response.data}');
-      setState(() {
-        availableTopics.addAll(List<String>.from(response.data));
-      });
-    }
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    _initForm();
-  }
+  User get _newUser => ref.watch(userProvider) ?? newUser;
+  UserPreferences get _newPreferences => ref.watch(preferencesProvider) ?? newPreferences;
 
   @override
   void dispose() {
@@ -59,9 +39,10 @@ class _WelcomePageState extends State<WelcomePage> {
     super.dispose();
   }
 
-  /// Move to the next step
+  /// Move to the next step or complete if last step
   void _nextStep() {
     if (_isLastStep) return _complete();
+
     _pageController.nextPage(
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeInOut,
@@ -87,27 +68,27 @@ class _WelcomePageState extends State<WelcomePage> {
   }
 
   void _skipStep() {
-    if (_currentStep == 0) {
-      return context.pop();
-    }
+    // Go back to previous screen if on first step
+    if (_currentStep == 0) return context.pop();
 
     // Reset form data for current step when skipping
+    final u = ref.read(userProvider.notifier);
+    final p = ref.read(preferencesProvider.notifier);
+    final currentUser = ref.read(userProvider) ?? newUser;
+    final currentPreferences = ref.read(preferencesProvider) ?? newPreferences;
     switch (_currentStep) {
-      case 0: setUser(_newUser.copyWith(gender: '')); break;
-      case 1: setUser(_newUser.copyWith(ageGroup: '')); break;
-      case 2: setUserPreferences(_newPreferences.copyWith(topics: [])); break;
-      case 3: setUser(_newUser.copyWith(name: '')); break;
+      case 0: u.setValue(currentUser.copyWith(gender: '')); break;
+      case 1: u.setValue(currentUser.copyWith(ageGroup: '')); break;
+      case 2: p.setValue(currentPreferences.copyWith(topics: [])); break;
+      case 3: u.setValue(currentUser.copyWith(name: '')); break;
     }
-    if (_isLastStep) {
-      _complete();
-    } else {
-      _nextStep();
-    }
+
+    // Move to next step or complete if last step
+    _nextStep();
   }
 
   /// Complete the welcome process
   void _complete() {
-    fireAndForget(saveAllData);
     context.go('/home');
   }
 
@@ -233,8 +214,6 @@ class _WelcomePageState extends State<WelcomePage> {
 
   /// Build interests step
   Widget _buildInterestsStep() {
-    return OnboardingInterestsStep(
-      availableTopics: availableTopics, // TODO: use from global variable
-    );
+    return OnboardingInterestsStep();
   }
 }

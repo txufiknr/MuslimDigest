@@ -27,9 +27,10 @@ class AppRouter {
       GoRoute(
         path: '/home',
         name: 'home',
-        builder: (context, state) {
-          return HomePage(args: Map<String, dynamic>.from(state.extra as Map? ?? {}));
-        },
+        builder: (context, state) => const HomePage(),
+        // builder: (context, state) {
+        //   return HomePage(args: Map<String, dynamic>.from(state.extra as Map? ?? {}));
+        // },
         // onExit: (context, state) async {
         //   fireAndForget(saveAllData);
         //   return true;

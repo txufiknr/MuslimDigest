@@ -1,16 +1,17 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:muslimdigest/config/colors.dart';
 import 'package:muslimdigest/config/constants.dart';
 import 'package:muslimdigest/config/themes.dart';
 import 'package:muslimdigest/utils/app.dart';
+import 'package:muslimdigest/utils/app_repository.dart';
 import 'package:muslimdigest/utils/dialogs.dart';
 import 'package:muslimdigest/utils/extensions.dart';
 import 'package:muslimdigest/utils/functions.dart';
 import 'package:muslimdigest/variables/app.dart';
 import 'package:muslimdigest/utils/helpers.dart';
-import 'package:muslimdigest/variables/user.dart';
 import 'package:muslimdigest/widgets/components/button.dart';
 import 'package:muslimdigest/widgets/components/logo.dart';
 import 'package:muslimdigest/widgets/components/icon_button.dart';
@@ -116,17 +117,18 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 }
 
-class SettingsHeader extends StatelessWidget {
+class SettingsHeader extends ConsumerWidget {
   const SettingsHeader({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final h = MyHelper(context);
+    final r = ref.read(appRepositoryProvider);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          '$GREETINGS, $firstName',
+          '$GREETINGS, ${r.firstName}',
           style: h.currentTextTheme.headlineMedium?.copyWith(
             fontWeight: FontWeight.bold,
             color: Colors.white,

@@ -1,27 +1,25 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lottie/lottie.dart';
+import 'package:muslimdigest/mock/users.dart';
+import 'package:muslimdigest/providers/user.dart';
 import 'package:muslimdigest/utils/extensions.dart';
-import 'package:muslimdigest/utils/users.dart';
-import 'package:muslimdigest/variables/user.dart';
 import '../../utils/helpers.dart';
 
 /// Gender selection step widget for onboarding
-class OnboardingGenderStep extends StatefulWidget {
+class OnboardingGenderStep extends ConsumerWidget {
   const OnboardingGenderStep({super.key});
 
-  @override
-  State<OnboardingGenderStep> createState() => _OnboardingGenderStepState();
-}
-
-class _OnboardingGenderStepState extends State<OnboardingGenderStep> {
   /// Build individual gender option
   Widget _buildGenderOption(
     MyHelper h,
-    String gender
+    String gender,
+    WidgetRef ref,
   ) {
     final label = gender == 'male' ? 'muslim' : 'muslimah';
     final lottiePath = 'assets/lottie/$gender.json';
-    final isSelected = gender == user?.gender;
+    final user = ref.watch(userProvider) ?? newUser;
+    final isSelected = gender == user.gender;
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -43,8 +41,7 @@ class _OnboardingGenderStepState extends State<OnboardingGenderStep> {
           ),
           child: Lottie.asset(lottiePath).scale(gender == 'male' ? 2.2 : 2).moveX(gender == 'male' ? 0 : 15).clipRadius(120),
         ).onTap(() async {
-          await setUser(user?.copyWith(gender: gender));
-          setState(() {});
+          await ref.read(userProvider.notifier).setValue(user.copyWith(gender: gender));
         }),
         const SizedBox(height: 8),
         Text(
@@ -60,7 +57,7 @@ class _OnboardingGenderStepState extends State<OnboardingGenderStep> {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final h = MyHelper(context);
 
     return Column(
@@ -79,8 +76,8 @@ class _OnboardingGenderStepState extends State<OnboardingGenderStep> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
-            _buildGenderOption(h, 'male'),
-            _buildGenderOption(h, 'female'),
+            _buildGenderOption(h, 'male', ref),
+            _buildGenderOption(h, 'female', ref),
           ],
         ),
       ],

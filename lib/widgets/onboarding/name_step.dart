@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:muslimdigest/utils/users.dart';
-import 'package:muslimdigest/variables/user.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:muslimdigest/mock/users.dart';
+import 'package:muslimdigest/providers/user.dart';
 import '../../utils/helpers.dart';
 
 /// Name input step widget for onboarding
-class OnboardingNameStep extends StatelessWidget {
+class OnboardingNameStep extends ConsumerWidget {
   const OnboardingNameStep({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final h = MyHelper(context);
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -33,7 +34,10 @@ class OnboardingNameStep extends StatelessWidget {
             ),
           ),
           child: TextField(
-            onChanged: (name) => setUser(user?.copyWith(name: name)),
+            onChanged: (name) {
+              final user = ref.read(userProvider) ?? newUser;
+              ref.read(userProvider.notifier).setValue(user.copyWith(name: name));
+            },
             style: h.currentTextTheme.bodyLarge?.copyWith(
               color: Colors.white,
             ),

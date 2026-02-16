@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 // App informations
@@ -25,3 +26,8 @@ const APP_ASSETS_LOGO = "assets/images/icons/logo.png";
 
 // App languages
 const GREETINGS = "As-salamu alaykum";
+
+// Debug configurations
+const APP_IS_PRODUCTION = kReleaseMode;
+const APP_IS_DEVELOPMENT = kDebugMode;
+const APP_USE_PRODUCTION_API = true;

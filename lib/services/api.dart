@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'dart:developer' show log;
 import 'dart:io' show Platform;
-import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import '../config/constants.dart';
 import '../variables/app.dart';
@@ -57,7 +56,8 @@ class ApiService {
   /// Uses development URL when running in debug mode, production URL otherwise.
   /// This allows the app to connect to different API endpoints for testing
   /// and production environments.
-  static String get baseUrl => kDebugMode ? APP_URL_API_DEV : APP_URL_API;
+  // static String get baseUrl => kDebugMode ? APP_URL_API_DEV : APP_URL_API;
+  static String get baseUrl => APP_IS_PRODUCTION || APP_USE_PRODUCTION_API ? APP_URL_API : APP_URL_API_DEV;
 
   /// Builds common headers for all API requests
   /// 
@@ -215,6 +215,7 @@ class ApiService {
 
       // Build headers with common information
       final headers = await _buildHeaders();
+      log('[api] GET headers: $headers');
 
       // Construct the full URL with query parameters if provided
       var uri = Uri.parse('$baseUrl/$path');

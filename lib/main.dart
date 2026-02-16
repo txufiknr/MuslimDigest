@@ -1,13 +1,15 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:muslimdigest/config/constants.dart';
-import 'package:muslimdigest/config/themes.dart';
-import 'package:muslimdigest/config/router.dart';
-import 'package:muslimdigest/variables/app.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'config/constants.dart';
+import 'config/themes.dart';
+import 'config/router.dart';
+import 'variables/app.dart';
 import 'package:theme_provider/theme_provider.dart';
+import 'providers/shared_preferences.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -35,13 +37,22 @@ Future<void> main() async {
         'feed', // Cached feed items (JSON string)
         'feed/trending', // Cached trending feed items (JSON string)
         'feed/latest', // Cached latest feed items (JSON string)
-        'topic', // Selected topic (string)
+        'topic', // Selected feed topic (string)
+        'topics', // List of available topics (JSON string)
       },
     ),
   );
   
   // Run the app
-  runApp(const MyApp());
+  runApp(
+    // Override the provider with the actual instance
+    ProviderScope(
+      overrides: [
+        sharedPreferencesProvider.overrideWithValue(prefs),
+      ],
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {

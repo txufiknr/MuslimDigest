@@ -1,10 +1,11 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:muslimdigest/config/themes.dart';
 import 'package:muslimdigest/mock/users.dart';
+import 'package:muslimdigest/providers/user.dart';
 import 'package:muslimdigest/utils/extensions.dart';
-import 'package:muslimdigest/utils/users.dart';
 import '../config/constants.dart';
 import '../config/colors.dart';
 import '../utils/functions.dart';
@@ -12,17 +13,17 @@ import '../utils/helpers.dart';
 import '../widgets/components/logo.dart';
 import '../widgets/components/button.dart';
 
-class OnboardingPage extends StatelessWidget {
+class OnboardingPage extends ConsumerWidget {
   const OnboardingPage({super.key});
 
   /// Start reading as a guest (global)
-  void _startReadingNow(BuildContext context) async {
-    await setUser(anonymousUser);
+  void _startReadingNow(BuildContext context, WidgetRef ref) async {
+    await ref.read(userProvider.notifier).setValue(anonymousUser);
     if (context.mounted) context.go('/home');
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final h = MyHelper(context);
 
     return Theme(
@@ -90,7 +91,7 @@ class OnboardingPage extends StatelessWidget {
                       // Get started button
                       MyButton(
                         text: 'Start reading now',
-                        onPressed: () => _startReadingNow(context),
+                        onPressed: () => _startReadingNow(context, ref),
                         brightness: Brightness.dark,
                         icon: Icon(CupertinoIcons.book),
                       ),

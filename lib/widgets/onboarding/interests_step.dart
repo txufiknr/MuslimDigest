@@ -1,48 +1,42 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:muslimdigest/mock/users.dart';
+import 'package:muslimdigest/providers/preferences.dart';
+import 'package:muslimdigest/providers/topics.dart';
+import 'package:muslimdigest/utils/app_repository.dart';
 import 'package:muslimdigest/utils/extensions.dart';
 import 'package:muslimdigest/utils/helpers.dart';
-import 'package:muslimdigest/utils/users.dart';
-import 'package:muslimdigest/variables/user.dart';
 import 'package:muslimdigest/widgets/animations/loader.dart';
 import 'topic_chip.dart';
 
 /// Interests selection step widget for onboarding
-class OnboardingInterestsStep extends StatefulWidget {
-  final List<String> availableTopics;
+class OnboardingInterestsStep extends ConsumerWidget {
 
-  const OnboardingInterestsStep({
-    super.key,
-    required this.availableTopics,
-  });
-
-  @override
-  State<OnboardingInterestsStep> createState() => _OnboardingInterestsStepState();
-}
-
-class _OnboardingInterestsStepState extends State<OnboardingInterestsStep> {
-  List<String> get _selectedTopics => preferredTopics;
+  const OnboardingInterestsStep({super.key});
 
   /// Build individual topic chip
-  Widget _buildTopicChip(MyHelper h, String topic, bool isSelected) {
+  Widget _buildTopicChip(MyHelper h, String topic, bool isSelected, WidgetRef ref) {
     return TopicChip(
       topic: topic,
       isSelected: isSelected,
       onSelected: (selected) async {
-        final newSelectedTopics = List<String>.from(_selectedTopics);
+        final selectedTopics = ref.read(appRepositoryProvider).preferredTopics;
+        final newSelectedTopics = List<String>.from(selectedTopics);
         if (selected) {
           newSelectedTopics.add(topic);
         } else {
           newSelectedTopics.remove(topic);
         }
-        await setUserPreferences(preferences?.copyWith(topics: newSelectedTopics));
-        setState(() {});
+        final preferences = ref.read(preferencesProvider) ?? newPreferences;
+        await ref.read(preferencesProvider.notifier).setValue(preferences.copyWith(topics: newSelectedTopics));
       },
     );
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final h = MyHelper(context);
+    final availableTopics = ref.watch(topicsProvider).availableTopics;
 
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -67,15 +61,16 @@ class _OnboardingInterestsStepState extends State<OnboardingInterestsStep> {
         
         const SizedBox(height: 32),
         
-        if (widget.availableTopics.isEmpty) MyLoader(color: Colors.white).center()
+        if (availableTopics.isEmpty) MyLoader(color: Colors.white).center()
         else
           Wrap(
             spacing: 6,
             runSpacing: 6,
             alignment: WrapAlignment.center,
-            children: widget.availableTopics.map((topic) {
-              final isSelected = _selectedTopics.contains(topic);
-              return _buildTopicChip(h, topic, isSelected);
+            children: availableTopics.map((topic) {
+              final selectedTopics = ref.watch(appRepositoryProvider).preferredTopics;
+              final isSelected = selectedTopics.contains(topic);
+              return _buildTopicChip(h, topic, isSelected, ref);
             }).toList(),
           ).withPaddingHorizontal(16),
       ],
