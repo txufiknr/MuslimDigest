@@ -15,6 +15,10 @@ class OnboardingInterestsStep extends ConsumerWidget {
   const OnboardingInterestsStep({super.key});
 
   /// Build individual topic chip
+  /// TODO: tap twice to avoid topic, sequence:
+  /// 1st tap: select (prefer topic)
+  /// 2nd tap: select (avoid topic)
+  /// 3rd tap: select (reset/neutral)
   Widget _buildTopicChip(MyHelper h, String topic, bool isSelected, WidgetRef ref) {
     return TopicChip(
       topic: topic,

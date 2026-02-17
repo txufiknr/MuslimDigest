@@ -58,24 +58,13 @@ class HomeHeader extends ConsumerWidget {
             scrollDirection: Axis.horizontal,
             padding: EdgeInsets.only(left: 8, right: 16),
             children: <Widget>[
-              if (streaks != null) 
-                // Container(
-                //   height: TAB_HEIGHT,
-                //   decoration: BoxDecoration(
-                //     color: Colors.orange[100],
-                //     borderRadius: BorderRadius.circular(TAB_RADIUS),
-                //   ),
-                //   child: Text(
-                //     '🔥 ${streaks!.currentStreak}',
-                //     style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-                //   ),
-                // ),
-              _TopicTab(
+              // TODO: white text on colored tab
+              if (streaks != null) _TopicTab(
                 title: '${streaks.currentStreak}',
                 icon: CupertinoIcons.flame_fill,
                 isSelected: false,
                 onTap: () {
-                  // TODO: show reading streak bottom sheet
+                  // TODO: show reading streak bottom sheet (ref: devbytes)
                 },
               ),
               _TopicTab(

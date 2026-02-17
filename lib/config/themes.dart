@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'colors.dart';
 
 class AppThemes {
@@ -25,76 +24,93 @@ class AppThemes {
   static const double contentPadding = 22.0;
   
   // Color Schemes
-  static ColorScheme get lightColorScheme => ColorScheme.fromSeed(
-    seedColor: AppColors.primary,
+  static ColorScheme _buildColorScheme({
+    required Brightness brightness,
+    required Color surface,
+    required Color surfaceContainerHigh,
+    required Color surfaceContainerHighest,
+    required Color onSurface,
+    required Color outline,
+    required Color tertiary,
+  }) {
+    return ColorScheme.fromSeed(
+      seedColor: AppColors.primary,
+      brightness: brightness,
+      primary: AppColors.primary,
+      secondary: AppColors.secondary,
+      surface: surface,
+      surfaceContainerHigh: surfaceContainerHigh,
+      surfaceContainerHighest: surfaceContainerHighest,
+      error: AppColors.error,
+      onPrimary: Colors.white,
+      onSecondary: Colors.white,
+      onSurface: onSurface,
+      onError: Colors.white,
+      outline: outline,
+      tertiary: tertiary,
+    );
+  }
+
+  static ColorScheme get lightColorScheme => _buildColorScheme(
     brightness: Brightness.light,
-    primary: AppColors.primary,
-    secondary: AppColors.secondary,
     surface: AppColors.surfaceLight,
+    surfaceContainerHigh: AppColors.surfaceContainerHighLight,
     surfaceContainerHighest: AppColors.surfaceContainerHighestLight,
-    error: AppColors.error,
-    onPrimary: Colors.white,
-    onSecondary: Colors.white,
     onSurface: AppColors.textPrimaryLight,
-    onError: Colors.white,
-    outline: Colors.grey[200],
+    outline: Colors.grey[200]!,
     tertiary: AppColors.mutedLight,
   );
 
-  static ColorScheme get darkColorScheme => ColorScheme.fromSeed(
-    seedColor: AppColors.primary,
+  static ColorScheme get darkColorScheme => _buildColorScheme(
     brightness: Brightness.dark,
-    primary: AppColors.primary,
-    secondary: AppColors.secondary,
     surface: AppColors.surfaceDark,
+    surfaceContainerHigh: AppColors.surfaceContainerHighDark,
     surfaceContainerHighest: AppColors.surfaceContainerHighestDark,
-    error: AppColors.error,
-    onPrimary: Colors.white,
-    onSecondary: Colors.white,
     onSurface: AppColors.textPrimaryDark,
-    onError: Colors.white,
-    outline: Colors.grey[800],
+    outline: Colors.grey[800]!,
     tertiary: AppColors.mutedDark,
   );
 
-  // AppBar Themes
-  // static AppBarTheme get appBarThemeLight => AppBarTheme(
-  //   backgroundColor: AppColors.primary,
-  //   foregroundColor: Colors.white,
-  //   elevation: 2,
-  //   centerTitle: true,
-  //   titleTextStyle: GoogleFonts.sourceSans3(
-  //     color: Colors.white,
-  //     fontSize: 20,
-  //     fontWeight: FontWeight.w600,
-  //   ),
-  // );
-
-  // static AppBarTheme get appBarThemeDark => AppBarTheme(
-  //   backgroundColor: AppColors.primaryDark,
-  //   foregroundColor: Colors.white,
-  //   elevation: 2,
-  //   centerTitle: true,
-  //   titleTextStyle: GoogleFonts.sourceSans3(
-  //     color: Colors.white,
-  //     fontSize: 20,
-  //     fontWeight: FontWeight.w600,
-  //   ),
-  // );
-
   // Button Styles
-  static ButtonStyle get elevatedButtonStyleLight => ElevatedButton.styleFrom(
+  static ButtonStyle _buildBaseButtonStyle({
+    Color? backgroundColor,
+    required Color foregroundColor,
+    Color? sideColor,
+    EdgeInsets? padding,
+  }) {
+    if (sideColor != null) {
+      return OutlinedButton.styleFrom(
+        side: BorderSide(color: sideColor),
+        foregroundColor: foregroundColor,
+        padding: padding ?? const EdgeInsets.symmetric(vertical: 16),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(28),
+        ),
+        textStyle: const TextStyle(
+          fontWeight: FontWeight.w500,
+          fontSize: buttonLargeSize,
+        ),
+      );
+    } else {
+      return ElevatedButton.styleFrom(
+        backgroundColor: backgroundColor,
+        foregroundColor: foregroundColor,
+        elevation: 0,
+        shadowColor: Colors.transparent,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(28),
+        ),
+        textStyle: const TextStyle(
+          fontWeight: FontWeight.w500,
+          fontSize: buttonLargeSize,
+        ),
+      );
+    }
+  }
+
+  static ButtonStyle get elevatedButtonStyleLight => _buildBaseButtonStyle(
     backgroundColor: AppColors.primary,
     foregroundColor: Colors.white,
-    elevation: 0,
-    shadowColor: Colors.transparent,
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(28),
-    ),
-    textStyle: GoogleFonts.sourceSans3(
-      fontWeight: FontWeight.w500,
-      fontSize: buttonLargeSize,
-    ),
   );
 
   static ButtonStyle get elevatedButtonStyleDark => elevatedButtonStyleLight.copyWith(
@@ -102,17 +118,9 @@ class AppThemes {
     foregroundColor: WidgetStateProperty.all(AppColors.primary),
   );
 
-  static ButtonStyle get outlinedButtonStyleLight => OutlinedButton.styleFrom(
-    side: const BorderSide(color: AppColors.primary),
+  static ButtonStyle get outlinedButtonStyleLight => _buildBaseButtonStyle(
+    sideColor: AppColors.primary,
     foregroundColor: AppColors.primary,
-    padding: const EdgeInsets.symmetric(vertical: 16),
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(28),
-    ),
-    textStyle: GoogleFonts.sourceSans3(
-      fontWeight: FontWeight.w500,
-      fontSize: buttonLargeSize,
-    ),
   );
 
   static ButtonStyle get outlinedButtonStyleDark => outlinedButtonStyleLight.copyWith(
@@ -121,200 +129,163 @@ class AppThemes {
   );
 
   // Button Themes
-  static ElevatedButtonThemeData get elevatedButtonThemeLight => ElevatedButtonThemeData(
-    style: elevatedButtonStyleLight,
-  );
+  static ElevatedButtonThemeData _buildElevatedButtonTheme(ButtonStyle style) => 
+      ElevatedButtonThemeData(style: style);
+  
+  static OutlinedButtonThemeData _buildOutlinedButtonTheme(ButtonStyle style) => 
+      OutlinedButtonThemeData(style: style);
 
-  static ElevatedButtonThemeData get elevatedButtonThemeDark => ElevatedButtonThemeData(
-    style: elevatedButtonStyleDark,
-  );
+  static ElevatedButtonThemeData get elevatedButtonThemeLight => 
+      _buildElevatedButtonTheme(elevatedButtonStyleLight);
 
-  static OutlinedButtonThemeData get outlinedButtonThemeLight => OutlinedButtonThemeData(
-    style: outlinedButtonStyleLight,
-  );
+  static ElevatedButtonThemeData get elevatedButtonThemeDark => 
+      _buildElevatedButtonTheme(elevatedButtonStyleDark);
 
-  static OutlinedButtonThemeData get outlinedButtonThemeDark => OutlinedButtonThemeData(
-    style: outlinedButtonStyleDark,
-  );
+  static OutlinedButtonThemeData get outlinedButtonThemeLight => 
+      _buildOutlinedButtonTheme(outlinedButtonStyleLight);
+
+  static OutlinedButtonThemeData get outlinedButtonThemeDark => 
+      _buildOutlinedButtonTheme(outlinedButtonStyleDark);
 
   // Text Themes
-  static TextTheme get textThemeLight => GoogleFonts.sourceSans3TextTheme(
-    const TextTheme(
-      displayLarge: TextStyle(
-        color: AppColors.textPrimaryLight,
-        fontWeight: FontWeight.bold,
-        fontSize: displayLargeSize,
-        height: textHeightMultiplier,
-      ),
-      displayMedium: TextStyle(
-        color: AppColors.textPrimaryLight,
-        fontWeight: FontWeight.bold,
-        fontSize: displayMediumSize,
-        height: textHeightMultiplier,
-      ),
-      headlineLarge: TextStyle(
-        color: AppColors.textPrimaryLight,
-        fontWeight: FontWeight.bold,
-        fontSize: headlineLargeSize,
-        height: textHeightMultiplier,
-      ),
-      headlineMedium: TextStyle(
-        color: AppColors.textPrimaryLight,
-        fontWeight: FontWeight.w600,
-        fontSize: headlineMediumSize,
-        height: textHeightMultiplier,
-      ),
-      titleLarge: TextStyle(
-        color: AppColors.textPrimaryLight,
-        fontWeight: FontWeight.w600,
-        fontSize: titleLargeSize,
-        height: textHeightMultiplier,
-      ),
-      titleMedium: TextStyle(
-        color: AppColors.textPrimaryLight,
-        fontWeight: FontWeight.w600,
-        fontSize: titleMediumSize,
-        height: textHeightMultiplier,
-      ),
-      bodyLarge: TextStyle(
-        color: AppColors.textPrimaryLight,
-        fontSize: bodyLargeSize,
-        height: textHeightMultiplier,
-      ),
-      bodyMedium: TextStyle(
-        color: AppColors.textSecondaryLight,
-        fontSize: bodyMediumSize,
-        height: textHeightMultiplier,
-      ),
-      labelLarge: TextStyle(
-        color: AppColors.textPrimaryLight,
-        fontWeight: FontWeight.w600,
-        fontSize: labelLargeSize,
-        height: textHeightMultiplier,
-      ),
-    ),
-  ).copyWith(
-    bodySmall: GoogleFonts.ibmPlexSans(
-      color: AppColors.textSecondaryLight,
-      fontSize: bodySmallSize,
-      height: textHeightMultiplier,
-    ),
-    labelSmall: GoogleFonts.ibmPlexSans(
-      color: AppColors.textSecondaryLight,
-      fontSize: labelSmallSize,
-      height: textHeightMultiplier,
-    ),
+  static TextTheme get textThemeLight => _buildTextTheme(
+    primaryColor: AppColors.textPrimaryLight,
+    secondaryColor: AppColors.textSecondaryLight,
   );
 
-  static TextTheme get textThemeDark => GoogleFonts.sourceSans3TextTheme(
-    const TextTheme(
-      displayLarge: TextStyle(
-        color: AppColors.textPrimaryDark,
+  static TextTheme get textThemeDark => _buildTextTheme(
+    primaryColor: AppColors.textPrimaryDark,
+    secondaryColor: AppColors.textSecondaryDark,
+  );
+
+  static TextTheme _buildTextTheme({
+    required Color primaryColor,
+    required Color secondaryColor,
+  }) {
+    return TextTheme(
+      displayLarge: _buildTextStyle(
+        color: primaryColor,
         fontWeight: FontWeight.bold,
         fontSize: displayLargeSize,
-        height: textHeightMultiplier,
       ),
-      displayMedium: TextStyle(
-        color: AppColors.textPrimaryDark,
+      displayMedium: _buildTextStyle(
+        color: primaryColor,
         fontWeight: FontWeight.bold,
         fontSize: displayMediumSize,
-        height: textHeightMultiplier,
       ),
-      headlineLarge: TextStyle(
-        color: AppColors.textPrimaryDark,
+      headlineLarge: _buildTextStyle(
+        color: primaryColor,
         fontWeight: FontWeight.bold,
         fontSize: headlineLargeSize,
-        height: textHeightMultiplier,
       ),
-      headlineMedium: TextStyle(
-        color: AppColors.textPrimaryDark,
+      headlineMedium: _buildTextStyle(
+        color: primaryColor,
         fontWeight: FontWeight.w600,
         fontSize: headlineMediumSize,
-        height: textHeightMultiplier,
       ),
-      titleLarge: TextStyle(
-        color: AppColors.textPrimaryDark,
+      titleLarge: _buildTextStyle(
+        color: primaryColor,
         fontWeight: FontWeight.w600,
         fontSize: titleLargeSize,
-        height: textHeightMultiplier,
       ),
-      titleMedium: TextStyle(
-        color: AppColors.textPrimaryDark,
+      titleMedium: _buildTextStyle(
+        color: primaryColor,
         fontWeight: FontWeight.w600,
         fontSize: titleMediumSize,
-        height: textHeightMultiplier,
       ),
-      bodyLarge: TextStyle(
-        color: AppColors.textPrimaryDark,
+      bodyLarge: _buildTextStyle(
+        color: primaryColor,
         fontSize: bodyLargeSize,
-        height: textHeightMultiplier,
       ),
-      bodyMedium: TextStyle(
-        color: AppColors.textSecondaryDark,
+      bodyMedium: _buildTextStyle(
+        color: secondaryColor,
         fontSize: bodyMediumSize,
-        height: textHeightMultiplier,
       ),
-      labelLarge: TextStyle(
-        color: AppColors.textPrimaryDark,
+      bodySmall: _buildTextStyle(
+        color: secondaryColor,
+        fontSize: bodySmallSize,
+      ),
+      labelLarge: _buildTextStyle(
+        color: primaryColor,
         fontWeight: FontWeight.w600,
         fontSize: labelLargeSize,
-        height: textHeightMultiplier,
       ),
-    ),
-  ).copyWith(
-    bodySmall: GoogleFonts.ibmPlexSans(
-      color: AppColors.textSecondaryDark,
-      fontSize: bodySmallSize,
+      labelSmall: _buildTextStyle(
+        color: secondaryColor,
+        fontSize: labelSmallSize,
+      ),
+    );
+  }
+
+  static TextStyle _buildTextStyle({
+    required Color color,
+    FontWeight? fontWeight,
+    required double fontSize,
+  }) {
+    return TextStyle(
+      color: color,
+      fontWeight: fontWeight,
+      fontSize: fontSize,
       height: textHeightMultiplier,
-    ),
-    labelSmall: GoogleFonts.ibmPlexSans(
-      color: AppColors.textSecondaryDark,
-      fontSize: labelSmallSize,
-      height: textHeightMultiplier,
+    );
+  }
+
+  // Card Themes
+  static CardThemeData get _baseCardTheme => const CardThemeData(
+    elevation: 2,
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.all(Radius.circular(12)),
     ),
   );
 
   // Card Themes
-  static CardThemeData get cardThemeLight => const CardThemeData(
-    color: AppColors.surfaceLight,
-    elevation: 2,
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.all(Radius.circular(12)),
-    ),
-  );
+  static CardThemeData _buildCardTheme(Color color) => _baseCardTheme.copyWith(color: color);
 
-  static CardThemeData get cardThemeDark => const CardThemeData(
-    color: AppColors.surfaceDark,
-    elevation: 2,
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.all(Radius.circular(12)),
-    ),
-  );
+  static CardThemeData get cardThemeLight => _buildCardTheme(AppColors.surfaceLight);
+  static CardThemeData get cardThemeDark => _buildCardTheme(AppColors.surfaceDark);
+
+  // Base Theme - Common properties for both light and dark themes
+  static ThemeData get _baseTheme {
+    return ThemeData(
+      useMaterial3: true,
+      fontFamily: "SourceSans3",
+    );
+  }
 
   // Complete Themes
-  static ThemeData get lightTheme {
-    return ThemeData(
-      useMaterial3: true,
-      colorScheme: lightColorScheme,
-      // appBarTheme: appBarThemeLight,
-      elevatedButtonTheme: elevatedButtonThemeLight,
-      outlinedButtonTheme: outlinedButtonThemeLight,
-      textTheme: textThemeLight,
-      cardTheme: cardThemeLight,
-      scaffoldBackgroundColor: AppColors.backgroundLight,
+  static ThemeData _buildTheme({
+    required ColorScheme colorScheme,
+    required OutlinedButtonThemeData outlinedButtonTheme,
+    required TextTheme textTheme,
+    required CardThemeData cardTheme,
+    required Color scaffoldBackgroundColor,
+    required ElevatedButtonThemeData elevatedButtonTheme,
+  }) {
+    return _baseTheme.copyWith(
+      colorScheme: colorScheme,
+      outlinedButtonTheme: outlinedButtonTheme,
+      textTheme: textTheme,
+      cardTheme: cardTheme,
+      scaffoldBackgroundColor: scaffoldBackgroundColor,
+      elevatedButtonTheme: elevatedButtonTheme,
     );
   }
 
-  static ThemeData get darkTheme {
-    return ThemeData(
-      useMaterial3: true,
-      colorScheme: darkColorScheme,
-      // appBarTheme: appBarThemeDark,
-      elevatedButtonTheme: elevatedButtonThemeLight,
-      outlinedButtonTheme: outlinedButtonThemeDark,
-      textTheme: textThemeDark,
-      cardTheme: cardThemeDark,
-      scaffoldBackgroundColor: AppColors.backgroundDark,
-    );
-  }
+  static ThemeData get lightTheme => _buildTheme(
+    colorScheme: lightColorScheme,
+    outlinedButtonTheme: outlinedButtonThemeLight,
+    textTheme: textThemeLight,
+    cardTheme: cardThemeLight,
+    scaffoldBackgroundColor: AppColors.backgroundLight,
+    elevatedButtonTheme: elevatedButtonThemeLight,
+  );
+
+  static ThemeData get darkTheme => _buildTheme(
+    colorScheme: darkColorScheme,
+    outlinedButtonTheme: outlinedButtonThemeDark,
+    textTheme: textThemeDark,
+    cardTheme: cardThemeDark,
+    scaffoldBackgroundColor: AppColors.backgroundDark,
+    elevatedButtonTheme: elevatedButtonThemeDark,
+  );
 }

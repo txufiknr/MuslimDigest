@@ -137,7 +137,7 @@ class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver
                 feedType: _feedType,
                 onReload: _loadFeed,
               ).expand(),
-              ReadingStreakFooter(),
+              if (_feedType == FeedType.digest) ReadingStreakFooter(),
             ],
           ),
         ),

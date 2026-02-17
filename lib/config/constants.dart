@@ -30,4 +30,4 @@ const GREETINGS = "As-salamu alaykum";
 // Debug configurations
 const APP_IS_PRODUCTION = kReleaseMode;
 const APP_IS_DEVELOPMENT = kDebugMode;
-const APP_USE_PRODUCTION_API = true;
+const APP_USE_PRODUCTION_API = false;

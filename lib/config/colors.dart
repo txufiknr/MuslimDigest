@@ -29,6 +29,8 @@ class AppColors {
   static const Color backgroundDark = Color(0xFF121212);
   static const Color surfaceLight = Color(0xFFFFFFFF);
   static const Color surfaceDark = Color(0xFF1E1E1E);
+  static const Color surfaceContainerHighLight = Color(0xFFCECECE);
+  static const Color surfaceContainerHighDark = Color(0xFF303030);
   static const Color surfaceContainerHighestLight = Color(0xFFF3F3F3);
   static const Color surfaceContainerHighestDark = Color(0xFF2C2C2C);
   

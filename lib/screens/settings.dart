@@ -15,6 +15,7 @@ import 'package:muslimdigest/utils/helpers.dart';
 import 'package:muslimdigest/widgets/components/button.dart';
 import 'package:muslimdigest/widgets/components/logo.dart';
 import 'package:muslimdigest/widgets/components/icon_button.dart';
+import 'package:muslimdigest/widgets/components/switch.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -251,10 +252,9 @@ class AppSettingsSection extends StatelessWidget {
           SettingsTile(
             icon: CupertinoIcons.moon_fill,
             title: 'Dark Mode',
-            trailing: Switch(
+            trailing: MySwitch(
               value: darkMode,
               onChanged: onDarkModeChanged,
-              inactiveTrackColor: Color(0xFFCECECE),
             ),
           ),
           SettingsDivider(),
