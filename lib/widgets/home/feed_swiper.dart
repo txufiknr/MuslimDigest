@@ -25,6 +25,8 @@ import 'package:muslimdigest/variables/time.dart';
 import 'package:muslimdigest/widgets/components/cached_image.dart';
 import 'package:muslimdigest/widgets/components/icon_button.dart';
 import 'package:muslimdigest/widgets/components/logo.dart';
+import 'package:muslimdigest/widgets/components/popup_menu_item.dart';
+import 'package:muslimdigest/widgets/components/popup_menu.dart';
 import 'package:path_provider/path_provider.dart';
 import '../../widgets/animations/loader.dart';
 import '../../widgets/components/placeholder.dart';
@@ -52,8 +54,8 @@ class FeedSwiper extends ConsumerStatefulWidget {
 class FeedSwiperState extends ConsumerState<FeedSwiper> {
   final _controller = CardSwiperController();
 
-  List<FeedItem> get _feedItems => widget.feedType.getItems(ref);
-  bool get _isFeedLoading => widget.feedType.isLoading(ref);
+  List<FeedItem> get _feedItems => widget.feedType.watchItems(ref);
+  bool get _isFeedLoading => widget.feedType.watch(ref).isLoading;
   int get _readCount => ref.watch(readCountProvider);
   bool get _canGoBack => _readCount > 0;
 
@@ -87,6 +89,8 @@ class FeedSwiperState extends ConsumerState<FeedSwiper> {
 
   @override
   Widget build(BuildContext context) {
+
+    // TODO: `MyLoader()` is not gone when feed has been loaded
 
     // When feed is empty
     if (_feedItems.isEmpty) {
@@ -125,10 +129,7 @@ class FeedSwiperState extends ConsumerState<FeedSwiper> {
       initialIndex: _readCount,
       cardsCount: cardsCount,
       cardBuilder: (context, index, percentThresholdX, percentThresholdY) {
-        if (index == cardsCount - 1) {
-          return FeedCard(widget.feedType);
-        }
-        return FeedCard(widget.feedType, feedItem: _feedItems[index]);
+        return FeedCard(widget.feedType, feedItem: index == cardsCount - 1 ? null : _feedItems[index]);
       },
       isDisabled: false,
       isLoop: false,
@@ -137,7 +138,7 @@ class FeedSwiperState extends ConsumerState<FeedSwiper> {
       },
       onSwipe: (previousIndex, currentIndex, direction) async {
         final previousItem = _feedItems[previousIndex];
-        log('[feed] Swipe direction: $direction, previousItem: ${previousItem.title}');
+        // log('[feed] Swipe direction: $direction, previousItem: ${previousItem.title}');
 
         // When an undo swipe is detected
         if (direction == UNDO_DIRECTION) {
@@ -150,7 +151,7 @@ class FeedSwiperState extends ConsumerState<FeedSwiper> {
         }
 
         if (direction == SWIPE_DIRECTION) {
-          log('[feed] Swiped item: ${previousItem.summary}');
+          // log('[feed] Swiped item: ${previousItem.title}');
           _incrementReadCount(previousItem.cluster.id);
         }
         return true;
@@ -173,22 +174,25 @@ class FeedCard extends ConsumerStatefulWidget {
   ConsumerState<FeedCard> createState() => _FeedCardState();
 }
 
-class _FeedCardState extends ConsumerState<FeedCard> {
+class _FeedCardState extends ConsumerState<FeedCard> with AutomaticKeepAliveClientMixin {
   final _screenshotController = ScreenshotController();
   late final _feedId = widget.feedItem?.id;
   bool _isTakingScreenshot = false;
+
+  @override
+  bool get wantKeepAlive => true;
 
   BaseFeedNotifier get _notifier => widget.feedType.getNotifier(ref);
   
   bool get _isLiked {
     if (_feedId == null) return false;
-    final currentItem = widget.feedType.getItem(ref, _feedId);
+    final currentItem = widget.feedType.readItem(ref, _feedId);
     return currentItem?.isLiked ?? false;
   }
   
   bool get _isSaved {
     if (_feedId == null) return false;
-    final currentItem = widget.feedType.getItem(ref, _feedId);
+    final currentItem = widget.feedType.readItem(ref, _feedId);
     return currentItem?.isSaved ?? false;
   }
 
@@ -243,6 +247,7 @@ class _FeedCardState extends ConsumerState<FeedCard> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     final h = MyHelper(context);
 
     return Container(
@@ -406,9 +411,7 @@ class _FeedFooter extends ConsumerWidget {
     final h = MyHelper(context);
 
     // Listen to provider state for real-time updates
-    final state = feedType.watchState(ref);
-    final currentFeedItem = state.getItem(feedItem.id) ?? feedItem;
-    
+    final currentFeedItem = feedType.watch(ref).getItem(feedItem.id) ?? feedItem;
     final isLiked = currentFeedItem.isLiked;
     final isSaved = currentFeedItem.isSaved;
     
@@ -416,14 +419,42 @@ class _FeedFooter extends ConsumerWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         Stack(
-          alignment: Alignment.centerLeft,
+          alignment: Alignment.center,
           children: [
             Divider(height: 1, thickness: 1, color: h.currentTheme.colorScheme.outline),
-            _FeedFooterSource(currentFeedItem).moveX(-8),
+            _FeedFooterSource(currentFeedItem).moveX(-8).left(),
+            MyPopupMenu(
+              icon: Icon(CupertinoIcons.ellipsis, color: h.currentTheme.colorScheme.tertiary),
+              onSelected: (String value) {
+                _handleMenuAction(context, value);
+              },
+              items: [
+                MyPopupMenuItem(
+                  value: 'not_interested',
+                  icon: CupertinoIcons.hand_thumbsdown,
+                  text: 'Not interested',
+                ),
+                MyPopupMenuItem(
+                  value: 'dont_recommend_source',
+                  icon: CupertinoIcons.eye_slash,
+                  text: "Don't recommend source",
+                ),
+                MyPopupMenuItem(
+                  value: 'send_feedback',
+                  icon: CupertinoIcons.chat_bubble_text,
+                  text: 'Send feedback',
+                ),
+                MyPopupMenuItem(
+                  value: 'report',
+                  icon: CupertinoIcons.exclamationmark_triangle,
+                  text: 'Report',
+                ),
+              ],
+            ).right(),
           ],
         ),
 
-        SizedBox(height: 8,),
+        // SizedBox(height: 8,),
 
         Row(children: [
           // Summarizer info
@@ -456,6 +487,27 @@ class _FeedFooter extends ConsumerWidget {
         SizedBox(height: 8,),
       ],
     ).withPaddingAll(AppThemes.contentPadding - 8);
+  }
+
+  void _handleMenuAction(BuildContext context, String action) {
+    switch (action) {
+      case 'not_interested':
+        // TODO: Implement "Not interested" functionality
+        showSnackBar(context, 'Marked as not interested');
+        break;
+      case 'dont_recommend_source':
+        // TODO: Implement "Don't recommend source" functionality
+        showSnackBar(context, "Won't recommend this source");
+        break;
+      case 'send_feedback':
+        // TODO: Implement "Send feedback" functionality
+        showSnackBar(context, 'Feedback form opened');
+        break;
+      case 'report':
+        // TODO: Implement "Report" functionality
+        showSnackBar(context, 'Report submitted');
+        break;
+    }
   }
 }
 
@@ -506,11 +558,7 @@ class _FeedFooterSource extends StatelessWidget {
             // Source site name
             Text(
               feedItem.sourceLabel,
-              style: h.currentTextTheme.bodySmall?.copyWith(
-                // fontSize: 12,
-                // color: Colors.black87,
-                // fontWeight: FontWeight.w500,
-              ),
+              style: h.currentTextTheme.bodySmall,
             ),
           ],
         ).withPadding(horizontal: 8, vertical: 4),

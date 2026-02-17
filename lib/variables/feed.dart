@@ -25,28 +25,20 @@ enum FeedType {
     }
   }
   
-  List<FeedItem> getItems(WidgetRef ref) {
-    switch (this) {
-      case FeedType.digest: return ref.read(feedProvider).items ?? [];
-      case FeedType.latest: return ref.read(feedLatestProvider).items ?? [];
-      case FeedType.trending: return ref.read(feedTrendingProvider).items ?? [];
-      case FeedType.liked: return ref.read(feedLikedProvider).items ?? [];
-      case FeedType.saved: return ref.read(feedSavedProvider).items ?? [];
-    }
+  List<FeedItem> readItems(WidgetRef ref) {
+    return read(ref).items ?? [];
   }
 
-  FeedItem? getItem(WidgetRef ref, String feedId) {
-    return getItems(ref).firstWhereOrNull((item) => item.id == feedId);
+  List<FeedItem> watchItems(WidgetRef ref) {
+    return watch(ref).items ?? [];
   }
-  
-  bool isLoading(WidgetRef ref) {
-    switch (this) {
-      case FeedType.digest: return ref.read(feedProvider).isLoading;
-      case FeedType.latest: return ref.read(feedLatestProvider).isLoading;
-      case FeedType.trending: return ref.read(feedTrendingProvider).isLoading;
-      case FeedType.liked: return ref.read(feedLikedProvider).isLoading;
-      case FeedType.saved: return ref.read(feedSavedProvider).isLoading;
-    }
+
+  FeedItem? readItem(WidgetRef ref, String feedId) {
+    return readItems(ref).firstWhereOrNull((item) => item.id == feedId);
+  }
+
+  FeedItem? watchItem(WidgetRef ref, String feedId) {
+    return watchItems(ref).firstWhereOrNull((item) => item.id == feedId);
   }
 
   Future<bool> load(WidgetRef ref, {String? topic, int? timeoutMs, int? limit}) {
@@ -60,13 +52,24 @@ enum FeedType {
   }
 
   /// Watch the provider state for real-time updates
-  BaseFeedState watchState(WidgetRef ref) {
+  BaseFeedState watch(WidgetRef ref) {
     switch (this) {
       case FeedType.digest: return ref.watch(feedProvider);
       case FeedType.latest: return ref.watch(feedLatestProvider);
       case FeedType.trending: return ref.watch(feedTrendingProvider);
       case FeedType.liked: return ref.watch(feedLikedProvider);
       case FeedType.saved: return ref.watch(feedSavedProvider);
+    }
+  }
+
+  /// Read the provider state
+  BaseFeedState read(WidgetRef ref) {
+    switch (this) {
+      case FeedType.digest: return ref.read(feedProvider);
+      case FeedType.latest: return ref.read(feedLatestProvider);
+      case FeedType.trending: return ref.read(feedTrendingProvider);
+      case FeedType.liked: return ref.read(feedLikedProvider);
+      case FeedType.saved: return ref.read(feedSavedProvider);
     }
   }
 }

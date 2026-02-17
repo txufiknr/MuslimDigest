@@ -43,6 +43,9 @@ extension WidgetExtension on Widget {
   Widget moveIt(double x, double y) => moveTo(Offset(x, y));
   Widget moveX(double x) => moveTo(Offset(x, 0));
   Widget moveY(double y) => moveTo(Offset(0, y));
+  Widget align(Alignment alignment) => Align(alignment: alignment, child: this);
+  Widget left() => align(Alignment.centerLeft);
+  Widget right() => align(Alignment.centerRight);
   Widget scale(double scale) => Transform.scale(scale: scale, child: this);
   Widget sized({double? width, double? height}) => SizedBox(width: width, height: height, child: this);
   Widget squared(double? size) => sized(width: size, height: size);

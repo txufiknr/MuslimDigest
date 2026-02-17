@@ -31,12 +31,14 @@ class AppThemes {
     primary: AppColors.primary,
     secondary: AppColors.secondary,
     surface: AppColors.surfaceLight,
+    surfaceContainerHighest: AppColors.surfaceContainerHighestLight,
     error: AppColors.error,
     onPrimary: Colors.white,
     onSecondary: Colors.white,
     onSurface: AppColors.textPrimaryLight,
     onError: Colors.white,
-    outline: Colors.grey[200]
+    outline: Colors.grey[200],
+    tertiary: AppColors.mutedLight,
   );
 
   static ColorScheme get darkColorScheme => ColorScheme.fromSeed(
@@ -45,12 +47,14 @@ class AppThemes {
     primary: AppColors.primary,
     secondary: AppColors.secondary,
     surface: AppColors.surfaceDark,
+    surfaceContainerHighest: AppColors.surfaceContainerHighestDark,
     error: AppColors.error,
     onPrimary: Colors.white,
     onSecondary: Colors.white,
     onSurface: AppColors.textPrimaryDark,
     onError: Colors.white,
-    outline: Colors.grey[800]
+    outline: Colors.grey[800],
+    tertiary: AppColors.mutedDark,
   );
 
   // AppBar Themes

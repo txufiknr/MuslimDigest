@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:developer' show log;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -70,16 +71,22 @@ class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver
 
   /// Ensure today's feed is loaded
   void _initFeed() {
-    if (r.shouldLoadFeedTodayAndStillNone) {
+    if (r.shouldLoadFeedToday) {
+      log("[home] Feed needs reloading");
       _loadFeed();
+    } else {
+      log("[home] Feed is up to date");
     }
   }
 
   /// Reset read count if it's a new day
   void _initReadCount() {
     if (r.isNewDay) {
+      log("[home] It's a new day, so reset the read count");
       ref.read(readCountProvider.notifier).setValue(0);
       ref.read(readLastDateProvider.notifier).setValue(today);
+    } else {
+      log("[home] Welcome back, it's still the same day");
     }
   }
 

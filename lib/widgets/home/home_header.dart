@@ -6,6 +6,7 @@ import 'package:muslimdigest/config/colors.dart';
 import 'package:muslimdigest/config/themes.dart';
 import 'package:muslimdigest/providers/streaks.dart';
 import 'package:muslimdigest/utils/extensions.dart';
+import 'package:muslimdigest/utils/helpers.dart';
 import 'package:muslimdigest/variables/app.dart';
 import 'package:muslimdigest/providers/preferences.dart';
 import 'package:muslimdigest/variables/user.dart';
@@ -33,6 +34,7 @@ class HomeHeader extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final h = MyHelper(context);
     final topics = ref.watch(preferencesProvider)?.topics ?? [];
     final streaks = ref.watch(streaksProvider);
 
@@ -46,7 +48,7 @@ class HomeHeader extends ConsumerWidget {
             icon: CupertinoIcons.line_horizontal_3_decrease,
             tooltip: "Settings",
             onPressed: () => context.push('/settings'),
-            backgroundColor: Colors.grey[100],
+            backgroundColor: h.currentTheme.colorScheme.surfaceContainerHighest,
             size: TAB_HEIGHT,
             radius: TAB_RADIUS,
           ),
@@ -96,7 +98,7 @@ class HomeHeader extends ConsumerWidget {
                 iconSize: 16,
                 tooltip: "Add topic",
                 onPressed: () => context.push('/settings'),
-                backgroundColor: Colors.grey[100],
+                backgroundColor: h.currentTheme.colorScheme.surfaceContainerHighest,
                 size: TAB_HEIGHT,
                 radius: TAB_RADIUS,
               ),
@@ -124,7 +126,10 @@ class _TopicTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final tabColor = isSelected ? AppColors.primary : Colors.grey[100];
+    final h = MyHelper(context);
+    // final tabColor = isSelected ? AppColors.primary : Colors.grey[100];
+    // final textColor = isSelected ? Colors.white : Colors.black87;
+    final tabColor = isSelected ? AppColors.primary : h.currentTheme.colorScheme.surfaceContainerHighest;
     final textColor = isSelected ? Colors.white : Colors.black87;
     return Material(
       color: tabColor,

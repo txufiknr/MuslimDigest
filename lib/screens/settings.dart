@@ -254,6 +254,7 @@ class AppSettingsSection extends StatelessWidget {
             trailing: Switch(
               value: darkMode,
               onChanged: onDarkModeChanged,
+              inactiveTrackColor: Color(0xFFCECECE),
             ),
           ),
           SettingsDivider(),

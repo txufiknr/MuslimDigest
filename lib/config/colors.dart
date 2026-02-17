@@ -21,12 +21,16 @@ class AppColors {
   static const Color warning = Color(0xFFFFB74D);
   static const Color error = Color(0xFFE57373);
   static const Color info = Color(0xFF64B5F6);
+  static const Color mutedLight = Color(0xFF9E9E9E);
+  static const Color mutedDark = Color(0xFF8D8D8D);
   
   // Background Colors
   static const Color backgroundLight = Color(0xFFFFFFFF);
   static const Color backgroundDark = Color(0xFF121212);
   static const Color surfaceLight = Color(0xFFFFFFFF);
   static const Color surfaceDark = Color(0xFF1E1E1E);
+  static const Color surfaceContainerHighestLight = Color(0xFFF3F3F3);
+  static const Color surfaceContainerHighestDark = Color(0xFF2C2C2C);
   
   // Text Colors
   static const Color textPrimaryLight = Color.fromARGB(255, 31, 31, 31);

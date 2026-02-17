@@ -1,3 +1,5 @@
+import 'package:muslimdigest/mock/users.dart';
+
 class User {
   final String userId;
   final String? name;
@@ -14,6 +16,8 @@ class User {
     this.createdAt,
     this.updatedAt,
   });
+
+  bool get isAnonymous => userId == anonymousUser.userId;
 
   factory User.fromJson(Map<String, dynamic> json) {
     return User(

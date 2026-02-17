@@ -4,6 +4,7 @@ import 'package:muslimdigest/variables/user.dart';
 
 /// Save user, preferences, and streaks data
 Future<bool> saveAllData() async {
+  if (PrefData.user == null || PrefData.user!.isAnonymous) return true;
   // TODO: save settings
   final responses = await Future.wait([
     if (PrefData.user != null) ApiService.post('user', PrefData.user!.toJson()),
