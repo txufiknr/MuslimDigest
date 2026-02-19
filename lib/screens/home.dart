@@ -70,10 +70,15 @@ class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver
   }
 
   /// Ensure today's feed is loaded
-  void _initFeed() {
+  Future<void> _initFeed() async {
+    if (!await isOnline()) {
+      log("[home] No internet connection, skipping feed load");
+      return;
+    }
+    // TODO: check last read date & last ingest date in backend, if fail -> skip
     if (r.shouldLoadFeedToday) {
       log("[home] Feed needs reloading");
-      _loadFeed();
+      await _loadFeed();
     } else {
       log("[home] Feed is up to date");
     }

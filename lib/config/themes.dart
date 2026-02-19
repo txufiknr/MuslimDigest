@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:muslimdigest/config/constants.dart';
 import 'colors.dart';
 
 class AppThemes {
@@ -223,10 +224,11 @@ class AppThemes {
     required double fontSize,
   }) {
     return TextStyle(
-      color: color,
+      fontFamily: APP_FONT_FAMILY,
       fontWeight: fontWeight,
       fontSize: fontSize,
       height: textHeightMultiplier,
+      color: color,
     );
   }
 
@@ -248,7 +250,7 @@ class AppThemes {
   static ThemeData get _baseTheme {
     return ThemeData(
       useMaterial3: true,
-      fontFamily: "SourceSans3",
+      fontFamily: APP_FONT_FAMILY,
     );
   }
 

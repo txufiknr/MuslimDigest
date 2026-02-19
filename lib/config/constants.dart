@@ -23,6 +23,7 @@ final APP_URL_API_DEV = dotenv.env['APP_URL_API_DEV']!;
 
 // App assets
 const APP_ASSETS_LOGO = "assets/images/icons/logo.png";
+const APP_FONT_FAMILY = "SourceSans3";
 
 // App languages
 const GREETINGS = "As-salamu alaykum";

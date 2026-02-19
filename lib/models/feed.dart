@@ -6,6 +6,7 @@ class FeedItem {
   final String? summaryStatus;
   final String? sourceUrl;
   final String? canonicalUrl;
+  final String? hook;
   final String? topic;
   final String? image;
   final String? video;
@@ -27,6 +28,7 @@ class FeedItem {
     this.summaryStatus,
     this.sourceUrl,
     this.canonicalUrl,
+    this.hook,
     this.topic,
     this.image,
     this.video,
@@ -43,7 +45,11 @@ class FeedItem {
 
   String get sourceLabel => source.siteName ?? source.id;
   String? get sourceLink => canonicalUrl ?? sourceUrl;
-  List<String> get badgeToDisplay => badges.where((badge) => !badge.startsWith('content_risk') && !badge.startsWith('summary_status')).toList();
+
+  List<String> get badgeToDisplay => badges.where((badge) => 
+    badge != 'summary_status:unavailable' &&
+    (badge != 'content_risk:high' ? !badge.startsWith('content_risk:') : true)
+  ).toList();
 
   factory FeedItem.fromJson(Map<String, dynamic> json) {
     return FeedItem(
@@ -54,6 +60,7 @@ class FeedItem {
       summaryStatus: json['summaryStatus'],
       sourceUrl: json['sourceUrl'],
       canonicalUrl: json['canonicalUrl'],
+      hook: json['hook'],
       topic: json['topic'],
       image: json['image'],
       video: json['video'],
@@ -78,6 +85,7 @@ class FeedItem {
       'summaryStatus': summaryStatus,
       'sourceUrl': sourceUrl,
       'canonicalUrl': canonicalUrl,
+      'hook': hook,
       'topic': topic,
       'image': image,
       'video': video,
@@ -101,6 +109,7 @@ class FeedItem {
     String? summaryStatus,
     String? sourceUrl,
     String? canonicalUrl,
+    String? hook,
     String? topic,
     String? image,
     String? video,
@@ -122,6 +131,7 @@ class FeedItem {
       summaryStatus: summaryStatus ?? this.summaryStatus,
       sourceUrl: sourceUrl ?? this.sourceUrl,
       canonicalUrl: canonicalUrl ?? this.canonicalUrl,
+      hook: hook ?? this.hook,
       topic: topic ?? this.topic,
       image: image ?? this.image,
       video: video ?? this.video,
@@ -147,6 +157,7 @@ FeedItem(
   summaryProvider: $summaryProvider,
   summaryStatus: $summaryStatus,
   sourceUrl: $sourceUrl,
+  hook: $hook,
   topic: $topic,
   image: $image,
   video: $video,

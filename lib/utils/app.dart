@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:external_app_launcher/external_app_launcher.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:muslimdigest/config/constants.dart';
 import 'package:muslimdigest/variables/app.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -25,4 +26,9 @@ Future<void> openStoreListing([String? appId]) async {
 
 Future<void> requestReview() async {
   if (await inAppReview.isAvailable()) return inAppReview.requestReview();
+}
+
+Future<bool> isOnline() async {
+  final connectivityResults = await Connectivity().checkConnectivity();
+  return connectivityResults.any((result) => result != ConnectivityResult.none);
 }

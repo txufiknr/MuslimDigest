@@ -36,6 +36,7 @@ dependencies:
   cupertino_icons: ^1.0.8
 
   cached_network_image: ^3.4.1
+  connectivity_plus: ^7.0.0
   external_app_launcher: ^4.0.3
   flutter_card_swiper: ^7.2.0
   flutter_dotenv: ^6.0.0
@@ -113,8 +114,45 @@ flutter:
   fonts:
     - family: SourceSans3
       fonts:
-        - asset: assets/fonts/SourceSans3.ttf
-        - asset: assets/fonts/SourceSans3-Italic.ttf
+        - asset: assets/fonts/SourceSans3/SourceSans3-ExtraLight.ttf
+          weight: 200
+        - asset: assets/fonts/SourceSans3/SourceSans3-ExtraLightItalic.ttf
+          weight: 200
+          style: italic
+        - asset: assets/fonts/SourceSans3/SourceSans3-Light.ttf
+          weight: 300
+        - asset: assets/fonts/SourceSans3/SourceSans3-LightItalic.ttf
+          weight: 300
+          style: italic
+        - asset: assets/fonts/SourceSans3/SourceSans3-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/SourceSans3/SourceSans3-Italic.ttf
+          weight: 400
+          style: italic
+        - asset: assets/fonts/SourceSans3/SourceSans3-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/SourceSans3/SourceSans3-MediumItalic.ttf
+          weight: 500
+          style: italic
+        - asset: assets/fonts/SourceSans3/SourceSans3-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/SourceSans3/SourceSans3-SemiBoldItalic.ttf
+          weight: 600
+          style: italic
+        - asset: assets/fonts/SourceSans3/SourceSans3-Bold.ttf
+          weight: 700
+        - asset: assets/fonts/SourceSans3/SourceSans3-BoldItalic.ttf
+          weight: 700
+          style: italic
+        - asset: assets/fonts/SourceSans3/SourceSans3-ExtraBold.ttf
+          weight: 800
+        - asset: assets/fonts/SourceSans3/SourceSans3-ExtraBoldItalic.ttf
+          weight: 800
+          style: italic
+        - asset: assets/fonts/SourceSans3/SourceSans3-Black.ttf
+          weight: 900
+        - asset: assets/fonts/SourceSans3/SourceSans3-BlackItalic.ttf
+          weight: 900
           style: italic
 
   # For details regarding fonts from package dependencies,
