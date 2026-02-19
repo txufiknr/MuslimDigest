@@ -190,3 +190,19 @@ Widget formatText(String rawText, {TextStyle? style}) {
     style: style,
   );
 }
+
+/// Formats a number with decimal separators (commas) for thousands.
+///
+/// [number] - The number to format
+/// [decimalDigits] - Number of decimal places (default: 0)
+///
+/// Examples:
+/// - formatNumber(1234) -> "1,234"
+/// - formatNumber(1234567.89, decimalDigits: 2) -> "1,234,567.89"
+/// - formatNumber(1000000) -> "1,000,000"
+String formatNumber(num number, {int decimalDigits = 0}) {
+  return number.toStringAsFixed(decimalDigits).replaceAllMapped(
+    RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+    (Match m) => '${m[1]},',
+  );
+}

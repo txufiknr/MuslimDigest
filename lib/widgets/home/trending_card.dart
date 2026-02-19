@@ -2,11 +2,10 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:muslimdigest/config/themes.dart';
 import 'package:muslimdigest/models/feed.dart';
-import 'package:muslimdigest/utils/extensions.dart';
 import 'package:muslimdigest/utils/helpers.dart';
 import 'package:muslimdigest/variables/feed.dart';
+import 'package:muslimdigest/widgets/components/card.dart';
 import 'package:muslimdigest/widgets/components/logo.dart';
 
 class TrendingFeedsCard extends ConsumerStatefulWidget {
@@ -53,35 +52,23 @@ class _TrendingFeedsCardState extends ConsumerState<TrendingFeedsCard> {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final width = constraints.maxWidth;
-        final height = width * 500 / 1024;
+        final maxWidth = constraints.maxWidth;
+        final height = maxWidth * 500 / 1024;
         return SizedBox(
           height: height,
           child: PageView.builder(
             controller: _pageController,
             itemBuilder: (context, index) {
               final feedItem = _feedItems[index % _feedItems.length];
-              return Container(
-                margin: EdgeInsets.all(AppThemes.contentPadding),
-                decoration: BoxDecoration(
-                  color: h.currentTheme.colorScheme.surface,
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: h.currentTheme.colorScheme.outline),
-                ),
-                child: Material(
-                  borderRadius: BorderRadius.circular(10),
-                  clipBehavior: Clip.antiAlias,
-                  child: InkWell(
-                    onTap: () => _read(feedItem),
-                    child: ListView(
-                      children: [
-                        Text(feedItem.title, textAlign: TextAlign.center, style: h.currentTextTheme.titleSmall,),
-                        SizedBox(height: 6,),
-                        Text(feedItem.summary, textAlign: TextAlign.center, style: h.currentTextTheme.bodySmall,),
-                      ],
-                    ).withPadding(horizontal: AppThemes.contentPadding, vertical: AppThemes.contentPadding),
-                  ),
-                ),
+              return MyCard(
+                onTap: () => _read(feedItem),
+                child: ListView(
+                  children: [
+                    Text(feedItem.title, textAlign: TextAlign.center, style: h.currentTextTheme.titleSmall,),
+                    SizedBox(height: 6,),
+                    Text(feedItem.summary, textAlign: TextAlign.center, style: h.currentTextTheme.bodySmall,),
+                  ],
+                )
               );
             },
           ),

@@ -3,8 +3,16 @@ import 'dart:math';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:muslimdigest/models/user.dart';
 import 'package:muslimdigest/providers/streaks.dart';
+import 'package:muslimdigest/variables/time.dart';
 
 Future<void> logStreak(WidgetRef ref) async {
+  final streaksNotifier = ref.read(streaksProvider.notifier);
+
+  // 1. Check if today's streak has been logged
+  final isStreakToday = streaksNotifier.isStreakToday;
+  if (isStreakToday) return;
+
+  // 2. Earn reading streak today
   final streaks = ref.read(streaksProvider);
   final currentStreak = streaks?.currentStreak ?? 0;
   final longestStreak = streaks?.longestStreak ?? 0;
@@ -13,8 +21,9 @@ Future<void> logStreak(WidgetRef ref) async {
   final newStreaks = UserStreaks(
     currentStreak: newCurrentStreak,
     longestStreak: newLongestStreak,
+    lastReadAt: today
   );
-  await ref.read(streaksProvider.notifier).setValue(newStreaks);
+  await streaksNotifier.setValue(newStreaks);
 }
 
 /// Extracts the first name from a full name string

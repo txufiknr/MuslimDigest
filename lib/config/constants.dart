@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
@@ -26,7 +28,19 @@ const APP_ASSETS_LOGO = "assets/images/icons/logo.png";
 const APP_FONT_FAMILY = "SourceSans3";
 
 // App languages
+const APP_LOCALE = Locale('en', 'US');
 const GREETINGS = "As-salamu alaykum";
+const MESSAGES = [
+  "May this knowledge benefit you.",
+  "May Allah increase you in understanding.",
+  "May it be a source of light.",
+  "Consistency builds clarity.",
+  "Small daily steps lead to lasting knowledge.",
+  "One day closer to stronger understanding.",
+  "Seeking knowledge is an act of worship.",
+  "Angels lower their wings for the seeker of knowledge.",
+  "May your intention be sincere.",
+];
 
 // Debug configurations
 const APP_IS_PRODUCTION = kReleaseMode;

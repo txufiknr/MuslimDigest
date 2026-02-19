@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:muslimdigest/api/user.dart';
 import 'package:muslimdigest/providers/read_count.dart';
 import 'package:muslimdigest/providers/read_last_date.dart';
+import 'package:muslimdigest/providers/streaks.dart';
 import 'package:muslimdigest/utils/app.dart';
 import 'package:muslimdigest/utils/app_repository.dart';
 import 'package:muslimdigest/utils/dialogs.dart';
@@ -26,7 +27,7 @@ class HomePage extends ConsumerStatefulWidget {
 }
 
 class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver {
-  final _feedType = FeedType.digest;
+  var _feedType = FeedType.digest;
   var _isWillExit = false;
 
   AppRepository get r => ref.read(appRepositoryProvider);
@@ -62,6 +63,17 @@ class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver
   }
 
   Future<void> _loadFeed([String? topic]) async {
+    // 1. Check user reading streak
+    final isStreakToday = ref.read(streaksProvider.notifier).isStreakToday;
+    
+    // 2. If today is streak, switch to latest feed from daily digest
+    if (isStreakToday && _feedType == FeedType.digest) {
+      setState(() {
+        _feedType = FeedType.latest;
+      });
+    }
+
+    // 3. Load the feeds
     final success = await _feedType.load(ref, topic: topic);
     if (!mounted) return;
     if (!success) {

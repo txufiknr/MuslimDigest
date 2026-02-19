@@ -8,8 +8,8 @@ class FeedItem {
   final String? canonicalUrl;
   final String? hook;
   final String? topic;
-  final String? image;
-  final String? video;
+  final String? imageUrl;
+  final String? videoUrl;
   final String? riskLevel;
   final DateTime? publishedAt;
   final List<String> sources;
@@ -19,6 +19,7 @@ class FeedItem {
   final bool isBreaking;
   final bool isLiked;
   final bool isSaved;
+  final int likeCount;
 
   FeedItem({
     required this.id,
@@ -30,8 +31,8 @@ class FeedItem {
     this.canonicalUrl,
     this.hook,
     this.topic,
-    this.image,
-    this.video,
+    this.imageUrl,
+    this.videoUrl,
     this.riskLevel,
     this.publishedAt,
     this.sources = const [],
@@ -41,6 +42,7 @@ class FeedItem {
     this.isBreaking = false,
     this.isLiked = false,
     this.isSaved = false,
+    this.likeCount = 0,
   });
 
   String get sourceLabel => source.siteName ?? source.id;
@@ -63,14 +65,15 @@ class FeedItem {
       canonicalUrl: json['canonicalUrl'],
       hook: json['hook'],
       topic: json['topic'],
-      image: json['image'],
-      video: json['video'],
+      imageUrl: json['image'],
+      videoUrl: json['video'],
       riskLevel: json['riskLevel'],
       publishedAt: json['publishedAt'] == null ? null : DateTime.parse(json['publishedAt']),
       sources: List<String>.from(json['sources'] ?? []),
       cluster: Cluster.fromJson(json['cluster']),
       badges: List<String>.from(json['badges'] ?? []),
       source: Source.fromJson(json['source']),
+      likeCount: json['likeCount'] ?? 0,
       isBreaking: json['isBreaking'] ?? false,
       isLiked: json['isLiked'] ?? false,
       isSaved: json['isSaved'] ?? false,
@@ -88,8 +91,8 @@ class FeedItem {
       'canonicalUrl': canonicalUrl,
       'hook': hook,
       'topic': topic,
-      'image': image,
-      'video': video,
+      'imageUrl': imageUrl,
+      'videoUrl': videoUrl,
       'riskLevel': riskLevel,
       'publishedAt': publishedAt?.toIso8601String(),
       'sources': sources,
@@ -99,6 +102,7 @@ class FeedItem {
       'isBreaking': isBreaking,
       'isLiked': isLiked,
       'isSaved': isSaved,
+      'likeCount': likeCount,
     };
   }
 
@@ -112,8 +116,8 @@ class FeedItem {
     String? canonicalUrl,
     String? hook,
     String? topic,
-    String? image,
-    String? video,
+    String? imageUrl,
+    String? videoUrl,
     String? riskLevel,
     DateTime? publishedAt,
     List<String>? sources,
@@ -123,6 +127,7 @@ class FeedItem {
     bool? isBreaking,
     bool? isLiked,
     bool? isSaved,
+    int? likeCount,
   }) {
     return FeedItem(
       id: id ?? this.id,
@@ -134,8 +139,8 @@ class FeedItem {
       canonicalUrl: canonicalUrl ?? this.canonicalUrl,
       hook: hook ?? this.hook,
       topic: topic ?? this.topic,
-      image: image ?? this.image,
-      video: video ?? this.video,
+      imageUrl: imageUrl ?? this.imageUrl,
+      videoUrl: videoUrl ?? this.videoUrl,
       riskLevel: riskLevel ?? this.riskLevel,
       publishedAt: publishedAt ?? this.publishedAt,
       sources: sources ?? this.sources,
@@ -145,6 +150,7 @@ class FeedItem {
       isBreaking: isBreaking ?? this.isBreaking,
       isLiked: isLiked ?? this.isLiked,
       isSaved: isSaved ?? this.isSaved,
+      likeCount: likeCount ?? this.likeCount,
     );
   }
 
@@ -160,8 +166,8 @@ FeedItem(
   sourceUrl: $sourceUrl,
   hook: $hook,
   topic: $topic,
-  image: $image,
-  video: $video,
+  imageUrl: $imageUrl,
+  videoUrl: $videoUrl,
   riskLevel: $riskLevel,
   publishedAt: $publishedAt,
   sources: $sources,
@@ -171,6 +177,7 @@ FeedItem(
   isBreaking: $isBreaking,
   isLiked: $isLiked,
   isSaved: $isSaved,
+  likeCount: $likeCount,
 )''';
   }
 }

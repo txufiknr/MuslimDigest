@@ -2,10 +2,12 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lottie/lottie.dart';
 import 'package:muslimdigest/config/colors.dart';
 import 'package:muslimdigest/config/constants.dart';
 import 'package:muslimdigest/config/themes.dart';
 import 'package:muslimdigest/providers/base_feed_notifier.dart';
+import 'package:muslimdigest/providers/streaks.dart';
 import 'package:muslimdigest/utils/dialogs.dart';
 import 'package:muslimdigest/utils/extensions.dart';
 import 'package:muslimdigest/utils/format.dart';
@@ -13,13 +15,17 @@ import 'package:muslimdigest/utils/functions.dart';
 import 'package:muslimdigest/utils/helpers.dart';
 import 'package:muslimdigest/variables/app.dart';
 import 'package:muslimdigest/variables/feed.dart';
+import 'package:muslimdigest/variables/time.dart';
 import 'package:muslimdigest/widgets/components/badge.dart';
+import 'package:muslimdigest/widgets/components/button.dart';
 import 'package:muslimdigest/widgets/components/cached_image.dart';
+import 'package:muslimdigest/widgets/components/card.dart';
 import 'package:muslimdigest/widgets/components/icon_button.dart';
 import 'package:muslimdigest/widgets/components/logo.dart';
 import 'package:muslimdigest/widgets/components/popup_menu_item.dart';
 import 'package:muslimdigest/widgets/components/popup_menu.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 import '../../models/feed.dart';
 import 'package:screenshot/screenshot.dart';
 import 'package:share_plus/share_plus.dart';
@@ -28,10 +34,12 @@ import 'package:share_plus/share_plus.dart';
 class FeedCard extends ConsumerStatefulWidget {
   final FeedType feedType;
   final FeedItem? feedItem;
+  final VoidCallback onReload;
 
   const FeedCard(this.feedType, {
     super.key,
     this.feedItem,
+    required this.onReload,
   });
 
   @override
@@ -71,40 +79,35 @@ class _FeedCardState extends ConsumerState<FeedCard> with AutomaticKeepAliveClie
   }
 
   Future<void> _share() async {
-    if (_feedId == null) return;
-
     setState(() => _isTakingScreenshot = true);
-
-    // Wait for the feed to be fully rendered
-    await delay(100);
-
-    // Take the screenshot of feed
-    final imagePath = await _screenshot();
+    await delay(100); // Wait for the feed to be fully rendered
+    final imagePath = await _screenshot(); // Take the screenshot of feed
     if (!mounted) return;
 
     setState(() => _isTakingScreenshot = false);
     if (imagePath == null) return;
 
     // Share the feed
+    final isShareReading = widget.feedItem != null;
     await sharePlus.share(
       ShareParams(
-        title: widget.feedItem!.title,
-        subject: 'Read "${widget.feedItem!.title}" in $APP_NAME',
+        title: widget.feedItem?.title ?? "I got my daily streak",
+        subject: '${isShareReading ? 'Read "${widget.feedItem!.title}"' : 'I got my daily streak'} on $APP_NAME',
         files: [XFile(imagePath)],
         text:
-          'Hi, I just read "${widget.feedItem!.title}" in $APP_NAME.\n'
-          'Check out the app to level up your Islamic knowledge with daily high-quality digests:\n'
+          'Hi, I wanted to share with you my latest ${isShareReading ? 'read' : 'achievement'} on $APP_NAME.'
+          'Check out $APP_NAME and level up your Islamic knowledge with daily high-quality digests:'
           '$APP_URL_PLAYSTORE',
       ),
     );
   }
 
   Future<String?> _screenshot() async {
-    final imageName = "$_feedId.png";
+    final imageName = "${_feedId ?? today.toIso8601String().substring(0, 10)}.png";
     final directory = await getApplicationDocumentsDirectory();
     final imagePath = await _screenshotController.captureAndSave(directory.path, fileName: imageName);
     if (mounted && imagePath == null) {
-      showSnackBar(context, "Cannot save feed image.");
+      showSnackBar(context, "Cannot save image. Please try again.");
     }
     return imagePath;
   }
@@ -113,6 +116,10 @@ class _FeedCardState extends ConsumerState<FeedCard> with AutomaticKeepAliveClie
   Widget build(BuildContext context) {
     super.build(context);
     final h = MyHelper(context);
+    final streaks = ref.read(streaksProvider);
+    final currentStreak = streaks?.currentStreak ?? 1;
+    final longestStreak = streaks?.longestStreak ?? 1;
+    final isStreakCard = widget.feedItem == null;
 
     return Container(
       decoration: BoxDecoration(
@@ -126,13 +133,35 @@ class _FeedCardState extends ConsumerState<FeedCard> with AutomaticKeepAliveClie
           ),
         ],
       ),
-      child: widget.feedItem == null ? Column(
+      padding: isStreakCard ? EdgeInsets.all(AppThemes.contentPadding) : EdgeInsets.zero,
+      child: isStreakCard ? Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          // TODO: end card
-          Text("End of feed", textAlign: TextAlign.center, style: h.currentTextTheme.titleMedium)
-        ],
+          Text("Another day of beneficial knowledge.", textAlign: TextAlign.center, style: h.currentTextTheme.titleLarge),
+          Text(MESSAGES[(currentStreak - 1) % MESSAGES.length], textAlign: TextAlign.center, style: h.currentTextTheme.bodyMedium),
+          Row(
+            children: [
+              StatCard(
+                total: currentStreak,
+                label: 'Current Streak'
+              ).expand(),
+              StatCard(
+                total: longestStreak,
+                label: 'Longest Streak'
+              ).expand(),
+            ],
+          ),
+          Lottie.asset('assets/lottie/streak.json'),
+          MyButton(text: "Continue reading", icon: Icon(CupertinoIcons.book), onPressed: widget.onReload,),
+          _FeedDivider(),
+          Row(
+            children: [
+              Text("Do you want to share it?", style: h.currentTextTheme.bodySmall?.copyWith(fontSize: 16)).expand(),
+              MyIconButton(icon: CupertinoIcons.share, onPressed: _share,)
+            ],
+          ),
+        ].addItemInBetween(SizedBox(height: 16,)),
       ) : Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -166,50 +195,68 @@ class _FeedHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final h = MyHelper(context);
+    final hasYouTubeVideo = feedItem.videoUrl?.contains('youtu') == true;
 
-    return ClipRRect(
-      borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-      child: Stack(
-        children: [
-          // Image
-          CachedImageWidget(
-            imageUrl: feedItem.image,
-            height: 200,
-            width: double.infinity,
-            fit: BoxFit.cover,
-            errorColor: h.currentTheme.colorScheme.secondary,
-            errorChild: Logo(),
-          ),
-          
-          // Title overlay
-          Positioned(
-            bottom: 0,
-            left: 0,
-            right: 0,
-            child: Container(
-              padding: EdgeInsets.all(AppThemes.contentPadding),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Colors.transparent,
-                    Colors.black.withValues(alpha: 0.7),
-                  ],
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final maxWidth = constraints.maxWidth;
+        return ClipRRect(
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+          child: Stack(
+            children: [
+              // Image or video
+              if (hasYouTubeVideo)
+                YoutubePlayer(
+                  controller: YoutubePlayerController(
+                    initialVideoId: feedItem.videoUrl!,
+                    flags: const YoutubePlayerFlags(
+                      autoPlay: false,
+                    ),
+                  ),
+                  // aspectRatio: 16 / 9,
+                  aspectRatio: maxWidth / 200,
+                )
+              else
+                CachedImageWidget(
+                imageUrl: feedItem.imageUrl,
+                height: 200,
+                width: double.infinity,
+                fit: BoxFit.cover,
+                errorColor: h.currentTheme.colorScheme.secondary,
+                errorChild: Logo(),
+              ),
+              
+              // Title overlay
+              Positioned(
+                bottom: 0,
+                left: 0,
+                right: 0,
+                child: Container(
+                  padding: EdgeInsets.all(AppThemes.contentPadding),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Colors.transparent,
+                        Colors.black.withValues(alpha: 0.7),
+                      ],
+                    ),
+                  ),
+                  child: Text(
+                    feedItem.title,
+                    style: h.currentTextTheme.titleMedium?.copyWith(
+                      color: Colors.white,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
               ),
-              child: Text(
-                feedItem.title,
-                style: h.currentTextTheme.titleMedium?.copyWith(
-                  color: Colors.white,
-                ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
+            ],
           ),
-        ],
-      ),
+        );
+      }
     );
   }
 }
@@ -304,7 +351,7 @@ class _FeedFooter extends ConsumerWidget {
         Stack(
           alignment: Alignment.center,
           children: [
-            Divider(height: 1, thickness: 1, color: h.currentTheme.colorScheme.outline),
+            _FeedDivider(),
             _FeedFooterSource(currentFeedItem).moveX(-8).left(),
             MyPopupMenu(
               icon: Icon(CupertinoIcons.ellipsis, color: h.currentTheme.colorScheme.tertiary),
@@ -344,7 +391,9 @@ class _FeedFooter extends ConsumerWidget {
           const Spacer(),
 
           // Action buttons
-          if (!isTakingScreenshot) ...<Widget>[
+          if (isTakingScreenshot) Logo(size: 100,) else ...<Widget>[
+            if (feedItem.likeCount > 0) Text(formatNumber(feedItem.likeCount), textAlign: TextAlign.right, style: h.currentTextTheme.bodySmall,),
+            SizedBox(width: 4,),
             MyIconButton(icon: isLiked ? CupertinoIcons.heart_fill : CupertinoIcons.heart, size: 50, outlined: true, onPressed: onLike, iconColor: isLiked ? AppColors.primary : null),
             MyIconButton(icon: isSaved ? CupertinoIcons.bookmark_fill : CupertinoIcons.bookmark, size: 50, outlined: true, onPressed: onSave, iconColor: isSaved ? AppColors.primary : null),
             MyIconButton(icon: CupertinoIcons.share, size: 50, outlined: true, onPressed: onShare,),
@@ -600,5 +649,15 @@ class _FeedBadgeChip extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+class _FeedDivider extends StatelessWidget {
+  const _FeedDivider();
+
+  @override
+  Widget build(BuildContext context) {
+    final h = MyHelper(context);
+    return Divider(height: 1, thickness: 1, color: h.currentTheme.colorScheme.outline);
   }
 }

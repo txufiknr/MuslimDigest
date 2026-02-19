@@ -113,7 +113,11 @@ class FeedSwiperState extends ConsumerState<FeedSwiper> {
       initialIndex: _readCount,
       cardsCount: cardsCount,
       cardBuilder: (context, index, percentThresholdX, percentThresholdY) {
-        return FeedCard(widget.feedType, feedItem: index == cardsCount - 1 ? null : _feedItems[index]);
+        return FeedCard(
+          widget.feedType,
+          feedItem: index == cardsCount - 1 ? null : _feedItems[index],
+          onReload: widget.onReload,
+        );
       },
       isDisabled: false,
       isLoop: false,
