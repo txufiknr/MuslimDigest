@@ -20,6 +20,7 @@ import 'package:muslimdigest/widgets/components/badge.dart';
 import 'package:muslimdigest/widgets/components/button.dart';
 import 'package:muslimdigest/widgets/components/cached_image.dart';
 import 'package:muslimdigest/widgets/components/card.dart';
+import 'package:muslimdigest/widgets/components/divider.dart';
 import 'package:muslimdigest/widgets/components/icon_button.dart';
 import 'package:muslimdigest/widgets/components/logo.dart';
 import 'package:muslimdigest/widgets/components/popup_menu_item.dart';
@@ -122,6 +123,7 @@ class _FeedCardState extends ConsumerState<FeedCard> with AutomaticKeepAliveClie
     final isStreakCard = widget.feedItem == null;
 
     return Container(
+      width: double.infinity,
       decoration: BoxDecoration(
         color: h.currentTheme.colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
@@ -154,9 +156,12 @@ class _FeedCardState extends ConsumerState<FeedCard> with AutomaticKeepAliveClie
           ),
           Lottie.asset('assets/lottie/streak.json'),
           MyButton(text: "Continue reading", icon: Icon(CupertinoIcons.book), onPressed: widget.onReload,),
-          _FeedDivider(),
+          MyDivider(),
           Row(
-            children: [
+            children: _isTakingScreenshot ? [
+              Text('Check out $APP_NAME and level up your Islamic knowledge').expand(),
+              Logo(size: 100,),
+            ] : [
               Text("Do you want to share it?", style: h.currentTextTheme.bodySmall?.copyWith(fontSize: 16)).expand(),
               MyIconButton(icon: CupertinoIcons.share, onPressed: _share,)
             ],
@@ -218,13 +223,13 @@ class _FeedHeader extends StatelessWidget {
                 )
               else
                 CachedImageWidget(
-                imageUrl: feedItem.imageUrl,
-                height: 200,
-                width: double.infinity,
-                fit: BoxFit.cover,
-                errorColor: h.currentTheme.colorScheme.secondary,
-                errorChild: Logo(),
-              ),
+                  imageUrl: feedItem.imageUrl,
+                  height: 200,
+                  width: double.infinity,
+                  fit: BoxFit.cover,
+                  errorColor: h.currentTheme.colorScheme.secondary,
+                  errorChild: Logo(),
+                ),
               
               // Title overlay
               Positioned(
@@ -312,6 +317,8 @@ class _FeedContent extends StatelessWidget {
               }).toList(),
             ),
           ],
+
+          // TODO: also read chips
         ],
       ),
     );
@@ -351,7 +358,7 @@ class _FeedFooter extends ConsumerWidget {
         Stack(
           alignment: Alignment.center,
           children: [
-            _FeedDivider(),
+            MyDivider(),
             _FeedFooterSource(currentFeedItem).moveX(-8).left(),
             MyPopupMenu(
               icon: Icon(CupertinoIcons.ellipsis, color: h.currentTheme.colorScheme.tertiary),
@@ -649,15 +656,5 @@ class _FeedBadgeChip extends StatelessWidget {
         ),
       ),
     );
-  }
-}
-
-class _FeedDivider extends StatelessWidget {
-  const _FeedDivider();
-
-  @override
-  Widget build(BuildContext context) {
-    final h = MyHelper(context);
-    return Divider(height: 1, thickness: 1, color: h.currentTheme.colorScheme.outline);
   }
 }

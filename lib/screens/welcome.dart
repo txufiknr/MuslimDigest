@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -8,6 +10,7 @@ import 'package:muslimdigest/providers/preferences.dart';
 import 'package:muslimdigest/providers/user.dart';
 import 'package:muslimdigest/utils/extensions.dart';
 import 'package:muslimdigest/utils/functions.dart';
+import 'package:muslimdigest/variables/feed.dart';
 import 'package:muslimdigest/widgets/onboarding/navigation_buttons.dart';
 import '../config/colors.dart';
 import '../utils/helpers.dart';
@@ -89,6 +92,7 @@ class _WelcomePageState extends ConsumerState<WelcomePage> {
 
   /// Complete the welcome process
   void _complete() {
+    unawaited(FeedType.digest.load(ref));
     context.go('/home');
   }
 

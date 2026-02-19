@@ -41,6 +41,7 @@ class AppRepository {
   }
 
   List<String> get preferredTopics => preferences?.topics ?? [];
+  List<String> get avoidedTopics => preferences?.avoidedTopics ?? [];
 }
 
 final appRepositoryProvider = Provider<AppRepository>((ref) {

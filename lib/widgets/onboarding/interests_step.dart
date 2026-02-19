@@ -14,25 +14,55 @@ class OnboardingInterestsStep extends ConsumerWidget {
 
   const OnboardingInterestsStep({super.key});
 
-  /// Build individual topic chip
-  /// TODO: tap twice to avoid topic, sequence:
+  /// Build individual topic chip with 3-step tap functionality
   /// 1st tap: select (prefer topic)
   /// 2nd tap: select (avoid topic)
   /// 3rd tap: select (reset/neutral)
-  Widget _buildTopicChip(MyHelper h, String topic, bool isSelected, WidgetRef ref) {
+  Widget _buildTopicChip(MyHelper h, String topic, WidgetRef ref) {
+    final appRepository = ref.read(appRepositoryProvider);
+    final preferredTopics = appRepository.preferredTopics;
+    final avoidedTopics = appRepository.avoidedTopics;
+    
+    TopicState state;
+    if (preferredTopics.contains(topic)) {
+      state = TopicState.preferred;
+    } else if (avoidedTopics.contains(topic)) {
+      state = TopicState.avoided;
+    } else {
+      state = TopicState.neutral;
+    }
+    
     return TopicChip(
       topic: topic,
-      isSelected: isSelected,
-      onSelected: (selected) async {
-        final selectedTopics = ref.read(appRepositoryProvider).preferredTopics;
-        final newSelectedTopics = List<String>.from(selectedTopics);
-        if (selected) {
-          newSelectedTopics.add(topic);
-        } else {
-          newSelectedTopics.remove(topic);
-        }
+      state: state,
+      onStateChanged: (newState) async {
         final preferences = ref.read(preferencesProvider) ?? newPreferences;
-        await ref.read(preferencesProvider.notifier).setValue(preferences.copyWith(topics: newSelectedTopics));
+        final newPreferredTopics = List<String>.from(preferences.topics);
+        final newAvoidedTopics = List<String>.from(preferences.avoidedTopics);
+        
+        // Remove topic from both lists first
+        newPreferredTopics.remove(topic);
+        newAvoidedTopics.remove(topic);
+        
+        // Add to appropriate list based on new state
+        switch (newState) {
+          case TopicState.preferred:
+            newPreferredTopics.add(topic);
+            break;
+          case TopicState.avoided:
+            newAvoidedTopics.add(topic);
+            break;
+          case TopicState.neutral:
+            // Already removed, nothing to add
+            break;
+        }
+        
+        await ref.read(preferencesProvider.notifier).setValue(
+          preferences.copyWith(
+            topics: newPreferredTopics,
+            avoidedTopics: newAvoidedTopics,
+          ),
+        );
       },
     );
   }
@@ -41,6 +71,9 @@ class OnboardingInterestsStep extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final h = MyHelper(context);
     final availableTopics = ref.watch(topicsProvider).availableTopics;
+    final appRepository = ref.watch(appRepositoryProvider);
+    final preferredTopics = appRepository.preferredTopics;
+    final avoidedTopics = appRepository.avoidedTopics;
 
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -56,7 +89,9 @@ class OnboardingInterestsStep extends ConsumerWidget {
         const SizedBox(height: 8),
         
         Text(
-          'Select all that apply',
+          preferredTopics.isEmpty && avoidedTopics.isEmpty 
+              ? 'Select all that apply' 
+              : '${preferredTopics.length} preferred${avoidedTopics.isNotEmpty ? ' - ${avoidedTopics.length} avoided' : ''}',
           style: MyHelper(context).currentTextTheme.bodySmall?.copyWith(
             color: Colors.white.withValues(alpha: 0.7),
           ),
@@ -72,9 +107,7 @@ class OnboardingInterestsStep extends ConsumerWidget {
             runSpacing: 6,
             alignment: WrapAlignment.center,
             children: availableTopics.map((topic) {
-              final selectedTopics = ref.watch(appRepositoryProvider).preferredTopics;
-              final isSelected = selectedTopics.contains(topic);
-              return _buildTopicChip(h, topic, isSelected, ref);
+              return _buildTopicChip(h, topic, ref);
             }).toList(),
           ).withPaddingHorizontal(16),
       ],

@@ -20,6 +20,7 @@ class FeedItem {
   final bool isLiked;
   final bool isSaved;
   final int likeCount;
+  // TODO: add alsoRead
 
   FeedItem({
     required this.id,
@@ -65,8 +66,8 @@ class FeedItem {
       canonicalUrl: json['canonicalUrl'],
       hook: json['hook'],
       topic: json['topic'],
-      imageUrl: json['image'],
-      videoUrl: json['video'],
+      imageUrl: json['imageUrl'],
+      videoUrl: json['imageUrl'],
       riskLevel: json['riskLevel'],
       publishedAt: json['publishedAt'] == null ? null : DateTime.parse(json['publishedAt']),
       sources: List<String>.from(json['sources'] ?? []),

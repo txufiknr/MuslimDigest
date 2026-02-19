@@ -155,7 +155,7 @@ class MyButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDisabled = onPressed == null || isLoading;
-    final buttonHeight = height ?? 56;
+    final buttonHeight = height ?? AppThemes.buttonHeight;
     
     // Create custom button styles with proper WidgetStateProperty wrapping
     final isDarkTheme = brightness == Brightness.dark;

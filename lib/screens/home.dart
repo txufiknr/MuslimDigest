@@ -12,6 +12,7 @@ import 'package:muslimdigest/utils/app_repository.dart';
 import 'package:muslimdigest/utils/dialogs.dart';
 import 'package:muslimdigest/utils/extensions.dart';
 import 'package:muslimdigest/utils/functions.dart';
+import 'package:muslimdigest/variables/app.dart';
 import 'package:muslimdigest/variables/feed.dart';
 import 'package:muslimdigest/variables/time.dart';
 import 'package:muslimdigest/widgets/animations/loading_indicator_bar.dart';
@@ -108,7 +109,7 @@ class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver
       context,
       title: 'Failed to fetch feed items.',
       message: 'Failed to load your feed. Would you like to retry?',
-      footer: 'You can always pull to refresh to reload your feed.',
+      footer: 'Or try checking your internet connection first.',
     );
     if (shouldRetry) {
       return onRetry();
@@ -149,6 +150,12 @@ class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver
               FeedSwiper(
                 feedType: _feedType,
                 onReload: _loadFeed,
+                onBackToDigest: () async {
+                  // TODO: scroll topic tabs to position 0
+                  await prefs.remove('topic');
+                  setState(() {});
+                  _initFeed();
+                },
               ).expand(),
               if (_isFeedLoading)
                 // Loading indicator at the bottom

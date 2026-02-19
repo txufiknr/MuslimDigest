@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lottie/lottie.dart';
 import 'package:muslimdigest/config/colors.dart';
 import 'package:muslimdigest/config/feeds.dart';
+import 'package:muslimdigest/config/themes.dart';
 import 'package:muslimdigest/providers/read_count.dart';
 import 'package:muslimdigest/providers/read_last_date.dart';
 import 'package:muslimdigest/utils/extensions.dart';
@@ -15,6 +16,8 @@ import 'package:muslimdigest/utils/time.dart';
 import 'package:muslimdigest/utils/users.dart';
 import 'package:muslimdigest/variables/feed.dart';
 import 'package:muslimdigest/variables/time.dart';
+import 'package:muslimdigest/widgets/components/button.dart';
+import 'package:muslimdigest/widgets/components/divider.dart';
 import 'package:muslimdigest/widgets/home/feed_card.dart';
 import 'package:muslimdigest/widgets/home/trending_card.dart';
 import '../../widgets/components/placeholder.dart';
@@ -26,10 +29,12 @@ final UNDO_DIRECTION = SWIPE_DIRECTION == CardSwiperDirection.left ? CardSwiperD
 /// Feed swiper widget for displaying news cards with swipe navigation
 class FeedSwiper extends ConsumerStatefulWidget {
   final VoidCallback onReload;
+  final VoidCallback onBackToDigest;
   final FeedType feedType;
   
   const FeedSwiper({super.key, 
     required this.onReload,
+    required this.onBackToDigest,
     required this.feedType,
   });
 
@@ -88,12 +93,23 @@ class FeedSwiperState extends ConsumerState<FeedSwiper> {
 
     // When feed is empty
     if (_feedItems.isEmpty) {
-      return MyPlaceholder(
-        'No articles available',
-        icon: Icon(CupertinoIcons.news, size: 80, color: AppColors.accent),
-        onRetry: widget.onReload,
-        retryLabel: "Reload",
-      ).center();
+      return Column(
+        children: [
+          MyPlaceholder(
+            'No articles available',
+            icon: Icon(CupertinoIcons.news, size: 80, color: AppColors.accent),
+            onRetry: widget.onReload,
+            retryLabel: "Reload",
+          ).center().expand(),
+          MyDivider().withPaddingVertical(AppThemes.contentPadding),
+          MyButton(
+            text: "Back to digest",
+            icon: Icon(CupertinoIcons.back),
+            variant: MyButtonVariant.success,
+            onPressed: widget.onBackToDigest,
+          )
+        ],
+      ).withPaddingAll(AppThemes.contentPadding);
     }
 
     final cardsCount = _feedItems.length + 1;

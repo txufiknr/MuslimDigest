@@ -7,6 +7,7 @@ import 'package:muslimdigest/utils/repository.dart';
 import 'package:muslimdigest/utils/functions.dart';
 import 'package:muslimdigest/api/feeds.dart';
 import 'package:muslimdigest/utils/extensions.dart';
+import 'package:muslimdigest/variables/app.dart';
 
 class BaseFeedState {
   final List<FeedItem>? items;
@@ -103,6 +104,13 @@ abstract class BaseFeedNotifier extends Notifier<BaseFeedState> {
           response.data.map((item) => FeedItem.fromJson(item as Map<String, dynamic>))
         );
         await setValue(feedItems);
+
+        // Log last ingestion date for daily digest feed
+        if (endpoint == 'feed') {
+          final lastIngestDate = response.result?['lastIngestDate'] as String?;
+          if (lastIngestDate != null) await prefs.setString('feed_last_ingest', lastIngestDate);
+        }
+
         state = state.copyWith(isLoading: false);
         return true;
       } else {
