@@ -10,9 +10,9 @@ class LoadingIndicatorBar extends StatefulWidget {
 
   const LoadingIndicatorBar({
     super.key,
-    this.height = 4.0,
+    this.height = 6.0,
     this.width,
-    this.duration = const Duration(milliseconds: 1500),
+    this.duration = const Duration(milliseconds: 2000),
     this.margin,
   });
 
@@ -68,8 +68,8 @@ class _LoadingIndicatorBarState extends State<LoadingIndicatorBar> with SingleTi
                 gradient: LinearGradient(
                   colors: [
                     Colors.transparent,
-                    AppColors.secondary,
-                    AppColors.secondary,
+                    AppColors.primary,
+                    AppColors.primary,
                     Colors.transparent,
                   ],
                   stops: const [0.0, 0.3, 0.7, 1.0],

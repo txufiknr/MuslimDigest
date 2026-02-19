@@ -231,18 +231,19 @@ class _FeedContent extends StatelessWidget {
         children: [
           // Hook text
           if (feedItem.hook != null) Container(
-            margin: EdgeInsets.only(bottom: 12),
+            margin: EdgeInsets.only(bottom: 16),
             decoration: BoxDecoration(
-              color: Colors.teal[200],
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.teal[300]!, width: 1),
+              color: Colors.teal[50],
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: Colors.teal[100]!, width: 1),
             ),
-            padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             child: Text(
               feedItem.hook!,
-              style: h.currentTextTheme.bodySmall?.copyWith(
+              style: h.currentTextTheme.bodyMedium?.copyWith(
                 fontWeight: FontWeight.w500,
                 fontStyle: FontStyle.italic,
+                color: Colors.teal[800]
               ),
             ),
           ),
@@ -546,7 +547,7 @@ class _FeedBadgeChip extends StatelessWidget {
         switch (_badgeValue) {
           case 'high': return Colors.green;
           case 'medium': return Colors.blue;
-          case 'basic': return Colors.grey;
+          case 'basic': return Colors.cyan;
           case 'unverified': return Colors.blueGrey;
         }
         
@@ -555,7 +556,7 @@ class _FeedBadgeChip extends StatelessWidget {
         switch (_badgeValue) {
           case 'quran': return Colors.teal;
           case 'dua': return Colors.lightGreen;
-          case 'news': case 'muslimworld': return Colors.amber;
+          case 'news': case 'muslimworld': return Colors.cyan;
           case 'fiqh': return Colors.indigo;
           case 'hadith': return Colors.teal;
           case 'seerah': return Colors.brown;
@@ -594,7 +595,7 @@ class _FeedBadgeChip extends StatelessWidget {
           style: TextStyle(
             fontSize: 12,
             color: _badgeColor[700],
-            fontWeight: FontWeight.w500,
+            fontWeight: FontWeight.w400,
           ),
         ),
       ),

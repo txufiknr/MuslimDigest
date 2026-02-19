@@ -99,4 +99,6 @@ class PrefData {
   }
 
   static String? get currentTopic => prefs.getString('topic');
+  static String? get feedLastIngest => prefs.getString('feed_last_ingest');
+  static DateTime? get feedLastIngestDate => feedLastIngest != null ? DateTime.parse(feedLastIngest!) : null;
 }

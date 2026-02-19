@@ -3,6 +3,7 @@ import 'dart:developer' show log;
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_card_swiper/flutter_card_swiper.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lottie/lottie.dart';
 import 'package:muslimdigest/config/colors.dart';
 import 'package:muslimdigest/config/feeds.dart';
 import 'package:muslimdigest/providers/read_count.dart';
@@ -15,7 +16,7 @@ import 'package:muslimdigest/utils/users.dart';
 import 'package:muslimdigest/variables/feed.dart';
 import 'package:muslimdigest/variables/time.dart';
 import 'package:muslimdigest/widgets/home/feed_card.dart';
-import '../../widgets/animations/loader.dart';
+import 'package:muslimdigest/widgets/home/trending_card.dart';
 import '../../widgets/components/placeholder.dart';
 import '../../models/feed.dart';
 
@@ -75,24 +76,24 @@ class FeedSwiperState extends ConsumerState<FeedSwiper> {
   @override
   Widget build(BuildContext context) {
 
+    // When feed is loading
+    if (_isFeedLoading) {
+      return Column(
+        children: [
+          TrendingFeedsCard().center().expand(),
+          Lottie.asset('assets/lottie/pulse.json', width: 150),
+        ],
+      );
+    }
+
     // When feed is empty
     if (_feedItems.isEmpty) {
-      if (_isFeedLoading) {
-        return MyLoader().center();
-      }
-
-      // Display empty feed placeholder
       return MyPlaceholder(
         'No articles available',
         icon: Icon(CupertinoIcons.news, size: 80, color: AppColors.accent),
         onRetry: widget.onReload,
         retryLabel: "Reload",
       ).center();
-    }
-
-    if (_isFeedLoading) {
-      // TODO: small non-disruptive loader
-      return MyLoader().center();
     }
 
     final cardsCount = _feedItems.length + 1;

@@ -21,7 +21,7 @@ class MyBadge extends StatelessWidget {
           style: TextStyle(
             fontSize: 11,
             color: color[700],
-            fontWeight: FontWeight.w500,
+            fontWeight: FontWeight.w400,
           ),
         ),
       ),

@@ -13,6 +13,7 @@ import 'package:muslimdigest/utils/extensions.dart';
 import 'package:muslimdigest/utils/functions.dart';
 import 'package:muslimdigest/variables/feed.dart';
 import 'package:muslimdigest/variables/time.dart';
+import 'package:muslimdigest/widgets/animations/loading_indicator_bar.dart';
 import '../widgets/home/home_header.dart';
 import '../widgets/home/feed_swiper.dart';
 import '../widgets/home/reading_streak_footer.dart';
@@ -29,6 +30,7 @@ class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver
   var _isWillExit = false;
 
   AppRepository get r => ref.read(appRepositoryProvider);
+  bool get _isFeedLoading => _feedType.watch(ref).isLoading;
 
   @override
   void initState() {
@@ -55,9 +57,7 @@ class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver
       fireAndForget(saveAllData);
     } else if (state == AppLifecycleState.resumed) {
       _initReadCount();
-      if (r.shouldLoadFeedToday) {
-        _loadFeed();
-      }
+      _initFeed();
     }
   }
 
@@ -71,17 +71,13 @@ class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver
 
   /// Ensure today's feed is loaded
   Future<void> _initFeed() async {
+    if (!r.shouldLoadFeedToday) return log("[home] Feed is up to date");
     if (!await isOnline()) {
       log("[home] No internet connection, skipping feed load");
       return;
     }
-    // TODO: check last read date & last ingest date in backend, if fail -> skip
-    if (r.shouldLoadFeedToday) {
-      log("[home] Feed needs reloading");
-      await _loadFeed();
-    } else {
-      log("[home] Feed is up to date");
-    }
+    log("[home] Feed needs reloading");
+    await _loadFeed();
   }
 
   /// Reset read count if it's a new day
@@ -142,7 +138,12 @@ class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver
                 feedType: _feedType,
                 onReload: _loadFeed,
               ).expand(),
-              if (_feedType == FeedType.digest) ReadingStreakFooter(),
+              if (_isFeedLoading)
+                // Loading indicator at the bottom
+                LoadingIndicatorBar()
+              else if (_feedType == FeedType.digest)
+                // Reading streak progress
+                ReadingStreakFooter(),
             ],
           ),
         ),

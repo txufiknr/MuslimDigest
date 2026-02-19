@@ -8,6 +8,7 @@ import 'package:muslimdigest/providers/user.dart';
 import 'package:muslimdigest/utils/time.dart';
 import 'package:muslimdigest/utils/users.dart';
 import 'package:muslimdigest/variables/time.dart';
+import 'package:muslimdigest/variables/user.dart';
 
 /// Business-logic repository. Uses Ref, never WidgetRef.
 /// Expose via provider so it can be watched or read anywhere.
@@ -23,8 +24,11 @@ class AppRepository {
 
   bool get isFirstRun => user == null;
   bool get isNewDay => !isToday(readLastDate);
-  bool get shouldLoadFeedToday => isNewDay || _ref.read(feedProvider).isEmpty;
-  bool get shouldLoadFeedTodayAndStillNone => shouldLoadFeedToday && _ref.read(feedProvider).isNone;
+
+  bool get shouldLoadFeedToday =>
+      PrefData.feedLastIngestDate == null ||
+      !isToday(PrefData.feedLastIngestDate!) ||
+      _ref.read(feedProvider).isNone;
 
   String get firstName {
     final name = extractFirstName(user?.name);

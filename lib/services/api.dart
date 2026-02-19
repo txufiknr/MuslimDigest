@@ -28,13 +28,22 @@ class ApiResponse {
   /// Contains the HTTP status code from the response
   final int statusCode;
 
+  /// Contains the full JSON response as a map
+  final Map<String, dynamic>? result;
+
   /// Creates a new ApiResponse instance
   /// 
   /// [success] - Whether the API call was successful (required)
   /// [data] - Response data (optional)
   /// [error] - Error message (optional)
   /// [statusCode] - HTTP status code from the response (required)
-  ApiResponse({required this.success, this.data, this.error, required this.statusCode});
+  ApiResponse({
+    required this.success,
+    required this.statusCode,
+    this.data,
+    this.error,
+    this.result,
+  });
 
   bool get successful => success && data != null;
 }
@@ -122,6 +131,7 @@ class ApiService {
           success: result['success'] ?? true,
           data: result['data'],
           statusCode: response.statusCode,
+          result: result,
         );
       } else {
         // Handle HTTP error responses with status code information
@@ -129,6 +139,7 @@ class ApiService {
           success: false,
           error: result['error'] ?? 'Failed to create $path: ${response.statusCode}',
           statusCode: response.statusCode,
+          result: result,
         );
       }
     } catch (e) {
@@ -180,6 +191,7 @@ class ApiService {
           success: result['success'] ?? true,
           data: result['data'],
           statusCode: response.statusCode,
+          result: result,
         );
       } else {
         // Handle HTTP error responses with status code information
@@ -187,6 +199,7 @@ class ApiService {
           success: false,
           error: result['error'] ?? 'Failed to update $path: ${response.statusCode}',
           statusCode: response.statusCode,
+          result: result,
         );
       }
     } catch (e) {
@@ -239,6 +252,7 @@ class ApiService {
           success: result['success'] ?? true,
           data: result['data'] ?? result['items'],
           statusCode: response.statusCode,
+          result: result,
         );
       } else {
         // Handle HTTP error responses with status code information
@@ -246,6 +260,7 @@ class ApiService {
           success: false,
           error: result['error'] ?? 'Failed to get $path: ${response.statusCode}',
           statusCode: response.statusCode,
+          result: result,
         );
       }
     } catch (e) {

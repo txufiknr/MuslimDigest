@@ -47,7 +47,8 @@ class FeedItem {
   String? get sourceLink => canonicalUrl ?? sourceUrl;
 
   List<String> get badgeToDisplay => badges.where((badge) => 
-    badge != 'summary_status:unavailable' &&
+    !badge.startsWith('trust_level:') &&
+    !badge.startsWith('summary_status:') &&
     (badge != 'content_risk:high' ? !badge.startsWith('content_risk:') : true)
   ).toList();
 

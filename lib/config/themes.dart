@@ -13,6 +13,7 @@ class AppThemes {
   static const double headlineMediumSize = 20;
   static const double titleLargeSize = 22;
   static const double titleMediumSize = 21;
+  static const double titleSmallSize = 16;
   static const double bodyLargeSize = 22;
   static const double bodyMediumSize = 17.5;
   static const double bodySmallSize = 14;
@@ -88,6 +89,7 @@ class AppThemes {
           borderRadius: BorderRadius.circular(28),
         ),
         textStyle: const TextStyle(
+          fontFamily: APP_FONT_FAMILY,
           fontWeight: FontWeight.w500,
           fontSize: buttonLargeSize,
         ),
@@ -102,6 +104,7 @@ class AppThemes {
           borderRadius: BorderRadius.circular(28),
         ),
         textStyle: const TextStyle(
+          fontFamily: APP_FONT_FAMILY,
           fontWeight: FontWeight.w500,
           fontSize: buttonLargeSize,
         ),
@@ -193,6 +196,11 @@ class AppThemes {
         color: primaryColor,
         fontWeight: FontWeight.w600,
         fontSize: titleMediumSize,
+      ),
+      titleSmall: _buildTextStyle(
+        color: primaryColor,
+        fontWeight: FontWeight.w600,
+        fontSize: titleSmallSize,
       ),
       bodyLarge: _buildTextStyle(
         color: primaryColor,
