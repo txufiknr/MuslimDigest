@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:muslimdigest/mock/users.dart';
 import 'package:muslimdigest/providers/user.dart';
 import 'package:muslimdigest/utils/extensions.dart';
 import '../../utils/helpers.dart';
@@ -48,7 +47,7 @@ class OnboardingAgeStep extends ConsumerWidget {
         ),
       ),
     ).onTap(() async {
-      final user = ref.read(userProvider) ?? newUser;
+      final user = ref.read(userProvider);
       await ref.read(userProvider.notifier).setValue(user.copyWith(ageGroup: group['value']!));
     });
   }
@@ -56,7 +55,7 @@ class OnboardingAgeStep extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final h = MyHelper(context);
-    final user = ref.watch(userProvider) ?? newUser;
+    final user = ref.watch(userProvider);
 
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,

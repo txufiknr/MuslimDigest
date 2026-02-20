@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:muslimdigest/models/user.dart';
 import 'package:muslimdigest/providers/feed.dart';
 import 'package:muslimdigest/providers/feed_trending.dart';
 import 'package:muslimdigest/providers/topics.dart';
@@ -11,6 +12,8 @@ import 'package:muslimdigest/utils/app.dart';
 import 'package:muslimdigest/utils/app_repository.dart';
 import 'package:muslimdigest/utils/extensions.dart';
 import 'package:muslimdigest/utils/functions.dart';
+import 'package:muslimdigest/variables/app.dart';
+import 'package:muslimdigest/variables/user.dart';
 import '../config/colors.dart';
 import '../widgets/animations/loading_indicator_bar.dart';
 import '../widgets/components/logo.dart';
@@ -34,7 +37,7 @@ class _SplashPageState extends ConsumerState<SplashPage> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       fireAndForget(_loadAppData);
-      fireAndForget(_loadFeedData);
+      fireAndForget(_loadUserData);
       unawaited(_startSplash());
     });
   }
@@ -46,7 +49,13 @@ class _SplashPageState extends ConsumerState<SplashPage> {
     ]);
   }
 
-  Future<bool> _loadFeedData() async {
+  Future<bool> _loadUserData() async {
+    final userId = prefs.getString('user_id');
+    if (userId == null) { // MUST: Create new user
+      final user = User(userId: PrefData.userId);
+      await ref.read(userProvider.notifier).setValue(user);
+    }
+
     final results = await Future.wait<bool>([
       ref.read(userProvider.notifier).load(),
       if (r.shouldLoadFeedToday) ref.read(feedProvider.notifier).load(),

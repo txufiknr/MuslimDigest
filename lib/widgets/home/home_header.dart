@@ -35,7 +35,7 @@ class HomeHeader extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final h = MyHelper(context);
-    final topics = ref.watch(preferencesProvider)?.topics ?? [];
+    final topics = ref.watch(preferencesProvider).topics;
     final streaks = ref.watch(streaksProvider);
 
     return Container(

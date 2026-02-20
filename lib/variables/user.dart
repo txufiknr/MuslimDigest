@@ -4,6 +4,8 @@ import 'package:muslimdigest/models/user.dart';
 import 'package:muslimdigest/variables/app.dart';
 import 'package:uuid/uuid.dart';
 
+String? newUserId;
+
 class PrefData {
   /// User data and preferences getters
   /// 
@@ -20,11 +22,11 @@ class PrefData {
   /// print('User ID: $id');
   /// ```
   static String get userId {
-    final existingUserId = prefs.getString('user_id');
+    final existingUserId = newUserId ?? prefs.getString('user_id');
     if (existingUserId == null) {
-      final newUserId = const Uuid().v7();
-      prefs.setString('user_id', newUserId);
-      return newUserId;
+      newUserId = const Uuid().v7();
+      prefs.setString('user_id', newUserId!);
+      return newUserId!;
     }
     return existingUserId;
   }

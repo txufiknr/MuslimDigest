@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:muslimdigest/mock/users.dart';
 import 'package:muslimdigest/providers/user.dart';
 import '../../utils/helpers.dart';
 
@@ -35,7 +34,7 @@ class OnboardingNameStep extends ConsumerWidget {
           ),
           child: TextField(
             onChanged: (name) {
-              final user = ref.read(userProvider) ?? newUser;
+              final user = ref.read(userProvider);
               ref.read(userProvider.notifier).setValue(user.copyWith(name: name));
             },
             style: h.currentTextTheme.bodyLarge?.copyWith(

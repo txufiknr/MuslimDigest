@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:muslimdigest/mock/users.dart';
 import 'package:muslimdigest/providers/preferences.dart';
 import 'package:muslimdigest/providers/topics.dart';
 import 'package:muslimdigest/utils/app_repository.dart';
@@ -36,7 +35,7 @@ class OnboardingInterestsStep extends ConsumerWidget {
       topic: topic,
       state: state,
       onStateChanged: (newState) async {
-        final preferences = ref.read(preferencesProvider) ?? newPreferences;
+        final preferences = ref.read(preferencesProvider);
         final newPreferredTopics = List<String>.from(preferences.topics);
         final newAvoidedTopics = List<String>.from(preferences.avoidedTopics);
         

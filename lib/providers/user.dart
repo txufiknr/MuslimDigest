@@ -3,28 +3,30 @@ import 'package:muslimdigest/models/user.dart';
 import 'package:muslimdigest/services/api.dart';
 import 'package:muslimdigest/utils/repository.dart';
 import 'package:muslimdigest/variables/app.dart';
+import 'package:muslimdigest/variables/user.dart';
 
-final userProvider = NotifierProvider<UserNotifier, User?>(UserNotifier.new);
+final userProvider = NotifierProvider<UserNotifier, User>(UserNotifier.new);
 
-class UserNotifier extends Notifier<User?> {
+class UserNotifier extends Notifier<User> {
   static const _key = 'user';
 
   @override
-  User? build() {
+  User build() {
     final json = ref.watch(preferencesRepositoryProvider).getJson(_key);
-    return json == null ? null : User.fromJson(json);
+    return json == null ? User(userId: PrefData.userId) : User.fromJson(json);
   }
 
-  Future<void> setValue(User? value) async {
+  Future<void> setValue(User value) async {
     state = value;
+    await prefs.setString('user_id', value.userId);
     await ref
         .read(preferencesRepositoryProvider)
-        .setJson(_key, value?.toJson());
+        .setJson(_key, value.toJson());
   }
 
   Future<bool> load() async {
-    final userId = prefs.getString('user_id');
-    if (userId == null) return true;
+    // final userId = prefs.getString('user_id');
+    // if (userId == null) return true;
     // PrefData.userId;
     try {
       final response = await ApiService.get('user');
@@ -35,10 +37,5 @@ class UserNotifier extends Notifier<User?> {
     } catch (e) {
       return false;
     }
-  }
-
-  Future<void> clear() async {
-    state = null;
-    await ref.read(preferencesRepositoryProvider).remove(_key);
   }
 }

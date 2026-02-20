@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:muslimdigest/config/themes.dart';
-import 'package:muslimdigest/mock/users.dart';
 import 'package:muslimdigest/models/user.dart';
 import 'package:muslimdigest/providers/preferences.dart';
 import 'package:muslimdigest/providers/user.dart';
@@ -33,8 +32,8 @@ class _WelcomePageState extends ConsumerState<WelcomePage> {
   var _currentStep = 0;
 
   bool get _isLastStep => _currentStep == _steps.length - 1;
-  User get _newUser => ref.watch(userProvider) ?? newUser;
-  UserPreferences get _newPreferences => ref.watch(preferencesProvider) ?? newPreferences;
+  User get _newUser => ref.watch(userProvider);
+  UserPreferences get _newPreferences => ref.watch(preferencesProvider);
 
   @override
   void dispose() {
@@ -77,8 +76,8 @@ class _WelcomePageState extends ConsumerState<WelcomePage> {
     // Reset form data for current step when skipping
     final u = ref.read(userProvider.notifier);
     final p = ref.read(preferencesProvider.notifier);
-    final currentUser = ref.read(userProvider) ?? newUser;
-    final currentPreferences = ref.read(preferencesProvider) ?? newPreferences;
+    final currentUser = ref.read(userProvider);
+    final currentPreferences = ref.read(preferencesProvider);
     switch (_currentStep) {
       case 0: u.setValue(currentUser.copyWith(gender: '')); break;
       case 1: u.setValue(currentUser.copyWith(ageGroup: '')); break;

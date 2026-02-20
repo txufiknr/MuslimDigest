@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lottie/lottie.dart';
-import 'package:muslimdigest/mock/users.dart';
 import 'package:muslimdigest/providers/user.dart';
 import 'package:muslimdigest/utils/extensions.dart';
 import '../../utils/helpers.dart';
@@ -18,7 +17,7 @@ class OnboardingGenderStep extends ConsumerWidget {
   ) {
     final label = gender == 'male' ? 'muslim' : 'muslimah';
     final lottiePath = 'assets/lottie/$gender.json';
-    final user = ref.watch(userProvider) ?? newUser;
+    final user = ref.watch(userProvider);
     final isSelected = gender == user.gender;
 
     return Column(
