@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:muslimdigest/providers/feed.dart';
 import 'package:muslimdigest/providers/feed_trending.dart';
 import 'package:muslimdigest/providers/topics.dart';
+import 'package:muslimdigest/providers/user.dart';
 import 'package:muslimdigest/utils/app.dart';
 import 'package:muslimdigest/utils/app_repository.dart';
 import 'package:muslimdigest/utils/extensions.dart';
@@ -47,6 +48,7 @@ class _SplashPageState extends ConsumerState<SplashPage> {
 
   Future<bool> _loadFeedData() async {
     final results = await Future.wait<bool>([
+      ref.read(userProvider.notifier).load(),
       if (r.shouldLoadFeedToday) ref.read(feedProvider.notifier).load(),
       ref.read(feedTrendingProvider.notifier).load(),
       ref.read(topicsProvider.notifier).load(),

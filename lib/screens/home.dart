@@ -4,6 +4,7 @@ import 'dart:developer' show log;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:muslimdigest/api/user.dart';
+import 'package:muslimdigest/models/user.dart';
 import 'package:muslimdigest/providers/read_count.dart';
 import 'package:muslimdigest/providers/read_last_date.dart';
 import 'package:muslimdigest/providers/streaks.dart';
@@ -15,6 +16,7 @@ import 'package:muslimdigest/utils/functions.dart';
 import 'package:muslimdigest/variables/app.dart';
 import 'package:muslimdigest/variables/feed.dart';
 import 'package:muslimdigest/variables/time.dart';
+import 'package:muslimdigest/variables/user.dart';
 import 'package:muslimdigest/widgets/animations/loading_indicator_bar.dart';
 import '../widgets/home/home_header.dart';
 import '../widgets/home/feed_swiper.dart';
@@ -28,11 +30,16 @@ class HomePage extends ConsumerStatefulWidget {
 }
 
 class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver {
-  var _feedType = FeedType.digest;
-  var _isWillExit = false;
+  UserStreaks? get streaks => ref.watch(streaksProvider);
+  bool get _isStreakToday => ref.watch(streaksProvider.notifier).isStreakToday;
+  bool get _isDailyDigestDone => _isStreakToday || PrefData.feedLastIngestDate == streaks?.lastReadAt;
+  FeedType get _homeFeedType => _isDailyDigestDone ? FeedType.latest : FeedType.digest;
+  late var _feedType = _homeFeedType;
 
   AppRepository get r => ref.read(appRepositoryProvider);
   bool get _isFeedLoading => _feedType.watch(ref).isLoading;
+
+  var _isWillExit = false;
 
   @override
   void initState() {
@@ -63,18 +70,13 @@ class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver
     }
   }
 
-  Future<void> _loadFeed([String? topic]) async {
-    // 1. Check user reading streak
-    final isStreakToday = ref.read(streaksProvider.notifier).isStreakToday;
-    
-    // 2. If today is streak, switch to latest feed from daily digest
-    if (isStreakToday && _feedType == FeedType.digest) {
-      setState(() {
-        _feedType = FeedType.latest;
-      });
-    }
+  void _seeLatestFeed() {
+    setState(() {
+      _feedType = _homeFeedType;
+    });
+  }
 
-    // 3. Load the feeds
+  Future<void> _loadFeed([String? topic]) async {
     final success = await _feedType.load(ref, topic: topic);
     if (!mounted) return;
     if (!success) {
@@ -150,6 +152,7 @@ class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver
               FeedSwiper(
                 feedType: _feedType,
                 onReload: _loadFeed,
+                onSeeLatest: _seeLatestFeed,
                 onBackToDigest: () async {
                   // TODO: scroll topic tabs to position 0
                   await prefs.remove('topic');

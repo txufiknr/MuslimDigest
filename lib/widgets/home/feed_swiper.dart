@@ -29,11 +29,13 @@ final UNDO_DIRECTION = SWIPE_DIRECTION == CardSwiperDirection.left ? CardSwiperD
 /// Feed swiper widget for displaying news cards with swipe navigation
 class FeedSwiper extends ConsumerStatefulWidget {
   final VoidCallback onReload;
+  final VoidCallback onSeeLatest;
   final VoidCallback onBackToDigest;
   final FeedType feedType;
   
   const FeedSwiper({super.key, 
     required this.onReload,
+    required this.onSeeLatest,
     required this.onBackToDigest,
     required this.feedType,
   });
@@ -133,6 +135,7 @@ class FeedSwiperState extends ConsumerState<FeedSwiper> {
           widget.feedType,
           feedItem: index == cardsCount - 1 ? null : _feedItems[index],
           onReload: widget.onReload,
+          onSeeLatest: widget.onSeeLatest,
         );
       },
       isDisabled: false,

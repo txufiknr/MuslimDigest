@@ -36,11 +36,13 @@ class FeedCard extends ConsumerStatefulWidget {
   final FeedType feedType;
   final FeedItem? feedItem;
   final VoidCallback onReload;
+  final VoidCallback onSeeLatest;
 
   const FeedCard(this.feedType, {
     super.key,
     this.feedItem,
     required this.onReload,
+    required this.onSeeLatest,
   });
 
   @override
@@ -155,7 +157,7 @@ class _FeedCardState extends ConsumerState<FeedCard> with AutomaticKeepAliveClie
             ],
           ),
           Lottie.asset('assets/lottie/streak.json'),
-          MyButton(text: "Continue reading", icon: Icon(CupertinoIcons.book), onPressed: widget.onReload,),
+          MyButton(text: "Continue reading", icon: Icon(CupertinoIcons.book), onPressed: widget.onSeeLatest,),
           MyDivider(),
           Row(
             children: _isTakingScreenshot ? [
