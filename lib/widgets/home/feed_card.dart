@@ -8,6 +8,7 @@ import 'package:muslimdigest/config/colors.dart';
 import 'package:muslimdigest/config/constants.dart';
 import 'package:muslimdigest/config/themes.dart';
 import 'package:muslimdigest/providers/feed/base_feed_notifier.dart';
+import 'package:muslimdigest/providers/user/settings.dart';
 import 'package:muslimdigest/providers/user/streaks.dart';
 import 'package:muslimdigest/utils/dialogs.dart';
 import 'package:muslimdigest/utils/extensions.dart';
@@ -288,14 +289,16 @@ class _FeedHeader extends StatelessWidget {
 }
 
 /// Feed content with article text and badges
-class _FeedContent extends StatelessWidget {
+class _FeedContent extends ConsumerWidget {
   final FeedItem feedItem;
 
   const _FeedContent({required this.feedItem});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final h = MyHelper(context);
+    final settings = ref.watch(settingsProvider);
+    final textSize = settings.textSize.toDouble();
     
     return SingleChildScrollView(
       padding: EdgeInsets.all(AppThemes.contentPadding),
@@ -316,7 +319,8 @@ class _FeedContent extends StatelessWidget {
               style: h.currentTextTheme.bodyMedium?.copyWith(
                 fontWeight: FontWeight.w500,
                 fontStyle: FontStyle.italic,
-                color: Colors.teal[800]
+                color: Colors.teal[800],
+                fontSize: textSize,
               ),
             ),
           ),
@@ -324,7 +328,9 @@ class _FeedContent extends StatelessWidget {
           // Summary text
           formatText(
             feedItem.summary,
-            style: h.currentTextTheme.bodyMedium
+            style: h.currentTextTheme.bodyMedium?.copyWith(
+              fontSize: textSize,
+            ),
           ),
           const SizedBox(height: 16),
           

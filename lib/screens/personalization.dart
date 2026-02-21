@@ -4,13 +4,14 @@ import 'package:muslimdigest/config/colors.dart';
 import 'package:muslimdigest/config/themes.dart';
 import 'package:muslimdigest/models/user.dart';
 import 'package:muslimdigest/providers/topics.dart';
+import 'package:muslimdigest/providers/user/preferences.dart';
 import 'package:muslimdigest/providers/user/settings.dart';
-import 'package:muslimdigest/utils/app_repository.dart';
 import 'package:muslimdigest/utils/extensions.dart';
 import 'package:muslimdigest/widgets/animations/loader.dart';
 import 'package:muslimdigest/widgets/components/divider.dart';
 import 'package:muslimdigest/widgets/components/setting_section.dart';
 import 'package:muslimdigest/widgets/components/topic_chip_selector.dart';
+import 'package:muslimdigest/widgets/onboarding/topic_chip.dart';
 import 'package:muslimdigest/utils/helpers.dart';
 
 class PersonalizationPage extends ConsumerStatefulWidget {
@@ -79,9 +80,9 @@ class _PersonalizationPageState extends ConsumerState<PersonalizationPage>
     return Consumer(
       builder: (context, ref, child) {
         final availableTopics = ref.watch(topicsProvider).availableTopics;
-        final appRepository = ref.watch(appRepositoryProvider);
-        final preferredTopics = appRepository.preferredTopics;
-        final avoidedTopics = appRepository.avoidedTopics;
+        final preferences = ref.watch(preferencesProvider);
+        final preferredTopics = preferences.topics;
+        final avoidedTopics = preferences.avoidedTopics;
 
         return SingleChildScrollView(
           padding: const EdgeInsets.all(AppThemes.contentPadding),
@@ -124,7 +125,19 @@ class _PersonalizationPageState extends ConsumerState<PersonalizationPage>
   }
 
   Widget _buildTopicChip(MyHelper h, String topic, WidgetRef ref) {
-    return TopicChipSelector(topic: topic);
+    return TopicChipSelector(
+      topic: topic,
+      colors: const TopicChipColors(
+        neutralText: AppColors.primary,
+        neutralBackground: Colors.white,
+        neutralBorder: AppColors.primary,
+        preferredText: Colors.white,
+        preferredBackground: AppColors.primary,
+        avoidedText: Colors.white,
+        avoidedBackground: AppColors.error,
+        avoidedBorder: AppColors.error,
+      ),
+    );
   }
 
   Widget _buildSettingsTab(MyHelper h, UserSettings settings) {

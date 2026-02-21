@@ -239,7 +239,7 @@ class UserSettings {
 
   UserSettings({
     required this.userId,
-    this.textSize = 16,
+    this.textSize = 18,
     this.swipeDirection = 'right',
     this.createdAt,
     this.updatedAt,
@@ -248,7 +248,7 @@ class UserSettings {
   factory UserSettings.fromJson(Map<String, dynamic> json) {
     return UserSettings(
       userId: json['userId'],
-      textSize: json['textSize'] ?? 16,
+      textSize: json['textSize'] ?? 18,
       swipeDirection: json['swipeDirection'] ?? 'right',
       createdAt: json['createdAt'] != null ? DateTime.parse(json['createdAt']) : null,
       updatedAt: json['updatedAt'] != null ? DateTime.parse(json['updatedAt']) : null,

@@ -8,11 +8,13 @@ import 'package:muslimdigest/widgets/onboarding/topic_chip.dart';
 class TopicChipSelector extends ConsumerWidget {
   final String topic;
   final VoidCallback? onStateChanged;
+  final TopicChipColors colors;
 
   const TopicChipSelector({
     super.key,
     required this.topic,
     this.onStateChanged,
+    this.colors = const TopicChipColors(),
   });
 
   @override
@@ -33,6 +35,7 @@ class TopicChipSelector extends ConsumerWidget {
     return TopicChip(
       topic: topic,
       state: state,
+      colors: colors,
       onStateChanged: (newState) async {
         await _updateTopicState(ref, topic, newState);
         onStateChanged?.call();
