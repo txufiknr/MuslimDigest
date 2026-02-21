@@ -33,14 +33,14 @@ final topicKeysProvider = Provider<List<GlobalKey>>((ref) {
 
 /// Header widget for the home page containing hamburger menu and topic tabs
 class HomeHeader extends ConsumerStatefulWidget {
-  // final Function(String?) onTopicChanged;
+  final Function(String?) onTopicChanged;
   final FeedType feedType;
   final VoidCallback onSeeTrending;
   const HomeHeader({
     super.key,
     required this.feedType,
     required this.onSeeTrending,
-    // required this.onTopicChanged,
+    required this.onTopicChanged,
   });
 
   @override
@@ -63,7 +63,7 @@ class _HomeHeaderState extends ConsumerState<HomeHeader> {
 
   Future<void> _onTopicChanged(WidgetRef ref, String? topic) async {
     await ref.read(topicProvider.notifier).setValue(topic);
-    // widget.onTopicChanged(topic);
+    widget.onTopicChanged(topic);
     
     // Auto-scroll to selected tab
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -160,7 +160,7 @@ class _HomeHeaderState extends ConsumerState<HomeHeader> {
               _TopicTab(
                 title: isTrending ? ref.read(userProvider.notifier).homeFeedType.label : widget.feedType.label,
                 icon: CupertinoIcons.antenna_radiowaves_left_right,
-                isSelected: _currentTopic == null,
+                isSelected: _currentTopic == null && !isTrending,
                 onTap: () => _onTopicChanged(ref, null),
               ),
               if (trendingCount > 0)

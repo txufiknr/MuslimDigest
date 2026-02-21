@@ -121,7 +121,11 @@ class FeedSwiperState extends ConsumerState<FeedSwiper> {
       ).withPaddingAll(AppThemes.contentPadding);
     }
 
-    final cardsCount = _feedItems.length + 1;
+    final isDigest = widget.feedType == FeedType.digest;
+    final cardsCount = isDigest
+      ? _feedItems.length + 1
+      : _feedItems.length;
+    final initialIndex = isDigest ? _readCount.clamp(0, cardsCount - 1) : 0;
 
     return CardSwiper(
       key: Key("CardSwiper_$_readCount"),
@@ -135,7 +139,7 @@ class FeedSwiperState extends ConsumerState<FeedSwiper> {
         left: SWIPE_DIRECTION == CardSwiperDirection.left || _canGoBack,
         right: SWIPE_DIRECTION == CardSwiperDirection.right || _canGoBack
       ),
-      initialIndex: _readCount.clamp(0, cardsCount - 1),
+      initialIndex: initialIndex,
       cardsCount: cardsCount,
       cardBuilder: (context, index, percentThresholdX, percentThresholdY) {
         return FeedCard(

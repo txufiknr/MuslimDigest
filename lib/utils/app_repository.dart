@@ -35,16 +35,6 @@ class AppRepository {
 
   bool get shouldLoadFeedToday => ingestLastDate == null || !isToday(ingestLastDate!) || _ref.read(feedProvider).isNone;
 
-  // String get firstName {
-  //   final name = extractFirstName(user.name);
-  //   if (name.isNotEmpty) return name;
-  //   return switch (user.gender) {
-  //     'male' => 'Brother',
-  //     'female' => 'Sister',
-  //     _ => 'Friend',
-  //   };
-  // }
-
   List<String> get preferredTopics => preferences.topics;
   List<String> get avoidedTopics => preferences.avoidedTopics;
 
@@ -56,7 +46,7 @@ class AppRepository {
     feedType ??= homeFeedType;
 
     // Check if we should load the feed
-    if (feedType == FeedType.digest && !shouldLoadFeedToday) {
+    if (feedType == FeedType.digest && topic == null && !shouldLoadFeedToday) {
       log("[loadFeed] ${feedType.name.toCapitalized()} feed is up to date");
       return true;
     }
@@ -68,10 +58,6 @@ class AppRepository {
     }
 
     return feedType.loadWithRef(_ref, topic: topic);
-    // if (feedType == FeedType.latest) {
-    //   return _ref.read(feedLatestProvider.notifier).load();
-    // }
-    // return _ref.read(feedProvider.notifier).load(topic: topic);
   }
 
   /// Load initial user and feed data on app launch/resume
