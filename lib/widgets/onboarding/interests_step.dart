@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:muslimdigest/providers/preferences.dart';
+import 'package:muslimdigest/providers/user/preferences.dart';
 import 'package:muslimdigest/providers/topics.dart';
 import 'package:muslimdigest/utils/app_repository.dart';
 import 'package:muslimdigest/utils/extensions.dart';

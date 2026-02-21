@@ -4,16 +4,18 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter_card_swiper/flutter_card_swiper.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lottie/lottie.dart';
+import 'package:muslimdigest/api/user.dart';
 import 'package:muslimdigest/config/colors.dart';
 import 'package:muslimdigest/config/feeds.dart';
 import 'package:muslimdigest/config/themes.dart';
 import 'package:muslimdigest/providers/read_count.dart';
 import 'package:muslimdigest/providers/read_last_date.dart';
+import 'package:muslimdigest/providers/topic.dart';
+import 'package:muslimdigest/utils/app_repository.dart';
 import 'package:muslimdigest/utils/extensions.dart';
 import 'package:muslimdigest/api/feeds.dart';
 import 'package:muslimdigest/utils/functions.dart';
 import 'package:muslimdigest/utils/time.dart';
-import 'package:muslimdigest/utils/users.dart';
 import 'package:muslimdigest/variables/feed.dart';
 import 'package:muslimdigest/variables/time.dart';
 import 'package:muslimdigest/widgets/components/button.dart';
@@ -51,6 +53,8 @@ class FeedSwiperState extends ConsumerState<FeedSwiper> {
   bool get _isFeedLoading => widget.feedType.watch(ref).isLoading;
   int get _readCount => ref.watch(readCountProvider);
   bool get _canGoBack => _readCount > 0;
+  FeedType get _homeFeedType => ref.read(appRepositoryProvider).homeFeedType;
+  String? get _currentTopic => ref.watch(topicProvider);
 
   @override
   void dispose() {
@@ -98,18 +102,21 @@ class FeedSwiperState extends ConsumerState<FeedSwiper> {
       return Column(
         children: [
           MyPlaceholder(
-            'No articles available',
+            'No articles available${_currentTopic == null ? ' right now' : ' in ${_currentTopic!.toCapitalized()}'}',
+            footer: 'Try switching to different topics or check your internet connection.',
             icon: Icon(CupertinoIcons.news, size: 80, color: AppColors.accent),
             onRetry: widget.onReload,
             retryLabel: "Reload",
-          ).center().expand(),
-          MyDivider().withPaddingVertical(AppThemes.contentPadding),
-          MyButton(
-            text: "Back to digest",
-            icon: Icon(CupertinoIcons.back),
-            variant: MyButtonVariant.success,
-            onPressed: widget.onBackToDigest,
-          )
+          ).withPaddingHorizontal(16).center().expand(),
+          if (widget.feedType != _homeFeedType) ...[
+            MyDivider().withPaddingVertical(AppThemes.contentPadding),
+            MyButton(
+              text: "Back to ${_homeFeedType.label}",
+              icon: Icon(CupertinoIcons.back),
+              variant: MyButtonVariant.success,
+              onPressed: widget.onBackToDigest,
+            )
+          ],
         ],
       ).withPaddingAll(AppThemes.contentPadding);
     }
@@ -128,7 +135,7 @@ class FeedSwiperState extends ConsumerState<FeedSwiper> {
         left: SWIPE_DIRECTION == CardSwiperDirection.left || _canGoBack,
         right: SWIPE_DIRECTION == CardSwiperDirection.right || _canGoBack
       ),
-      initialIndex: _readCount,
+      initialIndex: _readCount.clamp(0, cardsCount - 1),
       cardsCount: cardsCount,
       cardBuilder: (context, index, percentThresholdX, percentThresholdY) {
         return FeedCard(

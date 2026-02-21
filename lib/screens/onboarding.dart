@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:muslimdigest/config/themes.dart';
 import 'package:muslimdigest/mock/users.dart';
-import 'package:muslimdigest/providers/user.dart';
+import 'package:muslimdigest/providers/user/user.dart';
 import 'package:muslimdigest/utils/extensions.dart';
 import '../config/constants.dart';
 import '../config/colors.dart';
@@ -80,6 +80,7 @@ class OnboardingPage extends ConsumerWidget {
                         text: 'Select interests',
                         onPressed: () => context.push('/welcome'),
                         icon: Icon(CupertinoIcons.square_grid_2x2),
+                        height: 56,
                       ).hero('primary-button'),
                       SizedBox(height: 16),
       
@@ -94,6 +95,7 @@ class OnboardingPage extends ConsumerWidget {
                         onPressed: () => _startReadingNow(context, ref),
                         brightness: Brightness.dark,
                         icon: Icon(CupertinoIcons.book),
+                        height: 56,
                       ),
       
                       const SizedBox(height: 24),

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:muslimdigest/config/themes.dart';
+import 'package:muslimdigest/providers/user/streaks.dart';
 import 'package:muslimdigest/utils/extensions.dart';
 import 'package:muslimdigest/utils/format.dart';
 import 'package:muslimdigest/utils/helpers.dart';
@@ -49,9 +51,32 @@ class StatCard extends StatelessWidget {
     return MyCard(margin: 8, child: Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text(formatNumber(total), textAlign: TextAlign.center, style: h.currentTextTheme.titleMedium,),
-        Text(label, textAlign: TextAlign.center),
+        Text(formatNumber(total), textAlign: TextAlign.center, style: h.currentTextTheme.titleMedium, maxLines: 1, softWrap: false,),
+        Text(label, textAlign: TextAlign.center, maxLines: 1, softWrap: false,),
       ],
     ));
+  }
+}
+
+class StreaksCard extends ConsumerWidget {
+  const StreaksCard({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final streaks = ref.read(streaksProvider);
+    final currentStreak = streaks.currentStreak;
+    final longestStreak = streaks.longestStreak;
+    return Row(
+      children: [
+        StatCard(
+          total: currentStreak,
+          label: 'Current Streak'
+        ).expand(),
+        StatCard(
+          total: longestStreak,
+          label: 'Longest Streak'
+        ).expand(),
+      ],
+    );
   }
 }

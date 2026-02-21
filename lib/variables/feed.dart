@@ -1,11 +1,11 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:muslimdigest/models/feed.dart';
-import 'package:muslimdigest/providers/base_feed_notifier.dart';
-import 'package:muslimdigest/providers/feed.dart';
-import 'package:muslimdigest/providers/feed_liked.dart';
-import 'package:muslimdigest/providers/feed_latest.dart';
-import 'package:muslimdigest/providers/feed_saved.dart';
-import 'package:muslimdigest/providers/feed_trending.dart';
+import 'package:muslimdigest/providers/feed/base_feed_notifier.dart';
+import 'package:muslimdigest/providers/feed/feed.dart';
+import 'package:muslimdigest/providers/feed/feed_liked.dart';
+import 'package:muslimdigest/providers/feed/feed_latest.dart';
+import 'package:muslimdigest/providers/feed/feed_saved.dart';
+import 'package:muslimdigest/providers/feed/feed_trending.dart';
 import 'package:muslimdigest/utils/extensions.dart';
 
 enum FeedType {
@@ -14,6 +14,14 @@ enum FeedType {
   latest,
   saved,
   liked;
+
+  String get label {
+    switch (this) {
+      case FeedType.digest: return 'My Digest';
+      case FeedType.latest: return 'My Feed';
+      default: return name.toCapitalized();
+    }
+  }
 
   BaseFeedNotifier getNotifier(WidgetRef ref) {
     switch (this) {
@@ -42,6 +50,16 @@ enum FeedType {
   }
 
   Future<bool> load(WidgetRef ref, {String? topic, int? timeoutMs, int? limit}) {
+    switch (this) {
+      case FeedType.digest: return ref.read(feedProvider.notifier).load(topic: topic, timeoutMs: timeoutMs);
+      case FeedType.latest: return ref.read(feedLatestProvider.notifier).load(limit: limit);
+      case FeedType.trending: return ref.read(feedTrendingProvider.notifier).load(limit: limit);
+      case FeedType.liked: return ref.read(feedLikedProvider.notifier).load();
+      case FeedType.saved: return ref.read(feedSavedProvider.notifier).load();
+    }
+  }
+
+  Future<bool> loadWithRef(Ref ref, {String? topic, int? timeoutMs, int? limit}) {
     switch (this) {
       case FeedType.digest: return ref.read(feedProvider.notifier).load(topic: topic, timeoutMs: timeoutMs);
       case FeedType.latest: return ref.read(feedLatestProvider.notifier).load(limit: limit);

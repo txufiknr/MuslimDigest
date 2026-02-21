@@ -27,17 +27,17 @@ Future<void> main() async {
   prefs = await SharedPreferencesWithCache.create(
     cacheOptions: const SharedPreferencesWithCacheOptions(
       allowList: <String>{
-        'user_id', // User ID for authentication (uuid v7)
-        'user', // User data (JSON string)
+        'user', // User data (JSON string with uuid v7)
         'preferences', // App preferences (JSON string)
         'theme', // Theme preference ("dark" or "light")
         'read_last_date', // Last read date (YYYY-MM-DD)
         'read_count', // Daily read count (number)
+        'settings', // User settings data (JSON string)
         'streaks', // User streaks data (JSON string)
         'feed', // Cached feed items (JSON string)
         'feed/trending', // Cached trending feed items (JSON string)
         'feed/latest', // Cached latest feed items (JSON string)
-        'feed_last_ingest', // Last feed ingestion date (YYYY-MM-DD)
+        'ingest_last_date', // Last feed ingestion date (YYYY-MM-DD)
         'topic', // Selected feed topic (string)
         'topics', // List of available topics (JSON string)
       },

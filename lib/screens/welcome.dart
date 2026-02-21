@@ -5,8 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:muslimdigest/config/themes.dart';
 import 'package:muslimdigest/models/user.dart';
-import 'package:muslimdigest/providers/preferences.dart';
-import 'package:muslimdigest/providers/user.dart';
+import 'package:muslimdigest/providers/user/preferences.dart';
+import 'package:muslimdigest/providers/user/user.dart';
 import 'package:muslimdigest/utils/extensions.dart';
 import 'package:muslimdigest/utils/functions.dart';
 import 'package:muslimdigest/variables/feed.dart';
@@ -79,7 +79,7 @@ class _WelcomePageState extends ConsumerState<WelcomePage> {
     final currentUser = ref.read(userProvider);
     final currentPreferences = ref.read(preferencesProvider);
     switch (_currentStep) {
-      case 0: u.setValue(currentUser.copyWith(gender: '')); break;
+      case 0: u.setValue(currentUser.copyWith(gender: null)); break;
       case 1: u.setValue(currentUser.copyWith(ageGroup: '')); break;
       case 2: p.setValue(currentPreferences.copyWith(topics: [])); break;
       case 3: u.setValue(currentUser.copyWith(name: '')); break;
@@ -98,7 +98,7 @@ class _WelcomePageState extends ConsumerState<WelcomePage> {
   /// Check if the current step can proceed
   bool get _canProceed {
     switch (_currentStep) {
-      case 0: return _newUser.gender?.isNotEmpty == true;
+      case 0: return _newUser.gender != null;
       case 1: return _newUser.ageGroup?.isNotEmpty == true;
       case 2: return _newPreferences.topics.isNotEmpty;
       case 3: return _newUser.name?.trim().isNotEmpty == true;

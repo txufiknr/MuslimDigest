@@ -4,19 +4,16 @@ import 'dart:developer' show log;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:muslimdigest/api/user.dart';
-import 'package:muslimdigest/models/user.dart';
 import 'package:muslimdigest/providers/read_count.dart';
 import 'package:muslimdigest/providers/read_last_date.dart';
-import 'package:muslimdigest/providers/streaks.dart';
+import 'package:muslimdigest/providers/topic.dart';
 import 'package:muslimdigest/utils/app.dart';
 import 'package:muslimdigest/utils/app_repository.dart';
 import 'package:muslimdigest/utils/dialogs.dart';
 import 'package:muslimdigest/utils/extensions.dart';
 import 'package:muslimdigest/utils/functions.dart';
-import 'package:muslimdigest/variables/app.dart';
 import 'package:muslimdigest/variables/feed.dart';
 import 'package:muslimdigest/variables/time.dart';
-import 'package:muslimdigest/variables/user.dart';
 import 'package:muslimdigest/widgets/animations/loading_indicator_bar.dart';
 import '../widgets/home/home_header.dart';
 import '../widgets/home/feed_swiper.dart';
@@ -30,25 +27,20 @@ class HomePage extends ConsumerStatefulWidget {
 }
 
 class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver {
-  UserStreaks? get streaks => ref.watch(streaksProvider);
-  bool get _isStreakToday => ref.watch(streaksProvider.notifier).isStreakToday;
-  bool get _isDailyDigestDone => _isStreakToday || PrefData.feedLastIngestDate == streaks?.lastReadAt;
-  FeedType get _homeFeedType => _isDailyDigestDone ? FeedType.latest : FeedType.digest;
-  late var _feedType = _homeFeedType;
-
   AppRepository get r => ref.read(appRepositoryProvider);
   bool get _isFeedLoading => _feedType.watch(ref).isLoading;
-
+  late FeedType _feedType;
   var _isWillExit = false;
 
   @override
   void initState() {
+    _feedType = r.homeFeedType;
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      _initFeed();
       _initReadCount();
+      _loadFeed();
       fireAndForget(saveAllData);
     });
   }
@@ -66,34 +58,32 @@ class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver
       fireAndForget(saveAllData);
     } else if (state == AppLifecycleState.resumed) {
       _initReadCount();
-      _initFeed();
+      _loadFeed();
     }
   }
 
   void _seeLatestFeed() {
     setState(() {
-      _feedType = _homeFeedType;
+      _feedType = r.homeFeedType;
     });
   }
 
   Future<void> _loadFeed([String? topic]) async {
-    final success = await _feedType.load(ref, topic: topic);
-    if (!mounted) return;
-    if (!success) {
-      return _showLoadFeedFailed(() => _loadFeed(topic));
-    }
+    // final success = await _feedType.load(ref, topic: topic);
+    final success = await r.loadFeed(feedType: _feedType, topic: topic);
+    if (mounted && !success) return _showLoadFeedFailed(() => _loadFeed(topic));
   }
 
   /// Ensure today's feed is loaded
-  Future<void> _initFeed() async {
-    if (!r.shouldLoadFeedToday) return log("[home] Feed is up to date");
-    if (!await isOnline()) {
-      log("[home] No internet connection, skipping feed load");
-      return;
-    }
-    log("[home] Feed needs reloading");
-    await _loadFeed();
-  }
+  // Future<void> _initFeed() async {
+  //   if (!r.shouldLoadFeedToday) return log("[home] Feed is up to date");
+  //   if (!await isOnline()) {
+  //     log("[home] No internet connection, skipping feed load");
+  //     return;
+  //   }
+  //   log("[home] Feed needs reloading");
+  //   await _loadFeed();
+  // }
 
   /// Reset read count if it's a new day
   void _initReadCount() {
@@ -125,6 +115,11 @@ class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver
 
   @override
   Widget build(BuildContext context) {
+    // Listen for topic changes and trigger load feed
+    ref.listen<String?>(topicProvider, (previous, next) {
+      if (previous != next) _loadFeed(next);
+    });
+
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, _) async {
@@ -147,7 +142,16 @@ class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver
           child: Column(
             children: [
               HomeHeader(
-                onTopicChanged: _loadFeed,
+                feedType: _feedType,
+                // onTopicChanged: _loadFeed,
+                onSeeTrending: () async {
+                  // ref.read(feedTypeProvider.notifier).setValue(FeedType.trending);
+                  await ref.read(topicProvider.notifier).setValue(null);
+                  setState(() {
+                    _feedType = FeedType.trending;
+                  });
+                  _loadFeed();
+                },
               ),
               FeedSwiper(
                 feedType: _feedType,
@@ -155,9 +159,10 @@ class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver
                 onSeeLatest: _seeLatestFeed,
                 onBackToDigest: () async {
                   // TODO: scroll topic tabs to position 0
-                  await prefs.remove('topic');
+                  await ref.read(topicProvider.notifier).clear();
+                  // await prefs.remove('topic');
                   setState(() {});
-                  _initFeed();
+                  _loadFeed();
                 },
               ).expand(),
               if (_isFeedLoading)

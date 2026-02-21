@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:developer' show log;
 import 'dart:io' show Platform;
 import 'package:http/http.dart' as http;
+import 'package:muslimdigest/variables/user.dart';
 import '../config/constants.dart';
 import '../variables/app.dart';
 
@@ -76,11 +77,8 @@ class ApiService {
       'Content-Type': contentType,
     };
 
-    // Add user ID if available
-    final userId = prefs.getString('user_id');
-    if (userId != null) {
-      headers['X-Client-Id'] = userId;
-    }
+    // Add user ID
+    headers['X-Client-Id'] = PrefData.user.userId;
 
     // Add app version (hardcoded for now, can be updated later)
     headers['X-App-Version'] = appVersion;

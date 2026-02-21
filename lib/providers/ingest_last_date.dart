@@ -1,10 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:muslimdigest/utils/repository.dart';
 
-final readLastDateProvider = NotifierProvider<ReadLastDateNotifier, DateTime?>(ReadLastDateNotifier.new);
+final ingestLastDateProvider = NotifierProvider<IngestLastDateNotifier, DateTime?>(IngestLastDateNotifier.new);
 
-class ReadLastDateNotifier extends Notifier<DateTime?> {
-  static const _key = 'read_last_date';
+class IngestLastDateNotifier extends Notifier<DateTime?> {
+  static const _key = 'ingest_last_date';
 
   @override
   DateTime? build() {

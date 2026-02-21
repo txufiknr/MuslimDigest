@@ -1,3 +1,4 @@
+// import 'dart:math' show max;
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -6,8 +7,8 @@ import 'package:lottie/lottie.dart';
 import 'package:muslimdigest/config/colors.dart';
 import 'package:muslimdigest/config/constants.dart';
 import 'package:muslimdigest/config/themes.dart';
-import 'package:muslimdigest/providers/base_feed_notifier.dart';
-import 'package:muslimdigest/providers/streaks.dart';
+import 'package:muslimdigest/providers/feed/base_feed_notifier.dart';
+import 'package:muslimdigest/providers/user/streaks.dart';
 import 'package:muslimdigest/utils/dialogs.dart';
 import 'package:muslimdigest/utils/extensions.dart';
 import 'package:muslimdigest/utils/format.dart';
@@ -120,8 +121,7 @@ class _FeedCardState extends ConsumerState<FeedCard> with AutomaticKeepAliveClie
     super.build(context);
     final h = MyHelper(context);
     final streaks = ref.read(streaksProvider);
-    final currentStreak = streaks?.currentStreak ?? 1;
-    final longestStreak = streaks?.longestStreak ?? 1;
+    final currentStreak = streaks.currentStreak;
     final isStreakCard = widget.feedItem == null;
 
     return Container(
@@ -144,18 +144,7 @@ class _FeedCardState extends ConsumerState<FeedCard> with AutomaticKeepAliveClie
         children: [
           Text("Another day of beneficial knowledge.", textAlign: TextAlign.center, style: h.currentTextTheme.titleLarge),
           Text(MESSAGES[(currentStreak - 1) % MESSAGES.length], textAlign: TextAlign.center, style: h.currentTextTheme.bodyMedium),
-          Row(
-            children: [
-              StatCard(
-                total: currentStreak,
-                label: 'Current Streak'
-              ).expand(),
-              StatCard(
-                total: longestStreak,
-                label: 'Longest Streak'
-              ).expand(),
-            ],
-          ),
+          StreaksCard(),
           Lottie.asset('assets/lottie/streak.json'),
           MyButton(text: "Continue reading", icon: Icon(CupertinoIcons.book), onPressed: widget.onSeeLatest,),
           MyDivider(),
@@ -260,6 +249,36 @@ class _FeedHeader extends StatelessWidget {
                   ),
                 ),
               ),
+              
+              // Image URL overlay
+              // if (feedItem.imageUrl != null) Positioned(
+              //   top: 0,
+              //   left: 0,
+              //   right: 0,
+              //   child: Container(
+              //     padding: EdgeInsets.all(AppThemes.contentPadding),
+              //     decoration: BoxDecoration(
+              //       gradient: LinearGradient(
+              //         begin: Alignment.topCenter,
+              //         end: Alignment.bottomCenter,
+              //         colors: [
+              //           Colors.transparent,
+              //           Colors.black.withValues(alpha: 0.7),
+              //         ],
+              //       ),
+              //     ),
+              //     child: Text(
+              //       feedItem.imageUrl ?? '',
+              //       style: h.currentTextTheme.titleSmall?.copyWith(
+              //         color: Colors.white,
+              //       ),
+              //       maxLines: 2,
+              //       overflow: TextOverflow.ellipsis,
+              //     ),
+              //   ).onTap(() {
+              //     openUrl(feedItem.imageUrl!);
+              //   }),
+              // ),
             ],
           ),
         );
@@ -353,6 +372,7 @@ class _FeedFooter extends ConsumerWidget {
     final currentFeedItem = feedType.watch(ref).getItem(feedItem.id) ?? feedItem;
     final isLiked = currentFeedItem.isLiked;
     final isSaved = currentFeedItem.isSaved;
+    final likeCount = currentFeedItem.likeCount;
     
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -401,7 +421,8 @@ class _FeedFooter extends ConsumerWidget {
 
           // Action buttons
           if (isTakingScreenshot) Logo(size: 100,) else ...<Widget>[
-            if (feedItem.likeCount > 0) Text(formatNumber(feedItem.likeCount), textAlign: TextAlign.right, style: h.currentTextTheme.bodySmall,),
+            // if (isLiked || likeCount > 0) Text(formatNumber(max(1, likeCount)), textAlign: TextAlign.right, style: h.currentTextTheme.bodySmall,),
+            if (likeCount > 0) Text(formatNumber(likeCount), textAlign: TextAlign.right, style: h.currentTextTheme.bodySmall,),
             SizedBox(width: 4,),
             MyIconButton(icon: isLiked ? CupertinoIcons.heart_fill : CupertinoIcons.heart, size: 50, outlined: true, onPressed: onLike, iconColor: isLiked ? AppColors.primary : null),
             MyIconButton(icon: isSaved ? CupertinoIcons.bookmark_fill : CupertinoIcons.bookmark, size: 50, outlined: true, onPressed: onSave, iconColor: isSaved ? AppColors.primary : null),

@@ -4,7 +4,21 @@ import 'package:muslimdigest/models/user.dart';
 import 'package:muslimdigest/variables/app.dart';
 import 'package:uuid/uuid.dart';
 
-String? newUserId;
+enum Gender {
+  male,
+  female;
+
+  String get label {
+    switch (this) {
+      case male: return 'Muslim';
+      case female: return 'Muslimah';
+    }
+  }
+
+  static Gender fromString(String name) {
+    return values.firstWhere((e) => e.name == name);
+  }
+}
 
 class PrefData {
   /// User data and preferences getters
@@ -21,15 +35,10 @@ class PrefData {
   /// final id = PrefData.userId;
   /// print('User ID: $id');
   /// ```
-  static String get userId {
-    final existingUserId = newUserId ?? prefs.getString('user_id');
-    if (existingUserId == null) {
-      newUserId = const Uuid().v7();
-      prefs.setString('user_id', newUserId!);
-      return newUserId!;
-    }
-    return existingUserId;
-  }
+  // static String get userId {
+  //   final existingUserId = user.userId;
+  //   return existingUserId;
+  // }
 
   /// Returns cached user data from SharedPreferences
   /// 
@@ -43,9 +52,9 @@ class PrefData {
   ///   print('User name: ${currentUser.name}');
   /// }
   /// ```
-  static User? get user {
+  static User get user {
     final userString = prefs.getString('user');
-    if (userString == null) return null;
+    if (userString == null) return User(userId: const Uuid().v7());
     return User.fromJson(jsonDecode(userString));
   }
 
@@ -61,9 +70,9 @@ class PrefData {
   ///   print('Dark mode: ${userPrefs.darkMode}');
   /// }
   /// ```
-  static UserPreferences? get preferences {
+  static UserPreferences get preferences {
     final preferencesString = prefs.getString('preferences');
-    if (preferencesString == null) return null;
+    if (preferencesString == null) return UserPreferences(userId: user.userId);
     return UserPreferences.fromJson(jsonDecode(preferencesString));
   }
 
@@ -79,10 +88,27 @@ class PrefData {
   ///   print('Current streak: ${userStreaks.currentStreak}');
   /// }
   /// ```
-  static UserStreaks? get streaks {
+  static UserStreaks get streaks {
     final streaksString = prefs.getString('streaks');
-    if (streaksString == null) return null;
+    if (streaksString == null) return UserStreaks();
     return UserStreaks.fromJson(jsonDecode(streaksString));
+  }
+
+  /// Returns cached user settings from SharedPreferences
+  /// 
+  /// Retrieves stored user settings and parses them into UserSettings model.
+  /// Returns default settings if no settings are stored.
+  /// 
+  /// Example:
+  /// ```
+  /// final userSettings = PrefData.settings;
+  /// print('Text size: ${userSettings.textSize}');
+  /// print('Swipe direction: ${userSettings.swipeDirection}');
+  /// ```
+  static UserSettings get settings {
+    final settingsString = prefs.getString('settings');
+    if (settingsString == null) return UserSettings(userId: user.userId);
+    return UserSettings.fromJson(jsonDecode(settingsString));
   }
 
   /// Returns the date when the user last read content
@@ -100,7 +126,7 @@ class PrefData {
     return DateTime.parse(dateStr);
   }
 
-  static String? get currentTopic => prefs.getString('topic');
-  static String? get feedLastIngest => prefs.getString('feed_last_ingest');
-  static DateTime? get feedLastIngestDate => feedLastIngest != null ? DateTime.parse(feedLastIngest!) : null;
+  // static String? get currentTopic => prefs.getString('topic');
+  // static String? get feedLastIngest => prefs.getString('ingest_last_date');
+  // static DateTime? get feedLastIngestDate => feedLastIngest != null ? DateTime.parse(feedLastIngest!) : null;
 }

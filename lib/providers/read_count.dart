@@ -1,22 +1,24 @@
+import 'dart:math' show max;
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:muslimdigest/utils/repository.dart';
 
-final readCountProvider = NotifierProvider<UserNotifier, int>(UserNotifier.new);
+final readCountProvider = NotifierProvider<ReadCountNotifier, int>(ReadCountNotifier.new);
 
-class UserNotifier extends Notifier<int> {
+class ReadCountNotifier extends Notifier<int> {
   static const _key = 'read_count';
 
   @override
   int build() {
     final value = ref.watch(preferencesRepositoryProvider).getInt(_key);
-    return value ?? 0;
+    return max(0, value ?? 0);
   }
 
   Future<void> setValue(int? value) async {
-    state = value ?? 0;
+    state = max(0, value ?? 0);
     await ref
         .read(preferencesRepositoryProvider)
-        .setInt(_key, value);
+        .setInt(_key, state);
   }
 
   Future<void> clear() async {

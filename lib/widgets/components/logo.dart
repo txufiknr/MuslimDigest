@@ -30,32 +30,35 @@ class Splash extends StatelessWidget {
   Widget build(BuildContext context) {
     final h = MyHelper(context);
 
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        // App logo
-        const Logo(size: 180).pulseIt(duration: 3000, scaleEnd: 1.1),
-        
-        const SizedBox(height: 32),
-        
-        // App title
-        Text(
-          APP_NAME,
-          style: h.currentTextTheme.headlineLarge?.copyWith(
-            color: AppColors.primary,
+    return SingleChildScrollView(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          // App logo
+          const Logo(size: 180).pulseIt(duration: 3000, scaleEnd: 1.1),
+          
+          const SizedBox(height: 32),
+          
+          // App title
+          Text(
+            APP_NAME,
+            style: h.currentTextTheme.headlineLarge?.copyWith(
+              color: AppColors.primary,
+            ),
           ),
-        ),
-        
-        const SizedBox(height: 8),
-        
-        // App subtitle
-        Text(
-          APP_TAGLINE,
-          style: h.currentTextTheme.bodyMedium?.copyWith(
-            letterSpacing: 0.5,
+          
+          const SizedBox(height: 8),
+          
+          // App subtitle
+          Text(
+            APP_TAGLINE,
+            style: h.currentTextTheme.bodyMedium?.copyWith(
+              letterSpacing: 0.5,
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }

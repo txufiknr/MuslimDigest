@@ -1,9 +1,13 @@
 import 'package:go_router/go_router.dart';
+import 'package:muslimdigest/screens/edit_profile.dart';
+import 'package:muslimdigest/screens/liked_feeds.dart';
+import 'package:muslimdigest/screens/personalization.dart';
+import 'package:muslimdigest/screens/saved_feeds.dart';
 import '../screens/splash.dart';
 import '../screens/home.dart';
 import '../screens/onboarding.dart';
-import '../screens/welcome.dart';
 import '../screens/settings.dart';
+import '../screens/welcome.dart';
 
 class AppRouter {
   static final GoRouter router = GoRouter(
@@ -40,6 +44,26 @@ class AppRouter {
         path: '/settings',
         name: 'settings',
         builder: (context, state) => const SettingsPage(),
+      ),
+      GoRoute(
+        path: '/personalization',
+        name: 'personalization',
+        builder: (context, state) => const PersonalizationPage(),
+      ),
+      GoRoute(
+        path: '/edit_profile',
+        name: 'edit_profile',
+        builder: (context, state) => const EditProfilePage(),
+      ),
+      GoRoute(
+        path: '/liked_feeds',
+        name: 'liked_feeds',
+        builder: (context, state) => const LikedFeedsPage(),
+      ),
+      GoRoute(
+        path: '/saved_feeds',
+        name: 'saved_feeds',
+        builder: (context, state) => const SavedFeedsPage(),
       ),
     ],
   );

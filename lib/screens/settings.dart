@@ -5,10 +5,11 @@ import 'package:go_router/go_router.dart';
 import 'package:muslimdigest/config/colors.dart';
 import 'package:muslimdigest/config/constants.dart';
 import 'package:muslimdigest/config/themes.dart';
+import 'package:muslimdigest/providers/user/user.dart';
 import 'package:muslimdigest/utils/app.dart';
-import 'package:muslimdigest/utils/app_repository.dart';
 import 'package:muslimdigest/utils/dialogs.dart';
 import 'package:muslimdigest/utils/extensions.dart';
+import 'package:muslimdigest/utils/format.dart';
 import 'package:muslimdigest/utils/functions.dart';
 import 'package:muslimdigest/variables/app.dart';
 import 'package:muslimdigest/utils/helpers.dart';
@@ -17,22 +18,25 @@ import 'package:muslimdigest/widgets/components/logo.dart';
 import 'package:muslimdigest/widgets/components/icon_button.dart';
 import 'package:muslimdigest/widgets/components/switch.dart';
 
-class SettingsPage extends StatefulWidget {
+class SettingsPage extends ConsumerStatefulWidget {
   const SettingsPage({super.key});
 
   @override
-  State<SettingsPage> createState() => _SettingsPageState();
+  ConsumerState<SettingsPage> createState() => _SettingsPageState();
 }
 
-class _SettingsPageState extends State<SettingsPage> {
-  // @override
-  // void initState() {
-  //   super.initState();
-  // }
+class _SettingsPageState extends ConsumerState<SettingsPage> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(userProvider.notifier).load();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-    final h = MyHelper(context);
+    // final h = MyHelper(context);
 
     return Scaffold(
       body: Container(
@@ -74,11 +78,10 @@ class _SettingsPageState extends State<SettingsPage> {
                   SettingsSection(
                     title: 'App Settings',
                     child: AppSettingsSection(
-                      darkMode: h.isDarkTheme,
-                      onDarkModeChanged: (value) {
-                        h.nextTheme();
-                        // setState(() {});
-                      },
+                      // darkMode: h.isDarkTheme,
+                      // onDarkModeChanged: (value) {
+                      //   h.nextTheme();
+                      // },
                       onResetData: _showResetDataDialog,
                     ),
                   ),
@@ -124,12 +127,12 @@ class SettingsHeader extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final h = MyHelper(context);
-    final r = ref.read(appRepositoryProvider);
+    final firstName = ref.watch(userProvider).firstName;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          '$GREETINGS, ${r.firstName}',
+          '$GREETINGS, $firstName',
           style: h.currentTextTheme.headlineMedium?.copyWith(
             fontWeight: FontWeight.bold,
             color: Colors.white,
@@ -179,35 +182,42 @@ class SettingsSection extends StatelessWidget {
   }
 }
 
-class PersonalSettingsSection extends StatelessWidget {
+class PersonalSettingsSection extends ConsumerWidget {
   const PersonalSettingsSection({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final likedCount = ref.watch(userProvider).likedCount;
+    final savedCount = ref.watch(userProvider).savedCount;
     return SettingsContainer(
       child: Column(
         children: [
           SettingsTile(
             icon: CupertinoIcons.bookmark_fill,
             title: 'Saved Feeds',
+            total: savedCount,
             onTap: () {
-              // TODO: Navigate to saved feeds
+              context.push('/saved_feeds');
             },
           ),
           SettingsDivider(),
           SettingsTile(
             icon: CupertinoIcons.heart_fill,
             title: 'Liked Feeds',
+            total: likedCount,
             onTap: () {
-              // TODO: Navigate to liked feeds
+              context.push('/liked_feeds');
             },
           ),
           SettingsDivider(),
           SettingsTile(
-            icon: CupertinoIcons.square_grid_2x2_fill,
+            // icon: CupertinoIcons.square_grid_2x2_fill,
+            // icon: CupertinoIcons.square_fill_on_square_fill,
+            // icon: CupertinoIcons.rectangle_fill_on_rectangle_angled_fill,
+            icon: CupertinoIcons.rectangle_3_offgrid_fill,
             title: 'Personalize Your Feed',
             onTap: () {
-              // TODO: Navigate to feed personalization
+              context.push('/personalization');
             },
           ),
           SettingsDivider(),
@@ -215,7 +225,8 @@ class PersonalSettingsSection extends StatelessWidget {
             icon: CupertinoIcons.person_fill,
             title: 'Edit Profile',
             onTap: () {
-              context.push('/welcome');
+              // context.push('/welcome');
+              context.push('/edit_profile');
             },
           ),
         ],
@@ -225,19 +236,21 @@ class PersonalSettingsSection extends StatelessWidget {
 }
 
 class AppSettingsSection extends StatelessWidget {
-  final bool darkMode;
-  final ValueChanged<bool> onDarkModeChanged;
+  // final bool darkMode;
+  // final ValueChanged<bool> onDarkModeChanged;
   final VoidCallback onResetData;
   
   const AppSettingsSection({
     super.key,
-    required this.darkMode,
-    required this.onDarkModeChanged,
+    // required this.darkMode,
+    // required this.onDarkModeChanged,
     required this.onResetData,
   });
 
   @override
   Widget build(BuildContext context) {
+    final h = MyHelper(context);
+
     return SettingsContainer(
       child: Column(
         children: [
@@ -253,8 +266,12 @@ class AppSettingsSection extends StatelessWidget {
             icon: CupertinoIcons.moon_fill,
             title: 'Dark Mode',
             trailing: MySwitch(
-              value: darkMode,
-              onChanged: onDarkModeChanged,
+              // value: darkMode,
+              // onChanged: onDarkModeChanged,
+              value: h.isDarkTheme,
+              onChanged: (value) {
+                h.nextTheme();
+              },
             ),
           ),
           SettingsDivider(),
@@ -303,6 +320,7 @@ class SettingsTile extends StatelessWidget {
   final String title;
   final Widget? trailing;
   final VoidCallback? onTap;
+  final int? total;
   
   const SettingsTile({
     super.key,
@@ -310,6 +328,7 @@ class SettingsTile extends StatelessWidget {
     required this.title,
     this.trailing,
     this.onTap,
+    this.total,
   });
 
   @override
@@ -332,9 +351,34 @@ class SettingsTile extends StatelessWidget {
           color: Colors.white,
         ),
       ),
-      trailing: trailing ?? Icon(
-        Icons.chevron_right,
-        color: Colors.white.withValues(alpha: 0.7),
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (total != null && total! > 0) Container(
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            height: 24,
+            margin: EdgeInsets.only(right: 8),
+            padding: EdgeInsets.symmetric(horizontal: 8),
+            alignment: Alignment.center,
+            child: Text(
+              formatNumber(total!),
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              softWrap: false,
+              style: h.currentTextTheme.bodySmall?.copyWith(
+                fontWeight: FontWeight.w500,
+                color: Colors.white,
+              ),
+            )
+          ),
+          trailing ?? Icon(
+            Icons.chevron_right,
+            color: Colors.white.withValues(alpha: 0.7),
+          ),
+        ],
       ),
       onTap: onTap,
     );

@@ -1,6 +1,5 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:muslimdigest/config/colors.dart';
 import 'package:muslimdigest/utils/extensions.dart';
 import 'package:muslimdigest/utils/helpers.dart';
 import 'package:muslimdigest/widgets/components/button.dart';
@@ -24,44 +23,16 @@ class ModalButtonConfig {
   });
 }
 
-/// Shows a bottom modal sheet with customizable message and buttons
-/// 
-/// [message] - The message to display in the modal
-/// [buttons] - List of button configurations for the modal
-/// [context] - BuildContext for showing the modal
-/// 
-/// Returns a Future that completes when the modal is dismissed
-/// 
-/// Example:
-/// ```
-/// showBottomModalSheet(
-///   context: context,
-///   message: 'Something went wrong',
-///   buttons: [
-///     ModalButtonConfig(
-///       text: 'Retry',
-///       onPressed: () => Navigator.pop(context),
-///     ),
-///   ],
-/// );
-/// ```
-Future<void> showBottomModalSheet({
-  required BuildContext context,
-  required String message,
-  required List<ModalButtonConfig> buttons,
-  String? title,
-  String? footer,
-}) {
+/// Shows a bottom modal sheet
+Future<dynamic> showBottomModalSheet(BuildContext context, List<Widget> widgets) {
   final h = MyHelper(context);
 
-  return showModalBottomSheet<void>(
+  return showModalBottomSheet<dynamic>(
     context: context,
-    // backgroundColor: currentTheme.scaffoldBackgroundColor,
     builder: (BuildContext context) {
       return Container(
         decoration: BoxDecoration(
-          // color: currentTheme.scaffoldBackgroundColor,
-          color: AppColors.surfaceLight,
+          color: h.currentTheme.colorScheme.surface,
           borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
         ),
         padding: const EdgeInsets.all(24),
@@ -79,55 +50,89 @@ Future<void> showBottomModalSheet({
               ),
             ),
             SizedBox(height: 16),
-
-            // Title section
-            if (title != null) Text(
-              title,
-              textAlign: TextAlign.center,
-              style: h.currentTextTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-            ).withPadding(bottom: 24),
-
-            // Message section
-            Text(
-              message,
-              textAlign: TextAlign.center,
-              style: h.currentTextTheme.bodyMedium?.copyWith(
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-
-            // Footer section
-            if (footer != null) Text(
-              footer,
-              textAlign: TextAlign.center,
-              style: h.currentTextTheme.bodySmall?.copyWith(
-                color: h.currentTheme.hintColor,
-              ),
-            ).withPadding(top: 16),
-
-            const SizedBox(height: 24),
-            
-            // Buttons section
-            ...buttons.map((buttonConfig) => MyButton(
-              text: buttonConfig.text,
-              onPressed: buttonConfig.onPressed,
-              icon: buttonConfig.icon,
-              variant: buttonConfig.variant,
-              outlined: buttonConfig.outlined,
-              brightness: buttonConfig.brightness,
-            ).withPadding(bottom: 12)),
-            
-            // Remove padding from last button
-            if (buttons.isNotEmpty) 
-              const SizedBox.shrink()
-            else
-              const SizedBox(height: 12),
+            ...widgets
           ],
         ),
       );
     },
+  );
+}
+
+/// Shows a bottom modal sheet with customizable message and buttons
+/// 
+/// [message] - The message to display in the modal
+/// [buttons] - List of button configurations for the modal
+/// [context] - BuildContext for showing the modal
+/// 
+/// Returns a Future that completes when the modal is dismissed
+/// 
+/// Example:
+/// ```
+/// showBottomModalSheetMessage(
+///   context,
+///   'Something went wrong',
+///   buttons: [
+///     ModalButtonConfig(
+///       text: 'Retry',
+///       onPressed: () => Navigator.pop(context),
+///     ),
+///   ],
+/// );
+/// ```
+Future<dynamic> showBottomModalSheetMessage(BuildContext context, String message, {
+  List<ModalButtonConfig> buttons = const [],
+  String? title,
+  String? footer,
+}) {
+  final h = MyHelper(context);
+
+  return showBottomModalSheet(
+    context, [
+      // Title section
+      if (title != null) Text(
+        title,
+        textAlign: TextAlign.center,
+        style: h.currentTextTheme.titleLarge?.copyWith(
+          fontWeight: FontWeight.w600,
+        ),
+      ).withPadding(bottom: 24),
+
+      // Message section
+      Text(
+        message,
+        textAlign: TextAlign.center,
+        style: h.currentTextTheme.bodyMedium?.copyWith(
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+
+      // Footer section
+      if (footer != null) Text(
+        footer,
+        textAlign: TextAlign.center,
+        style: h.currentTextTheme.bodySmall?.copyWith(
+          color: h.currentTheme.hintColor,
+        ),
+      ).withPadding(top: 16),
+
+      const SizedBox(height: 24),
+      
+      // Buttons section
+      ...buttons.map((buttonConfig) => MyButton(
+        text: buttonConfig.text,
+        onPressed: buttonConfig.onPressed,
+        icon: buttonConfig.icon,
+        variant: buttonConfig.variant,
+        outlined: buttonConfig.outlined,
+        brightness: buttonConfig.brightness,
+      ).withPadding(bottom: 12)),
+      
+      // Remove padding from last button
+      if (buttons.isNotEmpty) 
+        const SizedBox.shrink()
+      else
+        const SizedBox(height: 12),
+    ]
   );
 }
 
@@ -164,9 +169,9 @@ Future<bool?> showBottomModalConfirm(
     Widget? cancelButtonIcon,
   }
 ) async {
-  return await showBottomModalSheet(
-    context: context,
-    message: message,
+  return await showBottomModalSheetMessage(
+    context,
+    message,
     title: title,
     footer: footer,
     buttons: [

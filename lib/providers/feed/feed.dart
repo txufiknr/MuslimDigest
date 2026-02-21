@@ -1,8 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:muslimdigest/config/feeds.dart' show DAILY_READ_TARGET;
-import 'package:muslimdigest/providers/base_feed_notifier.dart';
+import 'package:muslimdigest/providers/feed/base_feed_notifier.dart';
+import 'package:muslimdigest/providers/topic.dart';
 import 'package:muslimdigest/services/api.dart';
-import 'package:muslimdigest/variables/user.dart';
 
 typedef FeedState = BaseFeedState;
 
@@ -14,7 +14,8 @@ class FeedNotifier extends BaseFeedNotifier {
 
   Future<bool> load({String? topic, int? timeoutMs}) async {
     final options = timeoutMs == null ? null : ApiOptions(timeout: Duration(milliseconds: timeoutMs));
-    final topicValue = topic ?? PrefData.currentTopic;
+    final topicValue = topic ?? ref.read(topicProvider);
+    // final topicValue = topic ?? PrefData.currentTopic;
     
     final queryParams = <String, String>{
       'limit': DAILY_READ_TARGET.toString(),

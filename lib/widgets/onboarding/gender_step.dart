@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lottie/lottie.dart';
-import 'package:muslimdigest/providers/user.dart';
+import 'package:muslimdigest/providers/user/user.dart';
 import 'package:muslimdigest/utils/extensions.dart';
+import 'package:muslimdigest/variables/user.dart';
 import '../../utils/helpers.dart';
 
 /// Gender selection step widget for onboarding
@@ -12,11 +13,11 @@ class OnboardingGenderStep extends ConsumerWidget {
   /// Build individual gender option
   Widget _buildGenderOption(
     MyHelper h,
-    String gender,
+    Gender gender,
     WidgetRef ref,
   ) {
-    final label = gender == 'male' ? 'muslim' : 'muslimah';
-    final lottiePath = 'assets/lottie/$gender.json';
+    // final label = gender == Gender.male ? 'muslim' : 'muslimah';
+    final lottiePath = 'assets/lottie/${gender.name}.json';
     final user = ref.watch(userProvider);
     final isSelected = gender == user.gender;
 
@@ -38,13 +39,13 @@ class OnboardingGenderStep extends ConsumerWidget {
               width: isSelected ? 3 : 2,
             ),
           ),
-          child: Lottie.asset(lottiePath).scale(gender == 'male' ? 2.2 : 2).moveX(gender == 'male' ? 0 : 15).clipRadius(120),
+          child: Lottie.asset(lottiePath).scale(gender == Gender.male ? 2.2 : 2).moveX(gender == Gender.male ? 0 : 15).clipRadius(120),
         ).onTap(() async {
           await ref.read(userProvider.notifier).setValue(user.copyWith(gender: gender));
         }),
         const SizedBox(height: 8),
         Text(
-          label.toCapitalized(),
+          gender.label,
           style: h.currentTextTheme.bodyMedium?.copyWith(
             color: Colors.white,
             fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
@@ -74,10 +75,7 @@ class OnboardingGenderStep extends ConsumerWidget {
         
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            _buildGenderOption(h, 'male', ref),
-            _buildGenderOption(h, 'female', ref),
-          ],
+          children: Gender.values.map((gender) => _buildGenderOption(h, gender, ref)).toList(),
         ),
       ],
     );

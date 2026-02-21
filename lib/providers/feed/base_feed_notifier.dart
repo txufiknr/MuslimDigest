@@ -2,12 +2,12 @@ import 'dart:convert';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:muslimdigest/models/feed.dart';
+import 'package:muslimdigest/providers/ingest_last_date.dart';
 import 'package:muslimdigest/services/api.dart';
 import 'package:muslimdigest/utils/repository.dart';
 import 'package:muslimdigest/utils/functions.dart';
 import 'package:muslimdigest/api/feeds.dart';
 import 'package:muslimdigest/utils/extensions.dart';
-import 'package:muslimdigest/variables/app.dart';
 
 class BaseFeedState {
   final List<FeedItem>? items;
@@ -17,6 +17,7 @@ class BaseFeedState {
   bool get isEmpty => items?.isEmpty ?? true;
   bool get isGetting => isEmpty && isLoading;
   bool get isNone => isEmpty && !isLoading;
+  int get total => items?.length ?? 0;
 
   const BaseFeedState({
     this.items,
@@ -108,7 +109,10 @@ abstract class BaseFeedNotifier extends Notifier<BaseFeedState> {
         // Log last ingestion date for daily digest feed
         if (endpoint == 'feed') {
           final lastIngestDate = response.result?['lastIngestDate'] as String?;
-          if (lastIngestDate != null) await prefs.setString('feed_last_ingest', lastIngestDate);
+          if (lastIngestDate != null) {
+            // await ref.read(preferencesRepositoryProvider).setString('ingest_last_date', lastIngestDate);
+            await ref.read(ingestLastDateProvider.notifier).setValue(DateTime.parse(lastIngestDate));
+          }
         }
 
         state = state.copyWith(isLoading: false);

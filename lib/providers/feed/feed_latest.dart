@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:muslimdigest/config/feeds.dart' show CURSOR_PAGINATION_LIMIT;
-import 'package:muslimdigest/providers/base_feed_notifier.dart';
+import 'package:muslimdigest/providers/feed/base_feed_notifier.dart';
 
 typedef FeedLatestState = BaseFeedState;
 

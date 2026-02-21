@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:muslimdigest/providers/user.dart';
+import 'package:muslimdigest/config/user.dart';
+import 'package:muslimdigest/providers/user/user.dart';
 import 'package:muslimdigest/utils/extensions.dart';
 import '../../utils/helpers.dart';
 
@@ -8,17 +9,10 @@ import '../../utils/helpers.dart';
 class OnboardingAgeStep extends ConsumerWidget {
   const OnboardingAgeStep({super.key});
 
-  static const List<Map<String, String>> _ageGroups = [
-    {'label': '0-12', 'value': '0-12'},
-    {'label': '13-20', 'value': '13-20'},
-    {'label': '21-45', 'value': '21-45'},
-    {'label': '46+', 'value': '46+'},
-  ];
-
   /// Build individual age group option
   Widget _buildAgeGroupOption(
     MyHelper h,
-    Map<String, String> group,
+    String ageGroup,
     bool isSelected,
     WidgetRef ref,
   ) {
@@ -37,10 +31,10 @@ class OnboardingAgeStep extends ConsumerWidget {
       ),
       child: Center(
         child: Text(
-          group['label']!,
+          ageGroup,
           style: h.currentTextTheme.bodyLarge?.copyWith(
             color: Colors.white,
-            fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
             fontSize: 24,
           ),
           textAlign: TextAlign.center,
@@ -48,7 +42,7 @@ class OnboardingAgeStep extends ConsumerWidget {
       ),
     ).onTap(() async {
       final user = ref.read(userProvider);
-      await ref.read(userProvider.notifier).setValue(user.copyWith(ageGroup: group['value']!));
+      await ref.read(userProvider.notifier).setValue(user.copyWith(ageGroup: ageGroup));
     });
   }
 
@@ -80,11 +74,11 @@ class OnboardingAgeStep extends ConsumerWidget {
             mainAxisSpacing: 16,
             childAspectRatio: 1.5,
           ),
-          itemCount: OnboardingAgeStep._ageGroups.length,
+          itemCount: USER_AGE_GROUPS.length,
           itemBuilder: (context, index) {
-            final group = OnboardingAgeStep._ageGroups[index];
-            final isSelected = user.ageGroup == group['value'];
-            return _buildAgeGroupOption(h, group, isSelected, ref);
+            final ageGroup = USER_AGE_GROUPS[index];
+            final isSelected = user.ageGroup == ageGroup;
+            return _buildAgeGroupOption(h, ageGroup, isSelected, ref);
           },
         ),
       ],

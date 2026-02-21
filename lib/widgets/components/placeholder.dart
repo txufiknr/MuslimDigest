@@ -5,10 +5,11 @@ import 'package:muslimdigest/widgets/components/button.dart';
 
 class MyPlaceholder extends StatelessWidget {
   final String text;
+  final String? footer;
   final Widget? icon;
   final VoidCallback? onRetry;
   final String? retryLabel;
-  const MyPlaceholder(this.text, {this.icon, this.onRetry, this.retryLabel, super.key});
+  const MyPlaceholder(this.text, {this.footer, this.icon, this.onRetry, this.retryLabel, super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -18,10 +19,18 @@ class MyPlaceholder extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         ?icon,
-        Text(
-          text,
-          style: h.currentTextTheme.bodyMedium,
+        Text(text, style: h.currentTextTheme.bodyMedium),
+
+        // Footer section
+        if (footer != null) Text(
+          footer!,
+          textAlign: TextAlign.center,
+          style: h.currentTextTheme.bodySmall?.copyWith(
+            color: h.currentTheme.hintColor,
+          ),
         ),
+
+        // Retry button
         if (onRetry != null) MyButton(
           text: retryLabel ?? 'Retry',
           onPressed: onRetry,

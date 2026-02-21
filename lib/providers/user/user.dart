@@ -1,8 +1,11 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:muslimdigest/models/user.dart';
+import 'package:muslimdigest/providers/ingest_last_date.dart';
+import 'package:muslimdigest/providers/user/streaks.dart';
 import 'package:muslimdigest/services/api.dart';
 import 'package:muslimdigest/utils/repository.dart';
-import 'package:muslimdigest/variables/app.dart';
+import 'package:muslimdigest/utils/time.dart';
+import 'package:muslimdigest/variables/feed.dart' show FeedType;
 import 'package:muslimdigest/variables/user.dart';
 
 final userProvider = NotifierProvider<UserNotifier, User>(UserNotifier.new);
@@ -13,21 +16,23 @@ class UserNotifier extends Notifier<User> {
   @override
   User build() {
     final json = ref.watch(preferencesRepositoryProvider).getJson(_key);
-    return json == null ? User(userId: PrefData.userId) : User.fromJson(json);
+    return json == null ? PrefData.user : User.fromJson(json);
   }
 
   Future<void> setValue(User value) async {
     state = value;
-    await prefs.setString('user_id', value.userId);
     await ref
         .read(preferencesRepositoryProvider)
         .setJson(_key, value.toJson());
   }
 
+  DateTime? get ingestLastDate => ref.read(ingestLastDateProvider);
+  DateTime? get streakLastDate => ref.read(streaksProvider).lastReadAt;
+  bool get isStreakToday => ref.read(streaksProvider.notifier).isStreakToday;
+  bool get isDailyDigestDone => isStreakToday || isSameDay(ingestLastDate, streakLastDate);
+  FeedType get homeFeedType => isDailyDigestDone ? FeedType.latest : FeedType.digest;
+
   Future<bool> load() async {
-    // final userId = prefs.getString('user_id');
-    // if (userId == null) return true;
-    // PrefData.userId;
     try {
       final response = await ApiService.get('user');
       if (response.successful) {

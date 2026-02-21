@@ -1,14 +1,27 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:muslimdigest/providers/user.dart';
+import 'package:muslimdigest/providers/user/user.dart';
 import '../../utils/helpers.dart';
 
 /// Name input step widget for onboarding
-class OnboardingNameStep extends ConsumerWidget {
+class OnboardingNameStep extends ConsumerStatefulWidget {
   const OnboardingNameStep({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<OnboardingNameStep> createState() => _OnboardingNameStepState();
+}
+
+class _OnboardingNameStepState extends ConsumerState<OnboardingNameStep> {
+  late final _nameController = TextEditingController()..text = ref.read(userProvider).name ?? '';
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final h = MyHelper(context);
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -33,6 +46,7 @@ class OnboardingNameStep extends ConsumerWidget {
             ),
           ),
           child: TextField(
+            controller: _nameController,
             onChanged: (name) {
               final user = ref.read(userProvider);
               ref.read(userProvider.notifier).setValue(user.copyWith(name: name));

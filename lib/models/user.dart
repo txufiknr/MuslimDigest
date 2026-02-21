@@ -1,10 +1,14 @@
 import 'package:muslimdigest/mock/users.dart';
+import 'package:muslimdigest/utils/users.dart';
+import 'package:muslimdigest/variables/user.dart';
 
 class User {
   final String userId;
   final String? name;
-  final String? gender;
+  final Gender? gender;
   final String? ageGroup;
+  final int likedCount;
+  final int savedCount;
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
@@ -13,18 +17,31 @@ class User {
     this.name,
     this.gender,
     this.ageGroup,
+    this.likedCount = 0,
+    this.savedCount = 0,
     this.createdAt,
     this.updatedAt,
   });
 
   bool get isAnonymous => userId == anonymousUser.userId;
+  String get firstName {
+    final extractedFirstName = extractFirstName(name);
+    if (extractedFirstName.isNotEmpty) return extractedFirstName;
+    return switch (gender) {
+      Gender.male => 'Brother',
+      Gender.female => 'Sister',
+      _ => 'Friend',
+    };
+  }
 
   factory User.fromJson(Map<String, dynamic> json) {
     return User(
       userId: json['userId'],
       name: json['name'],
-      gender: json['gender'],
+      gender: json['gender'] == null ? null : Gender.fromString(json['gender']),
       ageGroup: json['ageGroup'],
+      likedCount: json['likedCount'] ?? 0,
+      savedCount: json['savedCount'] ?? 0,
       createdAt: json['createdAt'] != null ? DateTime.parse(json['createdAt']) : null,
       updatedAt: json['updatedAt'] != null ? DateTime.parse(json['updatedAt']) : null,
     );
@@ -34,8 +51,10 @@ class User {
     return {
       'userId': userId,
       'name': name,
-      'gender': gender,
+      'gender': gender?.name,
       'ageGroup': ageGroup,
+      'likedCount': likedCount,
+      'savedCount': savedCount,
       'createdAt': createdAt?.toIso8601String(),
       'updatedAt': updatedAt?.toIso8601String(),
     };
@@ -43,14 +62,18 @@ class User {
 
   User copyWith({
     String? name,
-    String? gender,
+    Gender? gender,
     String? ageGroup,
+    int? likedCount,
+    int? savedCount,
   }) {
     return User(
       userId: userId,
       name: name ?? this.name,
       gender: gender ?? this.gender,
       ageGroup: ageGroup ?? this.ageGroup,
+      likedCount: likedCount ?? this.likedCount,
+      savedCount: savedCount ?? this.savedCount,
       createdAt: createdAt,
       updatedAt: updatedAt,
     );
@@ -64,6 +87,8 @@ User(
   name: $name,
   gender: $gender,
   ageGroup: $ageGroup,
+  likedCount: $likedCount,
+  savedCount: $savedCount,
   createdAt: $createdAt,
   updatedAt: $updatedAt
 )''';
@@ -76,8 +101,8 @@ class UserStreaks {
   final DateTime? lastReadAt;
 
   UserStreaks({
-    required this.currentStreak,
-    required this.longestStreak,
+    this.currentStreak = 0,
+    this.longestStreak = 0,
     this.lastReadAt,
   });
 
@@ -199,6 +224,70 @@ UserPreferences(
   sources: $sources,
   avoidedTopics: $avoidedTopics,
   avoidedSources: $avoidedSources,
+  createdAt: $createdAt,
+  updatedAt: $updatedAt
+)''';
+  }
+}
+
+class UserSettings {
+  final String userId;
+  final int textSize;
+  final String swipeDirection;
+  final DateTime? createdAt;
+  final DateTime? updatedAt;
+
+  UserSettings({
+    required this.userId,
+    this.textSize = 16,
+    this.swipeDirection = 'right',
+    this.createdAt,
+    this.updatedAt,
+  });
+
+  factory UserSettings.fromJson(Map<String, dynamic> json) {
+    return UserSettings(
+      userId: json['userId'],
+      textSize: json['textSize'] ?? 16,
+      swipeDirection: json['swipeDirection'] ?? 'right',
+      createdAt: json['createdAt'] != null ? DateTime.parse(json['createdAt']) : null,
+      updatedAt: json['updatedAt'] != null ? DateTime.parse(json['updatedAt']) : null,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'userId': userId,
+      'textSize': textSize,
+      'swipeDirection': swipeDirection,
+      'createdAt': createdAt?.toIso8601String(),
+      'updatedAt': updatedAt?.toIso8601String(),
+    };
+  }
+
+  UserSettings copyWith({
+    String? userId,
+    int? textSize,
+    String? swipeDirection,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) {
+    return UserSettings(
+      userId: userId ?? this.userId,
+      textSize: textSize ?? this.textSize,
+      swipeDirection: swipeDirection ?? this.swipeDirection,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return '''
+UserSettings(
+  userId: $userId,
+  textSize: $textSize,
+  swipeDirection: $swipeDirection,
   createdAt: $createdAt,
   updatedAt: $updatedAt
 )''';
