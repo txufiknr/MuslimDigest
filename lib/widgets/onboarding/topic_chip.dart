@@ -5,17 +5,77 @@ import 'package:muslimdigest/utils/helpers.dart';
 
 enum TopicState { neutral, preferred, avoided }
 
+/// Color configuration for TopicChip states
+class TopicChipColors {
+  final Color preferredText;
+  final Color preferredBackground;
+  final Color avoidedText;
+  final Color avoidedBackground;
+  final Color neutralText;
+  final Color neutralBackground;
+  final Color avoidedBorder;
+  final Color neutralBorder;
+
+  const TopicChipColors({
+    this.preferredText = AppColors.accent,
+    this.preferredBackground = Colors.white,
+    this.avoidedText = Colors.white,
+    this.avoidedBackground = AppColors.error,
+    this.neutralText = Colors.white,
+    this.neutralBackground = AppColors.accentLight,
+    this.avoidedBorder = AppColors.error,
+    this.neutralBorder = Colors.white,
+  });
+
+  /// Get text color for given state
+  Color getTextColor(TopicState state) {
+    switch (state) {
+      case TopicState.preferred:
+        return preferredText;
+      case TopicState.avoided:
+        return avoidedText;
+      case TopicState.neutral:
+        return neutralText;
+    }
+  }
+
+  /// Get background color for given state
+  Color getBackgroundColor(TopicState state) {
+    switch (state) {
+      case TopicState.preferred:
+        return preferredBackground;
+      case TopicState.avoided:
+        return avoidedBackground;
+      case TopicState.neutral:
+        return neutralBackground;
+    }
+  }
+
+  /// Get border color for given state
+  Color getBorderColor(TopicState state) {
+    switch (state) {
+      case TopicState.preferred:
+      case TopicState.neutral:
+        return neutralBorder;
+      case TopicState.avoided:
+        return avoidedBorder;
+    }
+  }
+}
+
 /// Individual topic chip widget for onboarding interests selection
 class TopicChip extends StatelessWidget {
   final String topic;
   final TopicState state;
   final ValueChanged<TopicState> onStateChanged;
+  final TopicChipColors colors;
 
   const TopicChip({
     super.key,
     required this.topic,
     required this.state,
     required this.onStateChanged,
+    this.colors = const TopicChipColors(),
   });
 
   @override
@@ -23,23 +83,6 @@ class TopicChip extends StatelessWidget {
     final h = MyHelper(context);
     
     final isSelected = state != TopicState.neutral;
-    final Color textColor;
-    final Color backgroundColor;
-    
-    switch (state) {
-      case TopicState.preferred:
-        textColor = AppColors.accent;
-        backgroundColor = Colors.white;
-        break;
-      case TopicState.avoided:
-        textColor = Colors.white;
-        backgroundColor = AppColors.error;
-        break;
-      case TopicState.neutral:
-        textColor = Colors.white;
-        backgroundColor = AppColors.accentLight.withValues(alpha: 0.9);
-        break;
-    }
     
     return FilterChip(
       materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
@@ -47,7 +90,7 @@ class TopicChip extends StatelessWidget {
       label: Text(
         topic.toCapitalized(),
         style: h.currentTextTheme.bodyMedium?.copyWith(
-          color: textColor,
+          color: colors.getTextColor(state),
           fontWeight: FontWeight.w500,
         ),
       ),
@@ -67,8 +110,8 @@ class TopicChip extends StatelessWidget {
         }
         onStateChanged(newState);
       },
-      backgroundColor: backgroundColor,
-      selectedColor: backgroundColor,
+      backgroundColor: colors.getBackgroundColor(state),
+      selectedColor: colors.getBackgroundColor(state),
 
       elevation: 0,
       pressElevation: 0,
@@ -78,9 +121,7 @@ class TopicChip extends StatelessWidget {
       showCheckmark: false,
 
       side: BorderSide(
-        color: state == TopicState.avoided 
-            ? AppColors.error.withValues(alpha: 0.5)
-            : Colors.white.withValues(alpha: 0.3),
+        color: colors.getBorderColor(state).withValues(alpha: 0.5),
         width: 1,
       ),
       shape: RoundedRectangleBorder(
