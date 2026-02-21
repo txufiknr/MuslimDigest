@@ -4,10 +4,67 @@ import 'package:muslimdigest/config/colors.dart';
 import 'package:muslimdigest/config/themes.dart';
 import 'package:muslimdigest/config/user.dart';
 import 'package:muslimdigest/providers/user/user.dart';
+import 'package:muslimdigest/utils/dialogs.dart';
 import 'package:muslimdigest/utils/extensions.dart';
 import 'package:muslimdigest/utils/helpers.dart';
 import 'package:muslimdigest/variables/user.dart';
 import 'package:muslimdigest/widgets/components/button.dart';
+
+class GenderOption extends StatelessWidget {
+  final Gender gender;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const GenderOption({
+    super.key,
+    required this.gender,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final h = MyHelper(context);
+    
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      decoration: BoxDecoration(
+        border: Border.all(
+          color: isSelected
+              ? AppColors.primary
+              : Theme.of(context).colorScheme.outline,
+        ),
+        borderRadius: BorderRadius.circular(12),
+        color: isSelected
+            ? AppColors.primary.withValues(alpha: 0.1)
+            : Theme.of(context).colorScheme.surface,
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            gender == Gender.male ? Icons.male : Icons.female,
+            color: isSelected
+                ? AppColors.primary
+                : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            gender.label,
+            style: h.currentTextTheme.bodyMedium?.copyWith(
+              color: isSelected
+                  ? AppColors.primary
+                  : Theme.of(context).colorScheme.onSurface,
+              fontWeight: isSelected
+                  ? FontWeight.w600
+                  : FontWeight.normal,
+            ),
+          ),
+        ],
+      ),
+    ).onTap(onTap).expand();
+  }
+}
 
 class EditProfilePage extends ConsumerStatefulWidget {
   const EditProfilePage({super.key});
@@ -164,7 +221,7 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
                       ),
                     ),
                     style: h.currentTextTheme.bodyMedium,
-                    items: USER_AGE_GROUPS.map((ageGroup) {
+                    items: [...USER_AGE_GROUPS, 'Prefer not to say'].map((ageGroup) {
                       return DropdownMenuItem<String>(
                         value: ageGroup,
                         child: Text(ageGroup),
@@ -172,7 +229,7 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
                     }).toList(),
                     onChanged: (value) {
                       setState(() {
-                        _selectedAgeGroup = value;
+                        _selectedAgeGroup = USER_AGE_GROUPS.contains(value) ? value : null;
                         _isDirty = true;
                       });
                     },
@@ -194,95 +251,29 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
               
               Row(
                 children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                    decoration: BoxDecoration(
-                      border: Border.all(
-                        color: _isMale
-                            ? AppColors.primary
-                            : Theme.of(context).colorScheme.outline,
-                        width: _isMale ? 2 : 1,
-                      ),
-                      borderRadius: BorderRadius.circular(12),
-                      color: _isMale
-                          ? AppColors.primary.withValues(alpha: 0.1)
-                          : Theme.of(context).colorScheme.surface,
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.male,
-                          color: _isMale
-                              ? AppColors.primary
-                              : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          Gender.male.label,
-                          style: h.currentTextTheme.bodyMedium?.copyWith(
-                            color: _isMale
-                                ? AppColors.primary
-                                : Theme.of(context).colorScheme.onSurface,
-                            fontWeight: _isMale
-                                ? FontWeight.w600
-                                : FontWeight.normal,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ).onTap(() {
-                    setState(() {
-                      _selectedGender = Gender.male;
-                      _isDirty = true;
-                    });
-                  }).expand(),
+                  GenderOption(
+                    gender: Gender.male,
+                    isSelected: _isMale,
+                    onTap: () {
+                      setState(() {
+                        _selectedGender = _isMale ? null : Gender.male;
+                        _isDirty = true;
+                      });
+                    },
+                  ),
                   
                   const SizedBox(width: 12),
                   
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                    decoration: BoxDecoration(
-                      border: Border.all(
-                        color: _isFemale
-                            ? AppColors.primary
-                            : Theme.of(context).colorScheme.outline,
-                        width: _isFemale ? 2 : 1,
-                      ),
-                      borderRadius: BorderRadius.circular(12),
-                      color: _isFemale
-                          ? AppColors.primary.withValues(alpha: 0.1)
-                          : Theme.of(context).colorScheme.surface,
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.female,
-                          color: _isFemale
-                              ? AppColors.primary
-                              : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          Gender.female.label,
-                          style: h.currentTextTheme.bodyMedium?.copyWith(
-                            color: _isFemale
-                                ? AppColors.primary
-                                : Theme.of(context).colorScheme.onSurface,
-                            fontWeight: _isFemale
-                                ? FontWeight.w600
-                                : FontWeight.normal,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ).onTap(() {
-                    setState(() {
-                      _selectedGender = Gender.female;
-                      _isDirty = true;
-                    });
-                  }).expand(),
+                  GenderOption(
+                    gender: Gender.female,
+                    isSelected: _isFemale,
+                    onTap: () {
+                      setState(() {
+                        _selectedGender = _isFemale ? null : Gender.female;
+                        _isDirty = true;
+                      });
+                    },
+                  ),
                 ],
               ),
               
@@ -311,25 +302,10 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
     
     await ref.read(userProvider.notifier).setValue(updatedUser);
     
+    if (!mounted) return;
     setState(() {
       _isDirty = false;
     });
-    
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Profile updated successfully',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: Colors.white,
-            ),
-          ),
-          backgroundColor: AppColors.success,
-          duration: const Duration(seconds: 2),
-        ),
-      );
-      
-      Navigator.of(context).pop();
-    }
+    showSnackBar(context, 'Profile updated successfully');
   }
 }
