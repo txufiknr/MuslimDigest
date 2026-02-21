@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:muslimdigest/config/colors.dart';
@@ -67,7 +68,7 @@ class SwipeDirectionSelector extends ConsumerWidget {
         Expanded(
           child: _SwipeDirectionButton(
             direction: 'left',
-            icon: Icons.arrow_back,
+            icon: CupertinoIcons.arrow_left,
             label: 'Left',
             isSelected: currentDirection == 'left',
             onTap: () => onChanged('left'),
@@ -79,7 +80,7 @@ class SwipeDirectionSelector extends ConsumerWidget {
         Expanded(
           child: _SwipeDirectionButton(
             direction: 'right',
-            icon: Icons.arrow_forward,
+            icon: CupertinoIcons.arrow_right,
             label: 'Right',
             isSelected: currentDirection == 'right',
             onTap: () => onChanged('right'),

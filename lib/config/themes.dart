@@ -23,8 +23,9 @@ class AppThemes {
   static const double buttonSmallSize = 16;
 
   static const double buttonHeight = 50.0;
+  static const double buttonRadius = 25.0;
   static const double contentPadding = 22.0;
-  
+
   // Color Schemes
   static ColorScheme _buildColorScheme({
     required Brightness brightness,
@@ -79,6 +80,7 @@ class AppThemes {
     required Color foregroundColor,
     Color? sideColor,
     EdgeInsets? padding,
+    double? fontSize,
   }) {
     if (sideColor != null) {
       return OutlinedButton.styleFrom(
@@ -86,12 +88,12 @@ class AppThemes {
         foregroundColor: foregroundColor,
         padding: padding ?? const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(28),
+          borderRadius: BorderRadius.circular(buttonRadius),
         ),
-        textStyle: const TextStyle(
+        textStyle: TextStyle(
           fontFamily: APP_FONT_FAMILY,
           fontWeight: FontWeight.w500,
-          fontSize: buttonLargeSize,
+          fontSize: fontSize ?? buttonLargeSize,
         ),
       );
     } else {
@@ -102,12 +104,12 @@ class AppThemes {
         padding: padding ?? const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
         shadowColor: Colors.transparent,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(28),
+          borderRadius: BorderRadius.circular(buttonRadius),
         ),
-        textStyle: const TextStyle(
+        textStyle: TextStyle(
           fontFamily: APP_FONT_FAMILY,
           fontWeight: FontWeight.w500,
-          fontSize: buttonLargeSize,
+          fontSize: fontSize ?? buttonLargeSize,
         ),
       );
     }
@@ -133,12 +135,24 @@ class AppThemes {
     foregroundColor: WidgetStateProperty.all(Colors.white),
   );
 
+  static ButtonStyle get textButtonStyleLight => _buildBaseButtonStyle(
+    foregroundColor: AppColors.primary,
+    fontSize: buttonSmallSize,
+  );
+
+  static ButtonStyle get textButtonStyleDark => textButtonStyleLight.copyWith(
+    foregroundColor: WidgetStateProperty.all(Colors.white),
+  );
+
   // Button Themes
   static ElevatedButtonThemeData _buildElevatedButtonTheme(ButtonStyle style) => 
       ElevatedButtonThemeData(style: style);
   
   static OutlinedButtonThemeData _buildOutlinedButtonTheme(ButtonStyle style) => 
       OutlinedButtonThemeData(style: style);
+
+  static TextButtonThemeData _buildTextButtonTheme(ButtonStyle style) => 
+      TextButtonThemeData(style: style);
 
   static ElevatedButtonThemeData get elevatedButtonThemeLight => 
       _buildElevatedButtonTheme(elevatedButtonStyleLight);
@@ -151,6 +165,12 @@ class AppThemes {
 
   static OutlinedButtonThemeData get outlinedButtonThemeDark => 
       _buildOutlinedButtonTheme(outlinedButtonStyleDark);
+
+  static TextButtonThemeData get textButtonThemeLight => 
+      _buildTextButtonTheme(textButtonStyleLight);
+
+  static TextButtonThemeData get textButtonThemeDark => 
+      _buildTextButtonTheme(textButtonStyleDark);
 
   // Text Themes
   static TextTheme get textThemeLight => _buildTextTheme(
@@ -266,6 +286,7 @@ class AppThemes {
   // Complete Themes
   static ThemeData _buildTheme({
     required ColorScheme colorScheme,
+    required TextButtonThemeData textButtonTheme,
     required OutlinedButtonThemeData outlinedButtonTheme,
     required TextTheme textTheme,
     required CardThemeData cardTheme,
@@ -274,6 +295,7 @@ class AppThemes {
   }) {
     return _baseTheme.copyWith(
       colorScheme: colorScheme,
+      textButtonTheme: textButtonTheme,
       outlinedButtonTheme: outlinedButtonTheme,
       textTheme: textTheme,
       cardTheme: cardTheme,
@@ -284,6 +306,7 @@ class AppThemes {
 
   static ThemeData get lightTheme => _buildTheme(
     colorScheme: lightColorScheme,
+    textButtonTheme: textButtonThemeLight,
     outlinedButtonTheme: outlinedButtonThemeLight,
     textTheme: textThemeLight,
     cardTheme: cardThemeLight,
@@ -293,6 +316,7 @@ class AppThemes {
 
   static ThemeData get darkTheme => _buildTheme(
     colorScheme: darkColorScheme,
+    textButtonTheme: textButtonThemeDark,
     outlinedButtonTheme: outlinedButtonThemeDark,
     textTheme: textThemeDark,
     cardTheme: cardThemeDark,

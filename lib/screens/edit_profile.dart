@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:muslimdigest/config/colors.dart';
@@ -306,6 +307,13 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
     setState(() {
       _isDirty = false;
     });
-    showSnackBar(context, 'Profile updated successfully');
+    showSnackBar(
+      context,
+      'Profile updated successfully',
+      icon: Icon(CupertinoIcons.checkmark_circle_fill, color: AppColors.success),
+      buttons: [
+        TextButton(onPressed: Navigator.of(context).pop, child: Text('Done')),
+      ],
+    );
   }
 }

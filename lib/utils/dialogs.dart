@@ -210,12 +210,31 @@ Future<bool> showRetryableError(BuildContext context, {String? title, String? me
   return !continueAnyway;
 }
 
-void showSnackBar(BuildContext context, String message, {bool showAction = false, String? actionLabel, VoidCallback? action}) {
+void showSnackBar(BuildContext context, String message, {Widget? icon, List<Widget> buttons = const [], bool showAction = false, String? actionLabel, VoidCallback? action}) {
+  final h = MyHelper(context);
+
   ScaffoldMessenger.of(context).showSnackBar(
     SnackBar(
-      content: Text(message),
-      // backgroundColor: currentTheme.colorScheme.surface,
-      action: showAction ? SnackBarAction(label: actionLabel ?? "Close", onPressed: action ?? Navigator.of(context).pop) : null,
+      behavior: SnackBarBehavior.floating,
+      margin: EdgeInsets.all(16),
+      content: Row(
+        children: [
+          ?icon,
+          Text(message, style: h.currentTextTheme.bodyMedium?.copyWith(
+            color: h.currentTheme.colorScheme.onSurface,
+          )).expand(),
+          ...buttons
+        ].addItemInBetween(SizedBox(width: 8)),
+      ),
+      shape: h.popupShape,
+      elevation: 0,
+      backgroundColor: h.currentTheme.colorScheme.surface,
+      action: showAction
+        ? SnackBarAction(
+          label: actionLabel ?? "Close", 
+          onPressed: action ?? Navigator.of(context).pop
+        )
+        : null,
     ),
   );
 }

@@ -21,6 +21,14 @@ class MyHelper {
   Color pickColor(Color light, Color dark) => isLightTheme ? light : dark;
   void nextTheme() => ThemeProvider.controllerOf(context).nextTheme();
 
+  ShapeBorder get popupShape => RoundedRectangleBorder(
+    borderRadius: BorderRadius.circular(15.0),
+    side: BorderSide(
+      color: currentTheme.colorScheme.outline,
+      width: 1.0,
+    ),
+  );
+
   // NavigatorState get _navigator => Navigator.of(context);
   
   // void pop([dynamic result]) => _navigator.pop(result);

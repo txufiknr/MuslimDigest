@@ -8,9 +8,11 @@ import 'package:muslimdigest/api/user.dart';
 import 'package:muslimdigest/config/colors.dart';
 import 'package:muslimdigest/config/feeds.dart';
 import 'package:muslimdigest/config/themes.dart';
+import 'package:muslimdigest/models/user.dart';
 import 'package:muslimdigest/providers/read_count.dart';
 import 'package:muslimdigest/providers/read_last_date.dart';
 import 'package:muslimdigest/providers/topic.dart';
+import 'package:muslimdigest/providers/user/settings.dart';
 import 'package:muslimdigest/utils/app_repository.dart';
 import 'package:muslimdigest/utils/extensions.dart';
 import 'package:muslimdigest/api/feeds.dart';
@@ -24,9 +26,6 @@ import 'package:muslimdigest/widgets/home/feed_card.dart';
 import 'package:muslimdigest/widgets/home/trending_card.dart';
 import '../../widgets/components/placeholder.dart';
 import '../../models/feed.dart';
-
-final SWIPE_DIRECTION = CardSwiperDirection.left;
-final UNDO_DIRECTION = SWIPE_DIRECTION == CardSwiperDirection.left ? CardSwiperDirection.right : CardSwiperDirection.left;
 
 /// Feed swiper widget for displaying news cards with swipe navigation
 class FeedSwiper extends ConsumerStatefulWidget {
@@ -55,6 +54,9 @@ class FeedSwiperState extends ConsumerState<FeedSwiper> {
   bool get _canGoBack => _readCount > 0;
   FeedType get _homeFeedType => ref.read(appRepositoryProvider).homeFeedType;
   String? get _currentTopic => ref.watch(topicProvider);
+
+  UserSettings get _settings => ref.watch(settingsProvider);
+  CardSwiperDirection get _swipeDirection => _settings.swipeDirection == 'left' ? CardSwiperDirection.left : CardSwiperDirection.right;
 
   @override
   void dispose() {
@@ -127,6 +129,8 @@ class FeedSwiperState extends ConsumerState<FeedSwiper> {
       : _feedItems.length;
     final initialIndex = isDigest ? _readCount.clamp(0, cardsCount - 1) : 0;
 
+    final undoDirection = _swipeDirection == CardSwiperDirection.left ? UndoDirection.right : UndoDirection.left;
+
     return CardSwiper(
       key: Key("CardSwiper_$_readCount"),
       controller: _controller,
@@ -134,10 +138,10 @@ class FeedSwiperState extends ConsumerState<FeedSwiper> {
       showBackCardOnUndo: true,
       undoSwipeThreshold: 15,
       threshold: 70,
-      undoDirection: UndoDirection.right,
+      undoDirection: undoDirection,
       allowedSwipeDirection: AllowedSwipeDirection.only(
-        left: SWIPE_DIRECTION == CardSwiperDirection.left || _canGoBack,
-        right: SWIPE_DIRECTION == CardSwiperDirection.right || _canGoBack
+        left: _swipeDirection == CardSwiperDirection.left || _canGoBack,
+        right: _swipeDirection == CardSwiperDirection.right || _canGoBack
       ),
       initialIndex: initialIndex,
       cardsCount: cardsCount,
@@ -159,7 +163,7 @@ class FeedSwiperState extends ConsumerState<FeedSwiper> {
         // log('[feed] Swipe direction: $direction, previousItem: ${previousItem.title}');
 
         // When an undo swipe is detected
-        if (direction == UNDO_DIRECTION) {
+        if (direction != _swipeDirection) {
           // Trigger the undo action on the controller
           _controller.undo();
           _decreaseReadCount();
@@ -168,10 +172,8 @@ class FeedSwiperState extends ConsumerState<FeedSwiper> {
           return false;
         }
 
-        if (direction == SWIPE_DIRECTION) {
-          // log('[feed] Swiped item: ${previousItem.title}');
-          _incrementReadCount(previousItem.cluster.id);
-        }
+        // log('[feed] Swiped item: ${previousItem.title}');
+        _incrementReadCount(previousItem.cluster.id);
         return true;
       },
     );

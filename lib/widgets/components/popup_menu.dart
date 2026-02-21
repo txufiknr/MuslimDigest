@@ -27,13 +27,7 @@ class MyPopupMenu extends StatelessWidget {
       style: ButtonStyle(
         backgroundColor: WidgetStatePropertyAll(h.currentTheme.colorScheme.surface),
       ),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(15.0),
-        side: BorderSide(
-          color: h.currentTheme.colorScheme.outline,
-          width: 1.0,
-        ),
-      ),
+      shape: h.popupShape,
       elevation: 0.0,
       shadowColor: Colors.transparent,
       onSelected: onSelected,

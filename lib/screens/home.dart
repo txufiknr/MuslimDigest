@@ -117,7 +117,13 @@ class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver
   Widget build(BuildContext context) {
     // Listen for topic changes and trigger load feed
     ref.listen<String?>(topicProvider, (previous, next) {
-      if (previous != next) _loadFeed(next);
+      if (previous == next) return;
+      if (next != null) {
+        setState(() {
+          _feedType = FeedType.digest;
+        });
+      }
+      _loadFeed(next);
     });
 
     return PopScope(
@@ -143,13 +149,7 @@ class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver
             children: [
               HomeHeader(
                 feedType: _feedType,
-                onTopicChanged: (topic) {
-                  // TODO: kalo dari trending ke topic di kanannya, load feed ngga sesuai
-                  setState(() {
-                    _feedType = FeedType.digest;
-                  });
-                  // _loadFeed(topic);
-                },
+                // onTopicChanged: (topic) {},
                 onSeeTrending: () async {
                   await ref.read(topicProvider.notifier).setValue(null);
                   setState(() {

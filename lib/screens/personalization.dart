@@ -182,7 +182,7 @@ class _PersonalizationPageState extends ConsumerState<PersonalizationPage>
               ),
             ],
           ),
-        ].addItemInBetween(MyDivider().withPaddingVertical(16)),
+        ].addItemInBetween(MyDivider().withPaddingVertical(AppThemes.contentPadding)),
       ),
     );
   }
