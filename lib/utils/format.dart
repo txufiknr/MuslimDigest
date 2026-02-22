@@ -10,20 +10,33 @@ final _kInlineBulletDetect = RegExp(r'(?:^|\s)[-*•]\s');
 // Splits on any bullet character that is surrounded by optional whitespace.
 final _kBulletSplit = RegExp(r'\s*[-*•]\s+');
 
+// Matches Q&A pattern: "Q: ... A: ..."
+final _kQAPattern = RegExp(r'^\s*Q:\s*(.+?)\s*A:\s*(.+?)\s*$');
+
 /// Parsed result of a raw text string.
 ///
 /// - [header] is the optional leading text before the first bullet (e.g. a
 ///   label ending in `:`, or an introductory sentence).
 /// - [lines]  is the list of bullet-point strings, already stripped of their
 ///   leading bullet character.  Empty when the text contains no bullets.
+/// - [question] is the question part when Q&A format is detected.
+/// - [answer] is the answer part when Q&A format is detected.
 @immutable
-class _BulletParseResult {
-  const _BulletParseResult({required this.header, required this.lines});
+class _ParseResult {
+  const _ParseResult({
+    this.header,
+    this.lines = const [],
+    this.question,
+    this.answer,
+  });
 
   final String? header;
   final List<String> lines;
+  final String? question;
+  final String? answer;
 
   bool get hasBullets => lines.isNotEmpty;
+  bool get isQA => question != null && answer != null;
 }
 
 /// Strips the leading bullet character from [line] and returns the trimmed
@@ -44,28 +57,39 @@ String? _stripLeadingBullet(String line) {
   return null;
 }
 
-/// Parses [rawText] into an optional header and a list of bullet lines.
+/// Parses [rawText] into Q&A format, bullet list, or plain text.
 ///
 /// Three strategies are tried in order:
 ///
-/// 1. **Newline-separated** – when the text already contains line breaks,
+/// 1. **Q&A detection** – when the text matches "Q: ... A: ..." pattern
+///
+/// 2. **Newline-separated** – when the text already contains line breaks,
 ///    split on `\n` and treat non-bullet lines before the first bullet as a
 ///    header; every bullet line is stripped of its marker.
 ///
-/// 2. **Inline bullets** – when bullets appear inline (e.g. the text returned
+/// 3. **Inline bullets** – when bullets appear inline (e.g. the text returned
 ///    by many AI APIs: `"- Item one. - Item two. - Item three."`), detect them
 ///    via [_kInlineBulletDetect] and split via [_kBulletSplit].
 ///    A non-empty first segment that precedes the first bullet is the header.
 ///    An empty first segment means the text started with a bullet (no header).
 ///
-/// 3. **Single bullet line** – a single line that starts with a bullet marker.
+/// 4. **Single bullet line** – a single line that starts with a bullet marker.
 ///
-/// When no bullets are found at all, [_BulletParseResult.lines] is empty.
-_BulletParseResult _parseBulletText(String rawText) {
+/// When no bullets are found at all, [_ParseResult.lines] is empty.
+_ParseResult _parseText(String rawText) {
   final trimmed = rawText.trim();
-  if (trimmed.isEmpty) return const _BulletParseResult(header: null, lines: []);
+  if (trimmed.isEmpty) return const _ParseResult();
 
-  // ── Strategy 1: newline-separated ─────────────────────────────────────────
+  // ── Strategy 1: Q&A detection ────────────────────────────────────────────
+  final qaMatch = _kQAPattern.firstMatch(trimmed);
+  if (qaMatch != null) {
+    return _ParseResult(
+      question: qaMatch.group(1)?.trim(),
+      answer: qaMatch.group(2)?.trim(),
+    );
+  }
+
+  // ── Strategy 2: newline-separated ─────────────────────────────────────────
   final newlineSegments = trimmed
       .split('\n')
       .map((l) => l.trim())
@@ -88,11 +112,11 @@ _BulletParseResult _parseBulletText(String rawText) {
       }
     }
     if (lines.isNotEmpty) {
-      return _BulletParseResult(header: header, lines: lines);
+      return _ParseResult(header: header, lines: lines);
     }
   }
 
-  // ── Strategy 2: inline bullets ─────────────────────────────────────────────
+  // ── Strategy 3: inline bullets ─────────────────────────────────────────────
   if (_kInlineBulletDetect.hasMatch(trimmed)) {
     final rawParts = trimmed.split(_kBulletSplit);
 
@@ -116,17 +140,17 @@ _BulletParseResult _parseBulletText(String rawText) {
     }
 
     if (lines.isNotEmpty) {
-      return _BulletParseResult(header: header, lines: lines);
+      return _ParseResult(header: header, lines: lines);
     }
   }
 
-  // ── Strategy 3: single bullet line ─────────────────────────────────────────
+  // ── Strategy 4: single bullet line ─────────────────────────────────────────
   final stripped = _stripLeadingBullet(trimmed);
   if (stripped != null) {
-    return _BulletParseResult(header: null, lines: [stripped]);
+    return _ParseResult(header: null, lines: [stripped]);
   }
 
-  return const _BulletParseResult(header: null, lines: []);
+  return const _ParseResult();
 }
 
 /// Renders a bulleted list with an optional [header].
@@ -166,19 +190,58 @@ Widget bulletedList(
   );
 }
 
-/// Formats [rawText] into either a plain [Text] widget (when no bullet markers
-/// are detected) or a [bulletedList] widget.
+/// Renders a Q&A pair with question and answer sections.
 ///
-/// Handles all common bullet formats:
-/// - Newline-separated: `"- Item\n- Item"`
-/// - Inline with spaces: `"- Item. - Item. - Item."`
-/// - Using `*` or `•` as markers in both modes above
-/// - An optional header before the first bullet
+/// [question] and [answer] are displayed as separate text widgets
+/// with "Q:" and "A:" prefixes respectively.
+/// [spacing] controls the vertical gap between question and answer.
+Widget qaPair(String question, String answer, {
+  TextStyle? style,
+  double spacing = 8,
+}) {
+  return Column(
+    mainAxisSize: MainAxisSize.min,
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Q: ', style: style?.copyWith(fontWeight: FontWeight.bold) ?? TextStyle(fontWeight: FontWeight.bold)),
+          Expanded(child: Text(question, style: style)),
+        ],
+      ),
+      SizedBox(height: spacing),
+      Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('A: ', style: style?.copyWith(fontWeight: FontWeight.bold) ?? TextStyle(fontWeight: FontWeight.bold)),
+          Expanded(child: Text(answer, style: style)),
+        ],
+      ),
+    ],
+  );
+}
+
+/// Formats [rawText] into either a plain [Text] widget, [qaPair] widget,
+/// or [bulletedList] widget based on content detection.
 ///
-/// Hyphenated words (e.g. `"non-religious"`, `"well-known"`) are never
+/// Handles:
+/// - Q&A format: "Q: What's the question? A: Here's the answer."
+/// - Bullet lists with all common formats
+/// - Plain text as fallback
+///
+/// Hyphenated words (e.g. "non-religious", "well-known") are never
 /// misidentified as bullet separators.
 Widget formatText(String rawText, {TextStyle? style}) {
-  final result = _parseBulletText(rawText);
+  final result = _parseText(rawText);
+
+  if (result.isQA) {
+    return qaPair(
+      result.question!,
+      result.answer!,
+      style: style,
+    );
+  }
 
   if (!result.hasBullets) {
     return Text(rawText, style: style);

@@ -144,7 +144,6 @@ class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver
             children: [
               HomeHeader(
                 feedType: _feedType,
-                // onTopicChanged: (topic) {},
                 onSeeTrending: () async {
                   await ref.read(topicProvider.notifier).setValue(null);
                   setState(() {

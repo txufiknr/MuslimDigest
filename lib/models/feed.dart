@@ -67,7 +67,7 @@ class FeedItem {
       hook: json['hook'],
       topic: json['topic'],
       imageUrl: json['imageUrl'],
-      videoUrl: json['imageUrl'],
+      videoUrl: json['videoUrl'],
       riskLevel: json['riskLevel'],
       publishedAt: json['publishedAt'] == null ? null : DateTime.parse(json['publishedAt']),
       sources: List<String>.from(json['sources'] ?? []),

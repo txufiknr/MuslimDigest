@@ -3,9 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:muslimdigest/config/themes.dart';
-import 'package:muslimdigest/mock/users.dart';
 import 'package:muslimdigest/providers/user/user.dart';
 import 'package:muslimdigest/utils/extensions.dart';
+import 'package:muslimdigest/variables/user.dart';
 import '../config/constants.dart';
 import '../config/colors.dart';
 import '../utils/functions.dart';
@@ -18,7 +18,7 @@ class OnboardingPage extends ConsumerWidget {
 
   /// Start reading as a guest (global)
   void _startReadingNow(BuildContext context, WidgetRef ref) async {
-    await ref.read(userProvider.notifier).setValue(anonymousUser);
+    await ref.read(userProvider.notifier).setValue(PrefData.user);
     if (context.mounted) context.go('/home');
   }
 

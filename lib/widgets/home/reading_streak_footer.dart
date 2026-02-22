@@ -19,7 +19,6 @@ class ReadingStreakFooter extends ConsumerWidget {
       progress: progress,
       height: 6,
       backgroundColor: h.currentTheme.colorScheme.outline,
-      // backgroundColor: h.currentTheme.colorScheme.surface,
       animationDuration: const Duration(milliseconds: 300),
     );
   }

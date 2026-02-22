@@ -57,6 +57,35 @@ class FeedSwiperState extends ConsumerState<FeedSwiper> {
   UserSettings get _settings => ref.watch(settingsProvider);
   CardSwiperDirection get _swipeDirection => _settings.swipeDirection == SwipeDirection.left ? CardSwiperDirection.left : CardSwiperDirection.right;
 
+  bool get _isDigest => widget.feedType == FeedType.digest;
+  int get _cardsCount => _isDigest && _feedItems.length == DAILY_READ_TARGET
+    ? _feedItems.length + 1
+    : _feedItems.length;
+  int get _initialIndex => _isDigest ? _readCount.clamp(0, _cardsCount - 1) : 0;
+  UndoDirection get _undoDirection => _swipeDirection == CardSwiperDirection.left ? UndoDirection.right : UndoDirection.left;
+
+  @override
+  void didUpdateWidget(covariant FeedSwiper oldWidget) {
+    if (oldWidget.feedType != widget.feedType) {
+      // Reset initialIndex to 0 when feed type changes
+      // Note: initialIndex is not directly accessible on CardSwiperController
+      // We'll handle this by rebuilding the swiper with new key
+      final feedTotal = widget.feedType.readItems(ref).length;
+      debugPrint("Resetting swiper to index 0");
+      debugPrint("current feedType: ${widget.feedType.label}");
+      debugPrint("current feedType length: $feedTotal");
+      if (feedTotal > 0) {
+        debugPrint("first feed: ${widget.feedType.readItems(ref).first.title}");
+      }
+      debugPrint("cardsCount: $_cardsCount");
+      debugPrint("initialIndex: $_initialIndex");
+      setState(() {
+        _controller.moveTo(_initialIndex);
+      });
+    }
+    super.didUpdateWidget(oldWidget);
+  }
+
   @override
   void dispose() {
     _controller.dispose();
@@ -122,14 +151,6 @@ class FeedSwiperState extends ConsumerState<FeedSwiper> {
       ).withPaddingAll(AppThemes.contentPadding);
     }
 
-    final isDigest = widget.feedType == FeedType.digest;
-    final cardsCount = isDigest
-      ? _feedItems.length + 1
-      : _feedItems.length;
-
-    final initialIndex = isDigest ? _readCount.clamp(0, cardsCount - 1) : 0;
-    final undoDirection = _swipeDirection == CardSwiperDirection.left ? UndoDirection.right : UndoDirection.left;
-
     return CardSwiper(
       key: Key("CardSwiper_$_readCount"),
       controller: _controller,
@@ -137,17 +158,17 @@ class FeedSwiperState extends ConsumerState<FeedSwiper> {
       showBackCardOnUndo: true,
       undoSwipeThreshold: 15,
       threshold: 70,
-      undoDirection: undoDirection,
+      undoDirection: _undoDirection,
       allowedSwipeDirection: AllowedSwipeDirection.only(
         left: _swipeDirection == CardSwiperDirection.left || _canGoBack,
         right: _swipeDirection == CardSwiperDirection.right || _canGoBack
       ),
-      initialIndex: initialIndex,
-      cardsCount: cardsCount,
+      initialIndex: _initialIndex,
+      cardsCount: _cardsCount,
       cardBuilder: (context, index, percentThresholdX, percentThresholdY) {
         return FeedCard(
           widget.feedType,
-          feedItem: index == cardsCount - 1 ? null : _feedItems[index],
+          feedItem: _isDigest && index == DAILY_READ_TARGET ? null : _feedItems[index],
           onSeeLatest: widget.onSeeLatest,
         );
       },
@@ -155,6 +176,11 @@ class FeedSwiperState extends ConsumerState<FeedSwiper> {
       isLoop: false,
       onEnd: requestReview,
       onSwipe: (previousIndex, currentIndex, direction) async {
+        // Skip swipe processing for the extra congratulations card in digest
+        // if (_isDigest && previousIndex == DAILY_READ_TARGET) {
+        //   return true;
+        // }
+        
         final previousItem = _feedItems[previousIndex];
         // log('[feed] Swipe direction: $direction, previousItem: ${previousItem.title}');
 

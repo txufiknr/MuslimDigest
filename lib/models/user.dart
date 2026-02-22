@@ -1,4 +1,3 @@
-import 'package:muslimdigest/mock/users.dart';
 import 'package:muslimdigest/utils/users.dart';
 import 'package:muslimdigest/variables/feed.dart';
 import 'package:muslimdigest/variables/user.dart';
@@ -24,7 +23,6 @@ class User {
     this.updatedAt,
   });
 
-  bool get isAnonymous => userId == anonymousUser.userId;
   String get firstName {
     final extractedFirstName = extractFirstName(name);
     if (extractedFirstName.isNotEmpty) return extractedFirstName;
