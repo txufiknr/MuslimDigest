@@ -15,6 +15,13 @@ enum FeedType {
   saved,
   liked;
 
+  static FeedType fromString(String name) {
+    return FeedType.values.firstWhere(
+      (type) => type.name == name,
+      orElse: () => FeedType.digest,
+    );
+  }
+
   String get label {
     switch (this) {
       case FeedType.digest: return 'My Digest';
@@ -89,5 +96,15 @@ enum FeedType {
       case FeedType.liked: return ref.read(feedLikedProvider);
       case FeedType.saved: return ref.read(feedSavedProvider);
     }
+  }
+}
+
+enum SwipeDirection {
+  left, right;
+
+  static const SwipeDirection defaultDirection = left;
+
+  static SwipeDirection fromString(String name) {
+    return values.firstWhere((e) => e.name == name);
   }
 }

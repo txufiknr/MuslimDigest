@@ -8,6 +8,7 @@ import 'package:muslimdigest/providers/user/user.dart';
 import 'package:muslimdigest/utils/dialogs.dart';
 import 'package:muslimdigest/utils/extensions.dart';
 import 'package:muslimdigest/utils/helpers.dart';
+import 'package:muslimdigest/widgets/components/app_bar.dart';
 import 'package:muslimdigest/variables/user.dart';
 import 'package:muslimdigest/widgets/components/button.dart';
 
@@ -88,6 +89,7 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
   void initState() {
     super.initState();
     final user = ref.read(userProvider);
+    // TODO: why is this defaults to "Friend"?
     _nameController = TextEditingController(text: user.name);
     _selectedAgeGroup = user.ageGroup;
     _selectedGender = user.gender;
@@ -111,16 +113,8 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: AppBar(
-        title: Text(
-          'Edit Profile',
-          style: h.currentTextTheme.headlineMedium?.copyWith(
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        elevation: 0,
-        surfaceTintColor: Colors.transparent,
+      appBar: MyAppBar(
+        title: 'Edit Profile',
         actions: [
           if (_isDirty)
             TextButton(
@@ -295,8 +289,9 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
     if (!_formKey.currentState!.validate()) return;
     
     final user = ref.read(userProvider);
+    final name = _nameController.text.trim();
     final updatedUser = user.copyWith(
-      name: _nameController.text.trim().isEmpty ? null : _nameController.text.trim(),
+      name: name.isEmpty ? null : name,
       ageGroup: _selectedAgeGroup,
       gender: _selectedGender,
     );

@@ -37,14 +37,12 @@ import 'package:share_plus/share_plus.dart';
 class FeedCard extends ConsumerStatefulWidget {
   final FeedType feedType;
   final FeedItem? feedItem;
-  final VoidCallback onReload;
-  final VoidCallback onSeeLatest;
+  final VoidCallback? onSeeLatest;
 
   const FeedCard(this.feedType, {
     super.key,
     this.feedItem,
-    required this.onReload,
-    required this.onSeeLatest,
+    this.onSeeLatest,
   });
 
   @override
@@ -127,17 +125,7 @@ class _FeedCardState extends ConsumerState<FeedCard> with AutomaticKeepAliveClie
 
     return Container(
       width: double.infinity,
-      decoration: BoxDecoration(
-        color: h.currentTheme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
+      decoration: h.cardDecoration,
       padding: isStreakCard ? EdgeInsets.all(AppThemes.contentPadding) : EdgeInsets.zero,
       child: isStreakCard ? Column(
         crossAxisAlignment: CrossAxisAlignment.center,

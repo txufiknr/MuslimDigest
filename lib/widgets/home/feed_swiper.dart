@@ -1,5 +1,3 @@
-import 'dart:developer' show log;
-
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_card_swiper/flutter_card_swiper.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -13,6 +11,7 @@ import 'package:muslimdigest/providers/read_count.dart';
 import 'package:muslimdigest/providers/read_last_date.dart';
 import 'package:muslimdigest/providers/topic.dart';
 import 'package:muslimdigest/providers/user/settings.dart';
+import 'package:muslimdigest/utils/app.dart';
 import 'package:muslimdigest/utils/app_repository.dart';
 import 'package:muslimdigest/utils/extensions.dart';
 import 'package:muslimdigest/api/feeds.dart';
@@ -56,7 +55,7 @@ class FeedSwiperState extends ConsumerState<FeedSwiper> {
   String? get _currentTopic => ref.watch(topicProvider);
 
   UserSettings get _settings => ref.watch(settingsProvider);
-  CardSwiperDirection get _swipeDirection => _settings.swipeDirection == 'left' ? CardSwiperDirection.left : CardSwiperDirection.right;
+  CardSwiperDirection get _swipeDirection => _settings.swipeDirection == SwipeDirection.left ? CardSwiperDirection.left : CardSwiperDirection.right;
 
   @override
   void dispose() {
@@ -127,8 +126,8 @@ class FeedSwiperState extends ConsumerState<FeedSwiper> {
     final cardsCount = isDigest
       ? _feedItems.length + 1
       : _feedItems.length;
-    final initialIndex = isDigest ? _readCount.clamp(0, cardsCount - 1) : 0;
 
+    final initialIndex = isDigest ? _readCount.clamp(0, cardsCount - 1) : 0;
     final undoDirection = _swipeDirection == CardSwiperDirection.left ? UndoDirection.right : UndoDirection.left;
 
     return CardSwiper(
@@ -149,15 +148,12 @@ class FeedSwiperState extends ConsumerState<FeedSwiper> {
         return FeedCard(
           widget.feedType,
           feedItem: index == cardsCount - 1 ? null : _feedItems[index],
-          onReload: widget.onReload,
           onSeeLatest: widget.onSeeLatest,
         );
       },
       isDisabled: false,
       isLoop: false,
-      onEnd: () {
-        log('[feed] ENDED!');
-      },
+      onEnd: requestReview,
       onSwipe: (previousIndex, currentIndex, direction) async {
         final previousItem = _feedItems[previousIndex];
         // log('[feed] Swipe direction: $direction, previousItem: ${previousItem.title}');

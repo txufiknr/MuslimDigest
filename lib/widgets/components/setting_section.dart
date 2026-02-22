@@ -2,17 +2,20 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:muslimdigest/config/colors.dart';
+import 'package:muslimdigest/config/themes.dart';
+import 'package:muslimdigest/utils/extensions.dart';
 import 'package:muslimdigest/utils/helpers.dart';
+import 'package:muslimdigest/variables/feed.dart';
 
 /// Reusable widget for setting sections with title, description, and content
 class SettingSection extends StatelessWidget {
-  final String title;
+  final String? title;
   final String? description;
   final List<Widget> children;
 
   const SettingSection({
     super.key,
-    required this.title,
+    this.title,
     this.description,
     required this.children,
   });
@@ -24,34 +27,29 @@ class SettingSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          title,
-          style: h.currentTextTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.w600,
+        if (title != null) Text(
+          title!,
+          style: h.currentTextTheme.titleMedium,
+        ),
+        
+        if (description != null) Text(
+          description!,
+          style: h.currentTextTheme.bodyMedium?.copyWith(
+            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
           ),
         ),
         
-        if (description != null) ...[
-          const SizedBox(height: 8),
-          Text(
-            description!,
-            style: h.currentTextTheme.bodyMedium?.copyWith(
-              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
-            ),
-          ),
-        ],
-        
-        const SizedBox(height: 16),
+        SizedBox.shrink(),
         ...children,
-      ],
+      ].addItemInBetween(SizedBox(height: 8,)),
     );
   }
 }
 
 /// Reusable widget for swipe direction selection
 class SwipeDirectionSelector extends ConsumerWidget {
-  final String currentDirection;
-  final ValueChanged<String> onChanged;
+  final SwipeDirection currentDirection;
+  final ValueChanged<SwipeDirection> onChanged;
 
   const SwipeDirectionSelector({
     super.key,
@@ -67,11 +65,11 @@ class SwipeDirectionSelector extends ConsumerWidget {
       children: [
         Expanded(
           child: _SwipeDirectionButton(
-            direction: 'left',
+            direction: SwipeDirection.left,
             icon: CupertinoIcons.arrow_left,
             label: 'Left',
-            isSelected: currentDirection == 'left',
-            onTap: () => onChanged('left'),
+            isSelected: currentDirection == SwipeDirection.left,
+            onTap: () => onChanged(SwipeDirection.left),
           ),
         ),
         
@@ -79,11 +77,11 @@ class SwipeDirectionSelector extends ConsumerWidget {
         
         Expanded(
           child: _SwipeDirectionButton(
-            direction: 'right',
+            direction: SwipeDirection.right,
             icon: CupertinoIcons.arrow_right,
             label: 'Right',
-            isSelected: currentDirection == 'right',
-            onTap: () => onChanged('right'),
+            isSelected: currentDirection == SwipeDirection.right,
+            onTap: () => onChanged(SwipeDirection.right),
           ),
         ),
       ],
@@ -93,7 +91,7 @@ class SwipeDirectionSelector extends ConsumerWidget {
 
 /// Individual swipe direction button
 class _SwipeDirectionButton extends StatelessWidget {
-  final String direction;
+  final SwipeDirection direction;
   final IconData icon;
   final String label;
   final bool isSelected;
@@ -124,7 +122,7 @@ class _SwipeDirectionButton extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            if (direction == 'left') ...[
+            if (direction == SwipeDirection.left) ...[
               Icon(
                 icon,
                 color: isSelected ? Colors.white : AppColors.primary,
@@ -259,16 +257,17 @@ class PreviewSection extends StatelessWidget {
     
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(AppThemes.contentPadding),
+      // decoration: h.cardDecoration,
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(8),
+        color: h.currentTheme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: h.currentTheme.colorScheme.outline),
       ),
       child: Text(
         text,
         style: h.currentTextTheme.bodyMedium?.copyWith(
           fontSize: fontSize,
-          height: 1.4,
         ),
       ),
     );

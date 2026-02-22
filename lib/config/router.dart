@@ -3,11 +3,13 @@ import 'package:muslimdigest/screens/edit_profile.dart';
 import 'package:muslimdigest/screens/liked_feeds.dart';
 import 'package:muslimdigest/screens/personalization.dart';
 import 'package:muslimdigest/screens/saved_feeds.dart';
+import 'package:muslimdigest/screens/single_feed.dart';
 import '../screens/splash.dart';
 import '../screens/home.dart';
 import '../screens/onboarding.dart';
 import '../screens/settings.dart';
 import '../screens/welcome.dart';
+import '../variables/feed.dart';
 
 class AppRouter {
   static final GoRouter router = GoRouter(
@@ -64,6 +66,18 @@ class AppRouter {
         path: '/saved_feeds',
         name: 'saved_feeds',
         builder: (context, state) => const SavedFeedsPage(),
+      ),
+      GoRoute(
+        path: '/feed/:feedId',
+        name: 'single_feed',
+        builder: (context, state) {
+          final feedId = state.pathParameters['feedId']!;
+          final feedType = state.uri.queryParameters['feedType'] ?? FeedType.digest.name;
+          return SingleFeedPage(
+            feedId: feedId,
+            feedType: FeedType.fromString(feedType),
+          );
+        },
       ),
     ],
   );

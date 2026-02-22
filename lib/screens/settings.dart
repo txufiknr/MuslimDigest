@@ -55,7 +55,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             children: [
               Row(
                 children: [
-                  Logo(size: 40,),
+                  Logo(size: 40).onTap(context.pop),
                   Spacer(),
                   MyIconButton(icon: CupertinoIcons.chevron_left_2, iconColor: Colors.white, onPressed: context.pop),
                 ],
@@ -215,7 +215,7 @@ class PersonalSettingsSection extends ConsumerWidget {
             // icon: CupertinoIcons.square_fill_on_square_fill,
             // icon: CupertinoIcons.rectangle_fill_on_rectangle_angled_fill,
             icon: CupertinoIcons.rectangle_3_offgrid_fill,
-            title: 'Personalize Your Feed',
+            title: 'Personalize Feed',
             onTap: () {
               context.push('/personalization');
             },

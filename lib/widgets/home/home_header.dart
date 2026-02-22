@@ -220,10 +220,11 @@ class _TopicTab extends StatelessWidget {
   Widget build(BuildContext context) {
     final h = MyHelper(context);
     final backgroundColor = tabColor ?? (isSelected ? AppColors.primary : h.currentTheme.colorScheme.surfaceContainerHighest);
-    final foregroundColor = textColor ?? (isSelected ? Colors.white : Colors.black87);
+    final foregroundColor = textColor ?? (isSelected ? Colors.white : h.currentTheme.colorScheme.onSurface);
     return Material(
       color: backgroundColor,
       borderRadius: BorderRadius.circular(TAB_RADIUS),
+      clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
         child: Container(

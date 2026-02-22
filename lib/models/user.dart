@@ -1,5 +1,6 @@
 import 'package:muslimdigest/mock/users.dart';
 import 'package:muslimdigest/utils/users.dart';
+import 'package:muslimdigest/variables/feed.dart';
 import 'package:muslimdigest/variables/user.dart';
 
 class User {
@@ -233,14 +234,14 @@ UserPreferences(
 class UserSettings {
   final String userId;
   final int textSize;
-  final String swipeDirection;
+  final SwipeDirection swipeDirection;
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
   UserSettings({
     required this.userId,
     this.textSize = 18,
-    this.swipeDirection = 'right',
+    this.swipeDirection = SwipeDirection.defaultDirection,
     this.createdAt,
     this.updatedAt,
   });
@@ -249,7 +250,7 @@ class UserSettings {
     return UserSettings(
       userId: json['userId'],
       textSize: json['textSize'] ?? 18,
-      swipeDirection: json['swipeDirection'] ?? 'right',
+      swipeDirection: json['swipeDirection'] == null ? SwipeDirection.defaultDirection : SwipeDirection.fromString(json['swipeDirection']),
       createdAt: json['createdAt'] != null ? DateTime.parse(json['createdAt']) : null,
       updatedAt: json['updatedAt'] != null ? DateTime.parse(json['updatedAt']) : null,
     );
@@ -259,7 +260,7 @@ class UserSettings {
     return {
       'userId': userId,
       'textSize': textSize,
-      'swipeDirection': swipeDirection,
+      'swipeDirection': swipeDirection.name,
       'createdAt': createdAt?.toIso8601String(),
       'updatedAt': updatedAt?.toIso8601String(),
     };
@@ -268,7 +269,7 @@ class UserSettings {
   UserSettings copyWith({
     String? userId,
     int? textSize,
-    String? swipeDirection,
+    SwipeDirection? swipeDirection,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {

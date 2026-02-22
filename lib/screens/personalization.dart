@@ -1,14 +1,19 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:muslimdigest/config/colors.dart';
+import 'package:muslimdigest/config/constants.dart';
 import 'package:muslimdigest/config/themes.dart';
 import 'package:muslimdigest/models/user.dart';
 import 'package:muslimdigest/providers/topics.dart';
 import 'package:muslimdigest/providers/user/preferences.dart';
 import 'package:muslimdigest/providers/user/settings.dart';
+import 'package:muslimdigest/providers/user/user.dart';
 import 'package:muslimdigest/utils/extensions.dart';
 import 'package:muslimdigest/widgets/animations/loader.dart';
+import 'package:muslimdigest/widgets/components/button.dart';
 import 'package:muslimdigest/widgets/components/divider.dart';
+import 'package:muslimdigest/widgets/components/app_bar.dart';
 import 'package:muslimdigest/widgets/components/setting_section.dart';
 import 'package:muslimdigest/widgets/components/topic_chip_selector.dart';
 import 'package:muslimdigest/widgets/onboarding/topic_chip.dart';
@@ -24,6 +29,8 @@ class PersonalizationPage extends ConsumerStatefulWidget {
 class _PersonalizationPageState extends ConsumerState<PersonalizationPage>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
+
+  String get _firstName => ref.read(userProvider).firstName;
 
   @override
   void initState() {
@@ -43,23 +50,16 @@ class _PersonalizationPageState extends ConsumerState<PersonalizationPage>
     final settings = ref.watch(settingsProvider);
 
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: AppBar(
-        title: Text(
-          'Personalization',
-          style: h.currentTextTheme.headlineMedium?.copyWith(
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        elevation: 0,
-        surfaceTintColor: Colors.transparent,
+      backgroundColor: h.currentTheme.scaffoldBackgroundColor,
+      appBar: MyAppBar(
+        title: 'Personalization',
         bottom: TabBar(
           controller: _tabController,
+          dividerColor: h.currentTheme.colorScheme.outline,
           labelStyle: h.currentTextTheme.titleSmall,
           indicatorColor: AppColors.primary,
           labelColor: AppColors.primary,
-          unselectedLabelColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+          unselectedLabelColor: h.currentTheme.colorScheme.onSurface.withValues(alpha: 0.6),
           tabs: const [
             Tab(text: 'Interests'),
             Tab(text: 'Settings'),
@@ -79,10 +79,8 @@ class _PersonalizationPageState extends ConsumerState<PersonalizationPage>
   Widget _buildInterestsTab(MyHelper h) {
     return Consumer(
       builder: (context, ref, child) {
-        final availableTopics = ref.watch(topicsProvider).availableTopics;
-        final preferences = ref.watch(preferencesProvider);
-        final preferredTopics = preferences.topics;
-        final avoidedTopics = preferences.avoidedTopics;
+        final TopicsState(availableTopics: availableTopics, isLoading: isLoading) = ref.watch(topicsProvider);
+        final UserPreferences(topics: preferredTopics, avoidedTopics: avoidedTopics) = ref.watch(preferencesProvider);
 
         return SingleChildScrollView(
           padding: const EdgeInsets.all(AppThemes.contentPadding),
@@ -107,8 +105,15 @@ class _PersonalizationPageState extends ConsumerState<PersonalizationPage>
               
               const SizedBox(height: 24),
               
-              if (availableTopics.isEmpty) 
-                MyLoader(color: AppColors.primary).center()
+              if (availableTopics.isEmpty) Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  MyLoader(color: AppColors.primary),
+                  if (!isLoading) MyButton(text: "Reload topics", outlined: true, icon: Icon(CupertinoIcons.arrow_clockwise), onPressed: () {
+                    ref.read(topicsProvider.notifier).load();
+                  }),
+                ],
+              ).center()
               else
                 Wrap(
                   spacing: 8,
@@ -174,10 +179,9 @@ class _PersonalizationPageState extends ConsumerState<PersonalizationPage>
            
           // Preview Section
           SettingSection(
-            title: 'Preview',
             children: [
               PreviewSection(
-                text: 'This is how your text will appear with the selected size. Swipe ${settings.swipeDirection} to navigate through content.',
+                text: '$GREETINGS, $_firstName. Welcome to $APP_NAME - $APP_DESCRIPTION. This is how your article text will appear with the selected size. Swipe ${settings.swipeDirection.name} to navigate to the next article, and swipe to the opposite direction to undo.',
                 fontSize: settings.textSize.toDouble(),
               ),
             ],

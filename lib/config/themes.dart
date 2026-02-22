@@ -292,6 +292,7 @@ class AppThemes {
     required CardThemeData cardTheme,
     required Color scaffoldBackgroundColor,
     required ElevatedButtonThemeData elevatedButtonTheme,
+    required Color hintColor,
   }) {
     return _baseTheme.copyWith(
       colorScheme: colorScheme,
@@ -301,6 +302,7 @@ class AppThemes {
       cardTheme: cardTheme,
       scaffoldBackgroundColor: scaffoldBackgroundColor,
       elevatedButtonTheme: elevatedButtonTheme,
+      hintColor: hintColor,
     );
   }
 
@@ -312,6 +314,7 @@ class AppThemes {
     cardTheme: cardThemeLight,
     scaffoldBackgroundColor: AppColors.backgroundLight,
     elevatedButtonTheme: elevatedButtonThemeLight,
+    hintColor: AppColors.mutedLight,
   );
 
   static ThemeData get darkTheme => _buildTheme(
@@ -322,5 +325,6 @@ class AppThemes {
     cardTheme: cardThemeDark,
     scaffoldBackgroundColor: AppColors.backgroundDark,
     elevatedButtonTheme: elevatedButtonThemeDark,
+    hintColor: AppColors.mutedDark,
   );
 }

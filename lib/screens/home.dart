@@ -9,6 +9,7 @@ import 'package:muslimdigest/providers/read_last_date.dart';
 import 'package:muslimdigest/providers/topic.dart';
 import 'package:muslimdigest/utils/app.dart';
 import 'package:muslimdigest/utils/app_repository.dart';
+import 'package:muslimdigest/utils/debounce.dart';
 import 'package:muslimdigest/utils/dialogs.dart';
 import 'package:muslimdigest/utils/extensions.dart';
 import 'package:muslimdigest/utils/functions.dart';
@@ -29,6 +30,8 @@ class HomePage extends ConsumerStatefulWidget {
 class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver {
   AppRepository get r => ref.read(appRepositoryProvider);
   bool get _isFeedLoading => _feedType.watch(ref).isLoading;
+
+  late final Debounce _topicChangeDebounce = const Duration(milliseconds: 500).debounce;
   late FeedType _feedType;
   var _isWillExit = false;
 
@@ -48,6 +51,7 @@ class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _topicChangeDebounce.dispose();
     super.dispose();
   }
 
@@ -69,21 +73,9 @@ class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver
   }
 
   Future<void> _loadFeed([String? topic]) async {
-    // final success = await _feedType.load(ref, topic: topic);
     final success = await r.loadFeed(feedType: _feedType, topic: topic);
     if (mounted && !success) return _showLoadFeedFailed(() => _loadFeed(topic));
   }
-
-  /// Ensure today's feed is loaded
-  // Future<void> _initFeed() async {
-  //   if (!r.shouldLoadFeedToday) return log("[home] Feed is up to date");
-  //   if (!await isOnline()) {
-  //     log("[home] No internet connection, skipping feed load");
-  //     return;
-  //   }
-  //   log("[home] Feed needs reloading");
-  //   await _loadFeed();
-  // }
 
   /// Reset read count if it's a new day
   void _initReadCount() {
@@ -115,15 +107,18 @@ class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver
 
   @override
   Widget build(BuildContext context) {
-    // Listen for topic changes and trigger load feed
+    // Listen for topic changes and trigger load feed with debounce
     ref.listen<String?>(topicProvider, (previous, next) {
-      if (previous == next) return;
-      if (next != null) {
+      if (!mounted || previous == next) return;
+
+      // Debounce rapid topic tab switching to prevent excessive API calls
+      _topicChangeDebounce.run(() {
+        if (!mounted) return;
         setState(() {
           _feedType = FeedType.digest;
         });
-      }
-      _loadFeed(next);
+        _loadFeed(next);
+      });
     });
 
     return PopScope(

@@ -15,7 +15,6 @@ class FeedNotifier extends BaseFeedNotifier {
   Future<bool> load({String? topic, int? timeoutMs}) async {
     final options = timeoutMs == null ? null : ApiOptions(timeout: Duration(milliseconds: timeoutMs));
     final topicValue = topic ?? ref.read(topicProvider);
-    // final topicValue = topic ?? PrefData.currentTopic;
     
     final queryParams = <String, String>{
       'limit': DAILY_READ_TARGET.toString(),

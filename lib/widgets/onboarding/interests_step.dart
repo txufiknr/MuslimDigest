@@ -1,8 +1,11 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:muslimdigest/models/user.dart';
 import 'package:muslimdigest/providers/topics.dart';
-import 'package:muslimdigest/utils/app_repository.dart';
+import 'package:muslimdigest/providers/user/preferences.dart';
 import 'package:muslimdigest/utils/extensions.dart';
+import 'package:muslimdigest/widgets/components/button.dart';
 import 'package:muslimdigest/widgets/components/topic_chip_selector.dart';
 import '../../utils/helpers.dart';
 import 'package:muslimdigest/widgets/animations/loader.dart';
@@ -20,10 +23,8 @@ class OnboardingInterestsStep extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final h = MyHelper(context);
-    final availableTopics = ref.watch(topicsProvider).availableTopics;
-    final appRepository = ref.watch(appRepositoryProvider);
-    final preferredTopics = appRepository.preferredTopics;
-    final avoidedTopics = appRepository.avoidedTopics;
+    final TopicsState(availableTopics: availableTopics, isLoading: isLoading) = ref.watch(topicsProvider);
+    final UserPreferences(topics: preferredTopics, avoidedTopics: avoidedTopics) = ref.watch(preferencesProvider);
 
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -50,7 +51,15 @@ class OnboardingInterestsStep extends ConsumerWidget {
         
         const SizedBox(height: 32),
         
-        if (availableTopics.isEmpty) MyLoader(color: Colors.white).center()
+        if (availableTopics.isEmpty) Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            MyLoader(color: Colors.white),
+            if (!isLoading) MyButton(text: "Reload topics", outlined: true, icon: Icon(CupertinoIcons.arrow_clockwise), onPressed: () {
+              ref.read(topicsProvider.notifier).load();
+            }),
+          ],
+        ).center()
         else
           Wrap(
             spacing: 6,

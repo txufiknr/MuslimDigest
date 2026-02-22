@@ -32,7 +32,7 @@ class MyIconButton extends StatelessWidget {
 
     return IconButton(
       onPressed: onPressed,
-      icon: Icon(icon, color: iconColor),
+      icon: Icon(icon, color: iconColor ?? h.currentTheme.colorScheme.onSurface),
       iconSize: iconSize,
       tooltip: tooltip,
       style: IconButton.styleFrom(

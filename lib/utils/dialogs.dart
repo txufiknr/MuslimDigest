@@ -232,7 +232,7 @@ void showSnackBar(BuildContext context, String message, {Widget? icon, List<Widg
       action: showAction
         ? SnackBarAction(
           label: actionLabel ?? "Close", 
-          onPressed: action ?? Navigator.of(context).pop
+          onPressed: action ?? () => hideSnackBar(context),
         )
         : null,
     ),

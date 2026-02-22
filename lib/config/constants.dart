@@ -5,8 +5,8 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 // App informations
 const APP_NAME = "Muslim Digest";
-const APP_TAGLINE = "Your daily Muslim digest.";
-const APP_DESCRIPTION = "Your daily window into the Muslim world.";
+const APP_TAGLINE = "Your daily Muslim digest";
+const APP_DESCRIPTION = "Your daily window into the Muslim world";
 const APP_COPYRIGHT = "Taufik Nur Rahmanda";
 const APP_COMPANY = "TARRA Soft";
 const APP_COMPANY_EMAIL = "flias.test@gmail.com";

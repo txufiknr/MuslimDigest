@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:muslimdigest/models/user.dart';
 import 'package:muslimdigest/utils/repository.dart';
+import 'package:muslimdigest/variables/feed.dart';
 import 'package:muslimdigest/variables/user.dart';
 
 final settingsProvider = NotifierProvider<UserSettingsNotifier, UserSettings>(UserSettingsNotifier.new);
@@ -26,7 +27,7 @@ class UserSettingsNotifier extends Notifier<UserSettings> {
     await setValue(updated);
   }
 
-  Future<void> updateSwipeDirection(String swipeDirection) async {
+  Future<void> updateSwipeDirection(SwipeDirection swipeDirection) async {
     final updated = state.copyWith(swipeDirection: swipeDirection);
     await setValue(updated);
   }
