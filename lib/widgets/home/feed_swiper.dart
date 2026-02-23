@@ -25,18 +25,19 @@ import 'package:muslimdigest/widgets/home/feed_card.dart';
 import 'package:muslimdigest/widgets/home/trending_card.dart';
 import '../../widgets/components/placeholder.dart';
 import '../../models/feed.dart';
+import '../../providers/feed/feed_latest.dart';
 
 /// Feed swiper widget for displaying news cards with swipe navigation
 class FeedSwiper extends ConsumerStatefulWidget {
   final VoidCallback onReload;
   final VoidCallback onSeeLatest;
-  final VoidCallback onBackToDigest;
+  final VoidCallback onSeeHome;
   final FeedType feedType;
   
   const FeedSwiper({super.key, 
     required this.onReload,
     required this.onSeeLatest,
-    required this.onBackToDigest,
+    required this.onSeeHome,
     required this.feedType,
   });
 
@@ -46,23 +47,64 @@ class FeedSwiper extends ConsumerStatefulWidget {
 
 class FeedSwiperState extends ConsumerState<FeedSwiper> {
   final _controller = CardSwiperController();
+  final _readCountStates = <String, int>{};
 
+  // Feed type
+  // bool get _isHomeFeed => widget.feedType == _homeFeedType;
+  bool get _isDigestFeed => widget.feedType == FeedType.digest;
+  // bool get _isDailyDigest => _isDigestFeed && _currentTopic == null;
+  // bool get _isTopicDigest => _isDigestFeed && _currentTopic != null;
+  bool get _isLatestFeed => widget.feedType == FeedType.latest;
+  bool get _isTopicFeed => _isLatestFeed && _currentTopic != null;
+  // bool get _isTrendingFeed => widget.feedType == FeedType.trending;
+
+  // Feed states
+  // TODO: cache feed per type & topic
   List<FeedItem> get _feedItems => widget.feedType.watchItems(ref);
   bool get _isFeedLoading => widget.feedType.watch(ref).isLoading;
   int get _readCount => ref.watch(readCountProvider);
-  bool get _canGoBack => _readCount > 0;
   FeedType get _homeFeedType => ref.read(appRepositoryProvider).homeFeedType;
   String? get _currentTopic => ref.watch(topicProvider);
-
-  UserSettings get _settings => ref.watch(settingsProvider);
-  CardSwiperDirection get _swipeDirection => _settings.swipeDirection == SwipeDirection.left ? CardSwiperDirection.left : CardSwiperDirection.right;
-
-  bool get _isDigest => widget.feedType == FeedType.digest;
-  int get _cardsCount => _isDigest && _feedItems.length == DAILY_READ_TARGET
+  int get _cardsCount => _isDigestFeed && _feedItems.length == DAILY_READ_TARGET
     ? _feedItems.length + 1
     : _feedItems.length;
-  int get _initialIndex => _isDigest ? _readCount.clamp(0, _cardsCount - 1) : 0;
+
+  // Read state
+  String get _readCountName => _isTopicFeed ? _currentTopic! : widget.feedType.name;
+  int get _readCountState => _readCountStates[_readCountName] ?? 0;
+  int get _currentItemIndex => _isDigestFeed ? _readCount : _readCountState;
+  int get _initialItemIndex => _currentItemIndex.clamp(0, _cardsCount - 1);
+  bool get _canGoPrev => _currentItemIndex > 0;
+  bool get _canGoNext => _currentItemIndex < _cardsCount - 1;
+  bool get _canUndo => _canGoPrev;
+
+  int get _currentPage => _currentItemIndex % CURSOR_PAGINATION_LIMIT;
+
+  // User settings
+  UserSettings get _settings => ref.watch(settingsProvider);
+  CardSwiperDirection get _swipeDirection => _settings.swipeDirection == SwipeDirection.left ? CardSwiperDirection.left : CardSwiperDirection.right;
   UndoDirection get _undoDirection => _swipeDirection == CardSwiperDirection.left ? UndoDirection.right : UndoDirection.left;
+
+  // Lazy loading
+  bool get _shouldTriggerLazyLoad {
+    if (_isDigestFeed) return false;
+    // TODO: implement infinity lazy load, except for _isDigestFeed
+
+    if (widget.feedType != FeedType.latest) return false;
+    
+    final feedState = ref.read(feedLatestProvider);
+    if (!feedState.hasMore || feedState.isLoadingMore) return false;
+    
+    // Trigger when _currentItemIndex is 3 pages before CURSOR_PAGINATION_LIMIT * _currentPage
+    final threshold = (CURSOR_PAGINATION_LIMIT * _currentPage) - 3;
+    return _currentItemIndex >= threshold && _currentItemIndex < _feedItems.length - 3;
+  }
+
+  Future<void> _triggerLazyLoad() async {
+    if (_shouldTriggerLazyLoad) {
+      await ref.read(feedLatestProvider.notifier).loadMore();
+    }
+  }
 
   @override
   void didUpdateWidget(covariant FeedSwiper oldWidget) {
@@ -78,10 +120,10 @@ class FeedSwiperState extends ConsumerState<FeedSwiper> {
         debugPrint("first feed: ${widget.feedType.readItems(ref).first.title}");
       }
       debugPrint("cardsCount: $_cardsCount");
-      debugPrint("initialIndex: $_initialIndex");
-      setState(() {
-        _controller.moveTo(_initialIndex);
-      });
+      debugPrint("initialIndex: $_initialItemIndex");
+      // setState(() {
+      //   _controller.moveTo(_initialItemIndex);
+      // });
     }
     super.didUpdateWidget(oldWidget);
   }
@@ -102,6 +144,12 @@ class FeedSwiperState extends ConsumerState<FeedSwiper> {
         ref.read(readCountProvider.notifier).setValue(newCount),
         ref.read(readLastDateProvider.notifier).setValue(today),
       ]);
+    } else {
+      setState(() {
+        _readCountStates.addAll({
+          _readCountName: _readCountState + 1,
+        });
+      });
     }
     
     // Track reading history to backend
@@ -109,13 +157,25 @@ class FeedSwiperState extends ConsumerState<FeedSwiper> {
   }
 
   Future<void> _decreaseReadCount() async {
-    final readCount = ref.read(readCountProvider);
-    if (readCount == 0) return;
-    await ref.read(readCountProvider.notifier).setValue(readCount - 1);
+    if (widget.feedType == FeedType.digest) {
+      final readCount = ref.read(readCountProvider);
+      if (readCount == 0) return;
+      await ref.read(readCountProvider.notifier).setValue(readCount - 1);
+    } else if (_readCountState > 0) {
+      setState(() {
+        _readCountStates.addAll({
+          _readCountName: _readCountState - 1,
+        });
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    // Check for lazy loading trigger
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _triggerLazyLoad();
+    });
 
     // When feed is loading
     if (_isFeedLoading) {
@@ -144,7 +204,7 @@ class FeedSwiperState extends ConsumerState<FeedSwiper> {
               text: "Back to ${_homeFeedType.label}",
               icon: Icon(CupertinoIcons.back),
               variant: MyButtonVariant.success,
-              onPressed: widget.onBackToDigest,
+              onPressed: widget.onSeeHome,
             )
           ],
         ],
@@ -152,7 +212,7 @@ class FeedSwiperState extends ConsumerState<FeedSwiper> {
     }
 
     return CardSwiper(
-      key: Key("CardSwiper_$_readCount"),
+      key: Key("CardSwiper_$_currentItemIndex"),
       controller: _controller,
       padding: EdgeInsets.zero,
       showBackCardOnUndo: true,
@@ -160,15 +220,16 @@ class FeedSwiperState extends ConsumerState<FeedSwiper> {
       threshold: 70,
       undoDirection: _undoDirection,
       allowedSwipeDirection: AllowedSwipeDirection.only(
-        left: _swipeDirection == CardSwiperDirection.left || _canGoBack,
-        right: _swipeDirection == CardSwiperDirection.right || _canGoBack
+        left: _swipeDirection == CardSwiperDirection.left ? _canGoNext : _canUndo,
+        right: _swipeDirection == CardSwiperDirection.right ? _canGoNext : _canUndo
       ),
-      initialIndex: _initialIndex,
+      initialIndex: _initialItemIndex,
+      numberOfCardsDisplayed: _cardsCount == 1 ? 1 : 2,
       cardsCount: _cardsCount,
       cardBuilder: (context, index, percentThresholdX, percentThresholdY) {
         return FeedCard(
           widget.feedType,
-          feedItem: _isDigest && index == DAILY_READ_TARGET ? null : _feedItems[index],
+          feedItem: _isDigestFeed && index == DAILY_READ_TARGET ? null : _feedItems[index],
           onSeeLatest: widget.onSeeLatest,
         );
       },
@@ -196,6 +257,10 @@ class FeedSwiperState extends ConsumerState<FeedSwiper> {
 
         // log('[feed] Swiped item: ${previousItem.title}');
         _incrementReadCount(previousItem.cluster.id);
+        
+        // Trigger lazy loading after swipe
+        _triggerLazyLoad();
+        
         return true;
       },
     );

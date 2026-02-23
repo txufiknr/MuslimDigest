@@ -66,11 +66,16 @@ class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver
     }
   }
 
-  void _seeLatestFeed() {
+  Future<void> _openFeed([FeedType? feedType]) async {
+    await ref.read(topicProvider.notifier).clear();
     setState(() {
-      _feedType = r.homeFeedType;
+      _feedType = feedType ?? r.homeFeedType;
     });
+    _loadFeed();
   }
+
+  Future<void> _openFeedLatest() => _openFeed(FeedType.latest);
+  Future<void> _openFeedTrending() => _openFeed(FeedType.trending);
 
   Future<void> _loadFeed([String? topic]) async {
     final success = await r.loadFeed(feedType: _feedType, topic: topic);
@@ -115,7 +120,7 @@ class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver
       _topicChangeDebounce.run(() {
         if (!mounted) return;
         setState(() {
-          _feedType = FeedType.digest;
+          _feedType = next == null ? r.homeFeedType : FeedType.latest;
         });
         _loadFeed(next);
       });
@@ -144,25 +149,14 @@ class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver
             children: [
               HomeHeader(
                 feedType: _feedType,
-                onSeeTrending: () async {
-                  await ref.read(topicProvider.notifier).setValue(null);
-                  setState(() {
-                    _feedType = FeedType.trending;
-                  });
-                  _loadFeed();
-                },
+                onSeeTrending: _openFeedTrending,
+                onSeeHome: _openFeed,
               ),
               FeedSwiper(
                 feedType: _feedType,
                 onReload: _loadFeed,
-                onSeeLatest: _seeLatestFeed,
-                onBackToDigest: () async {
-                  // TODO: scroll topic tabs to position 0
-                  await ref.read(topicProvider.notifier).clear();
-                  // await prefs.remove('topic');
-                  setState(() {});
-                  _loadFeed();
-                },
+                onSeeLatest: _openFeedLatest,
+                onSeeHome: _openFeed,
               ).expand(),
               if (_isFeedLoading)
                 // Loading indicator at the bottom

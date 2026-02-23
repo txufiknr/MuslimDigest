@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:muslimdigest/models/feed.dart';
 import 'package:muslimdigest/providers/feed/base_feed_notifier.dart';
@@ -30,6 +31,14 @@ enum FeedType {
     }
   }
 
+  IconData get icon {
+    switch (this) {
+      case digest: return CupertinoIcons.antenna_radiowaves_left_right;
+      case trending: return CupertinoIcons.bubble_left_bubble_right;
+      default: return CupertinoIcons.square_on_square;
+    }
+  }
+
   BaseFeedNotifier getNotifier(WidgetRef ref) {
     switch (this) {
       case FeedType.trending: return ref.read(feedTrendingProvider.notifier);
@@ -58,8 +67,8 @@ enum FeedType {
 
   Future<bool> load(WidgetRef ref, {String? topic, int? timeoutMs, int? limit}) {
     switch (this) {
-      case FeedType.digest: return ref.read(feedProvider.notifier).load(topic: topic, timeoutMs: timeoutMs);
-      case FeedType.latest: return ref.read(feedLatestProvider.notifier).load(limit: limit);
+      case FeedType.digest: return ref.read(feedProvider.notifier).load(timeoutMs: timeoutMs);
+      case FeedType.latest: return ref.read(feedLatestProvider.notifier).load(topic: topic, limit: limit);
       case FeedType.trending: return ref.read(feedTrendingProvider.notifier).load(limit: limit);
       case FeedType.liked: return ref.read(feedLikedProvider.notifier).load();
       case FeedType.saved: return ref.read(feedSavedProvider.notifier).load();
@@ -68,8 +77,8 @@ enum FeedType {
 
   Future<bool> loadWithRef(Ref ref, {String? topic, int? timeoutMs, int? limit}) {
     switch (this) {
-      case FeedType.digest: return ref.read(feedProvider.notifier).load(topic: topic, timeoutMs: timeoutMs);
-      case FeedType.latest: return ref.read(feedLatestProvider.notifier).load(limit: limit);
+      case FeedType.digest: return ref.read(feedProvider.notifier).load(timeoutMs: timeoutMs);
+      case FeedType.latest: return ref.read(feedLatestProvider.notifier).load(topic: topic, limit: limit);
       case FeedType.trending: return ref.read(feedTrendingProvider.notifier).load(limit: limit);
       case FeedType.liked: return ref.read(feedLikedProvider.notifier).load();
       case FeedType.saved: return ref.read(feedSavedProvider.notifier).load();

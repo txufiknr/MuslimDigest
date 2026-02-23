@@ -23,4 +23,8 @@ class UserStreaksNotifier extends Notifier<UserStreaks> {
         .read(preferencesRepositoryProvider)
         .setJson(_key, value.toJson());
   }
+
+  Future<void> clear() async {
+    await ref.read(preferencesRepositoryProvider).remove(_key);
+  }
 }

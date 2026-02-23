@@ -8,32 +8,46 @@ import 'package:muslimdigest/utils/repository.dart';
 import 'package:muslimdigest/utils/functions.dart';
 import 'package:muslimdigest/api/feeds.dart';
 import 'package:muslimdigest/utils/extensions.dart';
+import 'package:muslimdigest/config/feeds.dart' show CURSOR_PAGINATION_LIMIT;
 
 class BaseFeedState {
   final List<FeedItem>? items;
   final bool isLoading;
+  final bool isLoadingMore;
   final String? error;
+  final bool hasMore;
+  final String? nextCursor;
 
   bool get isEmpty => items?.isEmpty ?? true;
   bool get isGetting => isEmpty && isLoading;
   bool get isNone => isEmpty && !isLoading;
+  bool get isLoadingMoreData => isLoadingMore;
   int get total => items?.length ?? 0;
 
   const BaseFeedState({
     this.items,
     this.isLoading = false,
+    this.isLoadingMore = false,
     this.error,
+    this.hasMore = true,
+    this.nextCursor,
   });
 
   BaseFeedState copyWith({
     List<FeedItem>? items,
     bool? isLoading,
+    bool? isLoadingMore,
     String? error,
+    bool? hasMore,
+    String? nextCursor,
   }) {
     return BaseFeedState(
       items: items ?? this.items,
       isLoading: isLoading ?? this.isLoading,
+      isLoadingMore: isLoadingMore ?? this.isLoadingMore,
       error: error ?? this.error,
+      hasMore: hasMore ?? this.hasMore,
+      nextCursor: nextCursor ?? this.nextCursor,
     );
   }
 
@@ -45,6 +59,28 @@ class BaseFeedState {
 
 abstract class BaseFeedNotifier extends Notifier<BaseFeedState> {
   String get cacheKey;
+  
+  /// Generate cursor from feed item in format: publishedAt|id
+  String? generateCursor(FeedItem? item) {
+    if (item == null || item.publishedAt == null) return null;
+    return '${item.publishedAt!.toIso8601String()}|${item.id}';
+  }
+  
+  /// Load more items using cursor pagination
+  Future<bool> loadMore({int? limit}) async {
+    if (!state.hasMore || state.isLoadingMore || state.nextCursor == null) {
+      return false;
+    }
+    
+    return await loadFromEndpoint(
+      'feed/latest',
+      queryParams: {
+        'cursor': state.nextCursor!,
+        'limit': (limit ?? CURSOR_PAGINATION_LIMIT).toString(),
+      },
+      isLoadMore: true,
+    );
+  }
   
   @override
   BaseFeedState build() {
@@ -94,8 +130,12 @@ abstract class BaseFeedNotifier extends Notifier<BaseFeedState> {
     await ref.read(preferencesRepositoryProvider).setString(cacheKey, feedItemsString);
   }
 
-  Future<bool> loadFromEndpoint(String endpoint, {Map<String, String>? queryParams, ApiOptions? options}) async {
-    state = state.copyWith(isLoading: true, error: null);
+  Future<bool> loadFromEndpoint(String endpoint, {Map<String, String>? queryParams, ApiOptions? options, bool isLoadMore = false}) async {
+    state = state.copyWith(
+      isLoading: !isLoadMore, 
+      isLoadingMore: isLoadMore, 
+      error: null
+    );
     
     try {
       final response = await ApiService.get(endpoint, queryParams: queryParams, options: options);
@@ -104,7 +144,29 @@ abstract class BaseFeedNotifier extends Notifier<BaseFeedState> {
         final feedItems = List<FeedItem>.from(
           response.data.map((item) => FeedItem.fromJson(item as Map<String, dynamic>))
         );
-        await setValue(feedItems);
+        
+        final List<FeedItem> updatedItems;
+        if (isLoadMore && state.items != null) {
+          // Append new items to existing ones
+          updatedItems = [...state.items!, ...feedItems];
+        } else {
+          // Replace all items for initial load
+          updatedItems = feedItems;
+        }
+        
+        // Extract pagination info from response
+        final hasMore = response.result?['hasMore'] ?? true;
+        final nextCursor = response.result?['nextCursor'];
+        
+        await setValue(updatedItems);
+        
+        // Update pagination state
+        state = state.copyWith(
+          isLoading: false,
+          isLoadingMore: false,
+          hasMore: hasMore,
+          nextCursor: nextCursor,
+        );
 
         // Log last ingestion date for daily digest feed
         if (endpoint == 'feed') {
@@ -115,14 +177,21 @@ abstract class BaseFeedNotifier extends Notifier<BaseFeedState> {
           }
         }
 
-        state = state.copyWith(isLoading: false);
         return true;
       } else {
-        state = state.copyWith(isLoading: false, error: response.error);
+        state = state.copyWith(
+          isLoading: false, 
+          isLoadingMore: false, 
+          error: response.error
+        );
         return false;
       }
     } catch (e) {
-      state = state.copyWith(isLoading: false, error: e.toString());
+      state = state.copyWith(
+        isLoading: false, 
+        isLoadingMore: false, 
+        error: e.toString()
+      );
       return false;
     }
   }

@@ -273,6 +273,7 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
               ),
               
               const SizedBox(height: 32),
+              Spacer(),
               
               // Buttons
               MyButton(text: 'Save Changes', onPressed: _isDirty ? _saveProfile : null),

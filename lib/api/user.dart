@@ -5,9 +5,19 @@ import 'package:collection/collection.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/material.dart';
 import 'package:muslimdigest/models/user.dart';
+import 'package:muslimdigest/providers/feed/feed.dart';
+import 'package:muslimdigest/providers/feed/feed_liked.dart';
+import 'package:muslimdigest/providers/feed/feed_saved.dart';
+import 'package:muslimdigest/providers/read_count.dart';
+import 'package:muslimdigest/providers/read_last_date.dart';
+import 'package:muslimdigest/providers/topic.dart';
+import 'package:muslimdigest/providers/user/preferences.dart';
+import 'package:muslimdigest/providers/user/settings.dart';
 import 'package:muslimdigest/providers/user/streaks.dart';
+import 'package:muslimdigest/providers/user/user.dart';
 import 'package:muslimdigest/services/api.dart';
 import 'package:muslimdigest/utils/api.dart';
+import 'package:muslimdigest/utils/functions.dart';
 import 'package:muslimdigest/variables/time.dart';
 import 'package:muslimdigest/variables/user.dart';
 
@@ -77,4 +87,23 @@ Future<void> logStreak(WidgetRef ref) async {
 
   // 3. Save user streaks
   await streaksNotifier.setValue(newStreaks);
+}
+
+Future<void> resetUserData(WidgetRef ref) async {
+  fireAndForget(() => ApiService.post('user/reset'));
+  await Future.wait([
+    // User data
+    ref.read(userProvider.notifier).clear(),
+    ref.read(streaksProvider.notifier).clear(),
+    ref.read(settingsProvider.notifier).clear(),
+    ref.read(preferencesProvider.notifier).clear(),
+    // Activity data
+    ref.read(topicProvider.notifier).clear(),
+    ref.read(readCountProvider.notifier).clear(),
+    ref.read(readLastDateProvider.notifier).clear(),
+    // Feed data
+    ref.read(feedProvider.notifier).clear(),
+    ref.read(feedLikedProvider.notifier).clear(),
+    ref.read(feedSavedProvider.notifier).clear(),
+  ]);
 }

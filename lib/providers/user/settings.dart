@@ -22,6 +22,10 @@ class UserSettingsNotifier extends Notifier<UserSettings> {
         .setJson(_key, value.toJson());
   }
 
+  Future<void> clear() async {
+    await ref.read(preferencesRepositoryProvider).remove(_key);
+  }
+
   Future<void> updateTextSize(int textSize) async {
     final updated = state.copyWith(textSize: textSize);
     await setValue(updated);

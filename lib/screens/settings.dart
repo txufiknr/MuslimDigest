@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:muslimdigest/api/user.dart';
 import 'package:muslimdigest/config/colors.dart';
 import 'package:muslimdigest/config/constants.dart';
 import 'package:muslimdigest/config/themes.dart';
@@ -114,10 +115,16 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       cancelButtonText: 'No, keep them',
     ) ?? false;
     
-    if (resetData && mounted) {
-      // TODO: reset data
-      showSnackBar(context, 'Data reset successfully');
-    }
+    if (!resetData || !mounted) return;
+    await resetUserData(ref);
+
+    if (!mounted) return;
+    context.go('/onboarding');
+    showSnackBar(
+      context,
+      'User data reset successfully',
+      icon: Icon(CupertinoIcons.checkmark_circle_fill, color: AppColors.success),
+    );
   }
 }
 

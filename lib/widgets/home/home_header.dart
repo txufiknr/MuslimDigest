@@ -35,10 +35,12 @@ final topicKeysProvider = Provider<List<GlobalKey>>((ref) {
 class HomeHeader extends ConsumerStatefulWidget {
   final FeedType feedType;
   final VoidCallback onSeeTrending;
+  final VoidCallback onSeeHome;
   const HomeHeader({
     super.key,
     required this.feedType,
     required this.onSeeTrending,
+    required this.onSeeHome,
   });
 
   @override
@@ -114,7 +116,7 @@ class _HomeHeaderState extends ConsumerState<HomeHeader> {
       StreaksCard().withPaddingVertical(16),
       Text(streakHint, style: h.currentTextTheme.bodyMedium?.copyWith(fontSize: 15, fontStyle: FontStyle.italic),),
       SizedBox(height: 16,),
-      MyButton(text: "Keep reading", icon: Icon(CupertinoIcons.book), onPressed: Navigator.of(context).pop),
+      MyButton(text: "Keep reading", icon: Icon(CupertinoIcons.book), onPressed: context.pop),
     ]);
   }
 
@@ -145,6 +147,7 @@ class _HomeHeaderState extends ConsumerState<HomeHeader> {
             scrollDirection: Axis.horizontal,
             padding: EdgeInsets.only(left: 8, right: 16),
             children: <Widget>[
+              // Reading streak count
               if (_streaks.currentStreak > 0)
               _TopicTab(
                 title: formatNumber(_streaks.currentStreak),
@@ -154,19 +157,25 @@ class _HomeHeaderState extends ConsumerState<HomeHeader> {
                 textColor: Colors.white,
                 onTap: _showStreaks,
               ),
+
+              // Home feed
               _TopicTab(
                 title: isTrending ? ref.read(userProvider.notifier).homeFeedType.label : widget.feedType.label,
-                icon: CupertinoIcons.antenna_radiowaves_left_right,
+                icon: widget.feedType.icon,
                 isSelected: _currentTopic == null && !isTrending,
-                onTap: () => _onTopicChanged(ref, null),
+                onTap: widget.onSeeHome,
               ),
+
+              // Trending feed
               if (trendingCount > 0)
               _TopicTab(
-                title: "Trending",
-                icon: CupertinoIcons.bubble_left_bubble_right,
+                title: FeedType.trending.label,
+                icon: FeedType.trending.icon,
                 isSelected: isTrending,
                 onTap: widget.onSeeTrending,
               ),
+
+              // Topic feeds
               ...List.generate(
                 _topics.length,
                 (index) => _TopicTab(
@@ -176,7 +185,8 @@ class _HomeHeaderState extends ConsumerState<HomeHeader> {
                   onTap: () => _onTopicChanged(ref, _topics[index]),
                 ),
               ),
-              // Add topic menu button
+
+              // Add topic button
               MyIconButton(
                 icon: CupertinoIcons.add,
                 iconSize: 16,

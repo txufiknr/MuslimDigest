@@ -100,7 +100,7 @@ class _FeedListBasePageState extends ConsumerState<FeedListBasePage> {
     try {
       // Unlike/Unsave the feed
       final actionEndpoint = widget.endpoint.contains('liked') ? 'like' : 'save';
-      final response = await ApiService.post('$actionEndpoint/${feed.id}', {});
+      final response = await ApiService.post('$actionEndpoint/${feed.id}');
       
       if (response.successful) {
         setState(() {

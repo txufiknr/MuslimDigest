@@ -20,4 +20,8 @@ class UserPreferencesNotifier extends Notifier<UserPreferences> {
         .read(preferencesRepositoryProvider)
         .setJson(_key, value.toJson());
   }
+
+  Future<void> clear() async {
+    await ref.read(preferencesRepositoryProvider).remove(_key);
+  }
 }

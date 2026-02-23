@@ -26,6 +26,10 @@ class UserNotifier extends Notifier<User> {
         .setJson(_key, value.toJson());
   }
 
+  Future<void> clear() async {
+    await ref.read(preferencesRepositoryProvider).remove(_key);
+  }
+
   DateTime? get ingestLastDate => ref.read(ingestLastDateProvider);
   DateTime? get streakLastDate => ref.read(streaksProvider).lastReadAt;
   bool get isStreakToday => ref.read(streaksProvider.notifier).isStreakToday;

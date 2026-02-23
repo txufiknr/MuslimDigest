@@ -99,7 +99,7 @@ class ApiService {
   /// [body] - The request body data to be sent as JSON
   /// 
   /// Returns [ApiResponse] with success status, data, or error information
-  static Future<ApiResponse> post(String path, Map<String, dynamic> body) async {
+  static Future<ApiResponse> post(String path, [Map<String, dynamic> body = const {}]) async {
     try {
       // Create a copy of body and remove timestamp fields
       final cleanedBody = Map<String, dynamic>.from(body);

@@ -12,7 +12,7 @@ class AppThemes {
   static const double headlineLargeSize = 24;
   static const double headlineMediumSize = 20;
   static const double titleLargeSize = 22;
-  static const double titleMediumSize = 21;
+  static const double titleMediumSize = 20;
   static const double titleSmallSize = 16;
   static const double bodyLargeSize = 22;
   static const double bodyMediumSize = 17.5;
