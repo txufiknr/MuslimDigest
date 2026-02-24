@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math' show max;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:muslimdigest/models/feed.dart';
@@ -105,6 +106,12 @@ abstract class BaseFeedNotifier extends Notifier<BaseFeedState> {
     final currentItem = state.items?.firstWhere((item) => item.id == feedId);
     if (currentItem == null) return;
 
+    // Calculate new like count
+    int? newLikeCount;
+    if (isLiked != null && isLiked != currentItem.isLiked) {
+      newLikeCount = isLiked ? currentItem.likeCount + 1 : currentItem.likeCount - 1;
+    }
+
     // Fire and forget API calls
     if (isLiked != null && isLiked != currentItem.isLiked) {
       fireAndForget(() => like(feedId, isLiked));
@@ -118,6 +125,7 @@ abstract class BaseFeedNotifier extends Notifier<BaseFeedState> {
         return item.copyWith(
           isLiked: isLiked ?? item.isLiked,
           isSaved: isSaved ?? item.isSaved,
+          likeCount: max(0, newLikeCount ?? item.likeCount),
         );
       }
       return item;

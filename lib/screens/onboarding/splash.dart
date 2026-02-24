@@ -8,9 +8,9 @@ import 'package:muslimdigest/utils/app_repository.dart';
 import 'package:muslimdigest/utils/extensions.dart';
 import 'package:muslimdigest/utils/functions.dart';
 import 'package:muslimdigest/variables/app.dart';
-import '../config/colors.dart';
-import '../widgets/animations/loading_indicator_bar.dart';
-import '../widgets/components/logo.dart';
+import '../../config/colors.dart';
+import '../../widgets/animations/loading_indicator_bar.dart';
+import '../../widgets/components/logo.dart';
 
 /// Duration of the splash screen in seconds
 const SPLASH_DURATION_MS = 2000;

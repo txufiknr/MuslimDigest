@@ -6,12 +6,12 @@ import 'package:muslimdigest/config/themes.dart';
 import 'package:muslimdigest/providers/user/user.dart';
 import 'package:muslimdigest/utils/extensions.dart';
 import 'package:muslimdigest/variables/user.dart';
-import '../config/constants.dart';
-import '../config/colors.dart';
-import '../utils/functions.dart';
-import '../utils/helpers.dart';
-import '../widgets/components/logo.dart';
-import '../widgets/components/button.dart';
+import '../../config/constants.dart';
+import '../../config/colors.dart';
+import '../../utils/functions.dart';
+import '../../utils/helpers.dart';
+import '../../widgets/components/logo.dart';
+import '../../widgets/components/button.dart';
 
 class OnboardingPage extends ConsumerWidget {
   const OnboardingPage({super.key});

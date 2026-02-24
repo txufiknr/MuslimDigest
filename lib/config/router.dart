@@ -1,14 +1,14 @@
 import 'package:go_router/go_router.dart';
-import 'package:muslimdigest/screens/edit_profile.dart';
-import 'package:muslimdigest/screens/liked_feeds.dart';
-import 'package:muslimdigest/screens/personalization.dart';
-import 'package:muslimdigest/screens/saved_feeds.dart';
-import 'package:muslimdigest/screens/single_feed.dart';
-import '../screens/splash.dart';
+import 'package:muslimdigest/screens/settings/edit_profile.dart';
+import 'package:muslimdigest/screens/feed/liked_feeds.dart';
+import 'package:muslimdigest/screens/settings/personalization.dart';
+import 'package:muslimdigest/screens/feed/saved_feeds.dart';
+import 'package:muslimdigest/screens/feed/single_feed.dart';
+import '../screens/onboarding/splash.dart';
 import '../screens/home.dart';
-import '../screens/onboarding.dart';
-import '../screens/settings.dart';
-import '../screens/welcome.dart';
+import '../screens/onboarding/onboarding.dart';
+import '../screens/settings/settings.dart';
+import '../screens/onboarding/welcome.dart';
 import '../variables/feed.dart';
 
 class AppRouter {

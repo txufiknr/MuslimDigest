@@ -125,6 +125,7 @@ class _HomeHeaderState extends ConsumerState<HomeHeader> {
     final h = MyHelper(context);
     final trendingCount = ref.watch(feedTrendingProvider).total;
     final isTrending = widget.feedType == FeedType.trending;
+    final homeFeedType = ref.watch(userProvider.notifier).homeFeedType;
 
     return Container(
       height: TAB_HEIGHT,
@@ -160,9 +161,10 @@ class _HomeHeaderState extends ConsumerState<HomeHeader> {
 
               // Home feed
               _TopicTab(
-                title: isTrending ? ref.read(userProvider.notifier).homeFeedType.label : widget.feedType.label,
-                icon: widget.feedType.icon,
-                isSelected: _currentTopic == null && !isTrending,
+                title: homeFeedType.label,
+                icon: homeFeedType.icon,
+                // isSelected: _currentTopic == null && !isTrending,
+                isSelected: widget.feedType == homeFeedType,
                 onTap: widget.onSeeHome,
               ),
 

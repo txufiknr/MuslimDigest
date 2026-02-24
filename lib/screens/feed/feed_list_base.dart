@@ -7,14 +7,18 @@ import 'package:muslimdigest/services/api.dart';
 import 'package:muslimdigest/utils/extensions.dart';
 import 'package:muslimdigest/utils/helpers.dart';
 import 'package:muslimdigest/widgets/animations/loader.dart';
+import 'package:muslimdigest/widgets/components/app_bar.dart';
 import 'package:muslimdigest/widgets/components/cached_image.dart';
 import 'package:muslimdigest/widgets/components/icon_button.dart';
+import 'package:muslimdigest/widgets/components/placeholder.dart';
 
 abstract class FeedListBasePage extends ConsumerStatefulWidget {
   final String title;
   final String endpoint;
   final IconData actionIcon;
   final String actionTooltip;
+  final IconData placeholderIcon;
+  final String placeholderTooltip;
 
   const FeedListBasePage({
     super.key,
@@ -22,6 +26,8 @@ abstract class FeedListBasePage extends ConsumerStatefulWidget {
     required this.endpoint,
     required this.actionIcon,
     required this.actionTooltip,
+    required this.placeholderIcon,
+    required this.placeholderTooltip,
   });
 
   @override
@@ -118,78 +124,26 @@ class _FeedListBasePageState extends ConsumerState<FeedListBasePage> {
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      appBar: MyAppBar(title: widget.title),
       body: SafeArea(
-        child: Column(
-          children: [
-            // Header
-            Container(
-              padding: const EdgeInsets.all(AppThemes.contentPadding),
-              child: Row(
-                children: [
-                  MyIconButton(
-                    icon: Icons.arrow_back,
-                    onPressed: () => Navigator.of(context).pop(),
-                    tooltip: 'Back',
-                    backgroundColor: AppColors.primary.withValues(alpha: 0.1),
-                    iconColor: AppColors.primary,
-                  ),
-                  
-                  const SizedBox(width: 16),
-                  
-                  Expanded(
-                    child: Text(
-                      widget.title,
-                      style: h.currentTextTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            
-            // Body
-            Expanded(
-              child: _feeds.isEmpty && !_isLoading
-                  ? _buildEmptyState(h)
-                  : _buildFeedList(h),
-            ),
-          ],
-        ),
+        child: _feeds.isEmpty && !_isLoading
+            ? _buildEmptyState(h)
+            : _buildFeedList(h),
       ),
     );
   }
 
   Widget _buildEmptyState(MyHelper h) {
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            widget.actionIcon,
-            size: 64,
-            color: AppColors.primary.withValues(alpha: 0.5),
-          ),
-          
-          const SizedBox(height: 16),
-          
-          Text(
-            'No ${widget.title.toLowerCase()} yet',
-            style: h.currentTextTheme.titleMedium?.copyWith(
-              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
-            ),
-          ),
-          
-          const SizedBox(height: 8),
-          
-          Text(
-            widget.actionTooltip,
-            style: h.currentTextTheme.bodyMedium?.copyWith(
-              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ],
+      child: MyPlaceholder(
+        'No ${widget.title.toLowerCase()} yet',
+        footer: widget.placeholderTooltip,
+        padding: 48,
+        icon: Icon(
+          widget.placeholderIcon,
+          size: 64,
+          color: AppColors.primary.withValues(alpha: 0.5),
+        ),
       ),
     );
   }

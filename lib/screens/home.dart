@@ -115,12 +115,14 @@ class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver
     // Listen for topic changes and trigger load feed with debounce
     ref.listen<String?>(topicProvider, (previous, next) {
       if (!mounted || previous == next) return;
+      if (next == null) return;
 
       // Debounce rapid topic tab switching to prevent excessive API calls
       _topicChangeDebounce.run(() {
         if (!mounted) return;
         setState(() {
-          _feedType = next == null ? r.homeFeedType : FeedType.latest;
+          // _feedType = next == null ? r.homeFeedType : FeedType.latest;
+          _feedType = FeedType.latest;
         });
         _loadFeed(next);
       });

@@ -52,6 +52,7 @@ extension WidgetExtension on Widget {
   Widget center() => Center(child: this);
   Widget clipRadius(double radius) => ClipRRect(borderRadius: BorderRadius.circular(radius), child: this);
   Widget expand() => Expanded(child: this);
+  Widget fill() => Positioned.fill(child: this);
   Widget flexible() => Flexible(child: this);
   Widget hero(String tag) => Hero(tag: tag, child: this);
   Widget ignore([bool ignoring = true]) => IgnorePointer(ignoring: ignoring, child: this,);

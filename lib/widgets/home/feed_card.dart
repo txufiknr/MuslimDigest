@@ -28,7 +28,6 @@ import 'package:muslimdigest/widgets/components/logo.dart';
 import 'package:muslimdigest/widgets/components/popup_menu_item.dart';
 import 'package:muslimdigest/widgets/components/popup_menu.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 import '../../models/feed.dart';
 import 'package:screenshot/screenshot.dart';
 import 'package:share_plus/share_plus.dart';
@@ -182,96 +181,103 @@ class _FeedHeader extends StatelessWidget {
     final h = MyHelper(context);
     final hasYouTubeVideo = feedItem.videoUrl?.contains('youtu') == true;
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final maxWidth = constraints.maxWidth;
-        return ClipRRect(
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-          child: Stack(
-            children: [
-              // Image or video
-              if (hasYouTubeVideo)
-                YoutubePlayer(
-                  controller: YoutubePlayerController(
-                    initialVideoId: feedItem.videoUrl!,
-                    flags: const YoutubePlayerFlags(
-                      autoPlay: false,
-                    ),
-                  ),
-                  // aspectRatio: 16 / 9,
-                  aspectRatio: maxWidth / 200,
-                )
-              else
-                CachedImageWidget(
-                  imageUrl: feedItem.imageUrl,
-                  height: 200,
-                  width: double.infinity,
-                  fit: BoxFit.cover,
-                  errorColor: h.currentTheme.colorScheme.secondary,
-                  errorChild: Logo(),
-                ),
-              
-              // Title overlay
-              Positioned(
-                bottom: 0,
-                left: 0,
-                right: 0,
-                child: Container(
-                  padding: EdgeInsets.all(AppThemes.contentPadding),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [
-                        Colors.transparent,
-                        Colors.black.withValues(alpha: 0.7),
-                      ],
-                    ),
-                  ),
-                  child: Text(
-                    feedItem.title,
-                    style: h.currentTextTheme.titleMedium?.copyWith(
-                      color: Colors.white,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
+    return ClipRRect(
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+      child: Stack(
+        children: [
+          // Image or video
+          // if (hasYouTubeVideo)
+          //   YoutubePlayer(
+          //     controller: YoutubePlayerController(
+          //       initialVideoId: feedItem.videoUrl!,
+          //       flags: const YoutubePlayerFlags(
+          //         autoPlay: false,
+          //       ),
+          //     ),
+          //     // aspectRatio: 16 / 9,
+          //     aspectRatio: h.screenWidth / 200,
+          //   )
+          // else
+          CachedImageWidget(
+            imageUrl: feedItem.imageUrl,
+            height: 200,
+            width: double.infinity,
+            fit: BoxFit.cover,
+            errorColor: h.currentTheme.colorScheme.secondary,
+            errorChild: Logo(),
+          ),
+          
+          // YouTube play button
+          if (hasYouTubeVideo)
+            MyIconButton(
+              icon: CupertinoIcons.play_circle,
+              iconColor: Colors.white,
+              iconSize: 64,
+              size: 64,
+              onPressed: () {
+                openUrl(feedItem.videoUrl!);
+              },
+            ).center(),
+
+          // Title overlay
+          Positioned(
+            bottom: 0,
+            left: 0,
+            right: 0,
+            child: Container(
+              padding: EdgeInsets.all(AppThemes.contentPadding),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.transparent,
+                    Colors.black.withValues(alpha: 0.7),
+                  ],
                 ),
               ),
-              
-              // Image URL overlay
-              // if (feedItem.imageUrl != null) Positioned(
-              //   top: 0,
-              //   left: 0,
-              //   right: 0,
-              //   child: Container(
-              //     padding: EdgeInsets.all(AppThemes.contentPadding),
-              //     decoration: BoxDecoration(
-              //       gradient: LinearGradient(
-              //         begin: Alignment.topCenter,
-              //         end: Alignment.bottomCenter,
-              //         colors: [
-              //           Colors.transparent,
-              //           Colors.black.withValues(alpha: 0.7),
-              //         ],
-              //       ),
-              //     ),
-              //     child: Text(
-              //       feedItem.imageUrl ?? '',
-              //       style: h.currentTextTheme.titleSmall?.copyWith(
-              //         color: Colors.white,
-              //       ),
-              //       maxLines: 2,
-              //       overflow: TextOverflow.ellipsis,
-              //     ),
-              //   ).onTap(() {
-              //     openUrl(feedItem.imageUrl!);
-              //   }),
-              // ),
-            ],
+              child: Text(
+                feedItem.title,
+                style: h.currentTextTheme.titleMedium?.copyWith(
+                  color: Colors.white,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
           ),
-        );
-      }
+          
+          // Image URL overlay
+          // if (feedItem.imageUrl != null) Positioned(
+          //   top: 0,
+          //   left: 0,
+          //   right: 0,
+          //   child: Container(
+          //     padding: EdgeInsets.all(AppThemes.contentPadding),
+          //     decoration: BoxDecoration(
+          //       gradient: LinearGradient(
+          //         begin: Alignment.topCenter,
+          //         end: Alignment.bottomCenter,
+          //         colors: [
+          //           Colors.transparent,
+          //           Colors.black.withValues(alpha: 0.7),
+          //         ],
+          //       ),
+          //     ),
+          //     child: Text(
+          //       feedItem.imageUrl ?? '',
+          //       style: h.currentTextTheme.titleSmall?.copyWith(
+          //         color: Colors.white,
+          //       ),
+          //       maxLines: 2,
+          //       overflow: TextOverflow.ellipsis,
+          //     ),
+          //   ).onTap(() {
+          //     openUrl(feedItem.imageUrl!);
+          //   }),
+          // ),
+        ],
+      ),
     );
   }
 }
@@ -415,9 +421,7 @@ class _FeedFooter extends ConsumerWidget {
 
           // Action buttons
           if (isTakingScreenshot) Logo(size: 100,) else ...<Widget>[
-            // if (isLiked || likeCount > 0) Text(formatNumber(max(1, likeCount)), textAlign: TextAlign.right, style: h.currentTextTheme.bodySmall,),
-            if (likeCount > 0) Text(formatNumber(likeCount), textAlign: TextAlign.right, style: h.currentTextTheme.bodySmall,),
-            SizedBox(width: 4,),
+            if (likeCount > 0) Text(formatNumber(likeCount), textAlign: TextAlign.right, style: h.currentTextTheme.bodySmall,).withPadding(right: 4),
             MyIconButton(icon: isLiked ? CupertinoIcons.heart_fill : CupertinoIcons.heart, size: 50, outlined: true, onPressed: onLike, iconColor: isLiked ? AppColors.primary : null),
             MyIconButton(icon: isSaved ? CupertinoIcons.bookmark_fill : CupertinoIcons.bookmark, size: 50, outlined: true, onPressed: onSave, iconColor: isSaved ? AppColors.primary : null),
             MyIconButton(icon: CupertinoIcons.share, size: 50, outlined: true, onPressed: onShare,),
@@ -458,6 +462,7 @@ class _FeedSummarizer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (provider == 'none') return SizedBox.shrink();
     final providerLabel = provider.toCapitalized();
     return MyBadge(
       text: 'Summarizer: $providerLabel',
@@ -514,7 +519,10 @@ class _FeedFooterSource extends StatelessWidget {
             Text(
               feedItem.sourceLabel,
               style: h.currentTextTheme.bodySmall,
-            ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              softWrap: false,
+            ).flexible(),
 
             const SizedBox(width: 6),
             Icon(Icons.open_in_new, size: 14, color: h.currentTheme.colorScheme.tertiary),

@@ -73,7 +73,7 @@ class FeedSwiperState extends ConsumerState<FeedSwiper> {
   String get _readCountName => _isTopicFeed ? _currentTopic! : widget.feedType.name;
   int get _readCountState => _readCountStates[_readCountName] ?? 0;
   int get _currentItemIndex => _isDigestFeed ? _readCount : _readCountState;
-  int get _initialItemIndex => _currentItemIndex.clamp(0, _cardsCount - 1);
+  int get _initialItemIndex => _cardsCount == 0 ? 0 : _currentItemIndex.clamp(0, _cardsCount - 1);
   bool get _canGoPrev => _currentItemIndex > 0;
   bool get _canGoNext => _currentItemIndex < _cardsCount - 1;
   bool get _canUndo => _canGoPrev;
@@ -197,7 +197,7 @@ class FeedSwiperState extends ConsumerState<FeedSwiper> {
             icon: Icon(CupertinoIcons.news, size: 80, color: AppColors.accent),
             onRetry: widget.onReload,
             retryLabel: "Reload",
-          ).withPaddingHorizontal(16).center().expand(),
+          ).center().expand(),
           if (widget.feedType != _homeFeedType) ...[
             MyDivider().withPaddingVertical(AppThemes.contentPadding),
             MyButton(

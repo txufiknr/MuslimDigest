@@ -11,13 +11,13 @@ import 'package:muslimdigest/utils/extensions.dart';
 import 'package:muslimdigest/utils/functions.dart';
 import 'package:muslimdigest/variables/feed.dart';
 import 'package:muslimdigest/widgets/onboarding/navigation_buttons.dart';
-import '../config/colors.dart';
-import '../utils/helpers.dart';
-import '../widgets/onboarding/progress_indicator.dart';
-import '../widgets/onboarding/name_step.dart';
-import '../widgets/onboarding/gender_step.dart';
-import '../widgets/onboarding/age_step.dart';
-import '../widgets/onboarding/interests_step.dart';
+import '../../config/colors.dart';
+import '../../utils/helpers.dart';
+import '../../widgets/onboarding/progress_indicator.dart';
+import '../../widgets/onboarding/name_step.dart';
+import '../../widgets/onboarding/gender_step.dart';
+import '../../widgets/onboarding/age_step.dart';
+import '../../widgets/onboarding/interests_step.dart';
 
 class WelcomePage extends ConsumerStatefulWidget {
   const WelcomePage({super.key});
