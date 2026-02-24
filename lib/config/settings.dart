@@ -1,0 +1,1 @@
+const DEFAULT_TEXT_SIZE = 17;

@@ -89,7 +89,6 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
   void initState() {
     super.initState();
     final user = ref.read(userProvider);
-    // TODO: why is this defaults to "Friend"?
     _nameController = TextEditingController(text: user.name);
     _selectedAgeGroup = user.ageGroup;
     _selectedGender = user.gender;

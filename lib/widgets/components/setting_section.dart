@@ -29,7 +29,7 @@ class SettingSection extends StatelessWidget {
       children: [
         if (title != null) Text(
           title!,
-          style: h.currentTextTheme.titleMedium,
+          style: h.currentTextTheme.titleSmall,
         ),
         
         if (description != null) Text(
@@ -187,7 +187,7 @@ class TextSizeSelector extends ConsumerWidget {
             value: currentSize.toDouble(),
             min: 12,
             max: 24,
-            divisions: 6,
+            divisions: 12,
             activeColor: AppColors.primary,
             onChanged: (value) => onChanged(value.round()),
           ),

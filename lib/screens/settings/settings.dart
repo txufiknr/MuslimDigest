@@ -354,7 +354,7 @@ class SettingsTile extends StatelessWidget {
       ),
       title: Text(
         title,
-        style: h.currentTextTheme.bodyMedium?.copyWith(
+        style: h.currentTextTheme.bodyLarge?.copyWith(
           color: Colors.white,
         ),
       ),

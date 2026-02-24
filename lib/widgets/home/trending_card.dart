@@ -26,7 +26,9 @@ class _TrendingFeedsCardState extends ConsumerState<TrendingFeedsCard> {
   }
 
   void _next() {
-    _pageController.nextPage(duration: Duration(milliseconds: 200), curve: Curves.easeOut);
+    if (_pageController.hasClients && _pageController.page != null) {
+      _pageController.nextPage(duration: Duration(milliseconds: 200), curve: Curves.easeOut);
+    }
   }
 
   @override

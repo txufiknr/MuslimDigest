@@ -21,12 +21,7 @@ class MyAppBar extends StatelessWidget implements PreferredSizeWidget {
     final h = MyHelper(context);
 
     return AppBar(
-      title: Text(
-        title,
-        style: h.currentTextTheme.headlineMedium?.copyWith(
-          fontWeight: FontWeight.w600,
-        ),
-      ),
+      title: Text(title, style: h.currentTextTheme.titleMedium),
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       elevation: 0,
       surfaceTintColor: Colors.transparent,

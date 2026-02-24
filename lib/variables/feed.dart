@@ -31,6 +31,13 @@ enum FeedType {
     }
   }
 
+  String get endpoint {
+    switch (this) {
+      case digest: return 'feed';
+      default: return 'feed/$name';
+    }
+  }
+
   IconData get icon {
     switch (this) {
       case latest: return CupertinoIcons.antenna_radiowaves_left_right;

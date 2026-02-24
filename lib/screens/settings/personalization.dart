@@ -56,7 +56,7 @@ class _PersonalizationPageState extends ConsumerState<PersonalizationPage>
         bottom: TabBar(
           controller: _tabController,
           dividerColor: h.currentTheme.colorScheme.outline,
-          labelStyle: h.currentTextTheme.titleSmall,
+          labelStyle: h.currentTextTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
           indicatorColor: AppColors.primary,
           labelColor: AppColors.primary,
           unselectedLabelColor: h.currentTheme.colorScheme.onSurface.withValues(alpha: 0.6),
@@ -89,7 +89,7 @@ class _PersonalizationPageState extends ConsumerState<PersonalizationPage>
             children: [
               Text(
                 'What interests you?',
-                style: h.currentTextTheme.titleMedium,
+                style: h.currentTextTheme.titleSmall,
               ),
               
               const SizedBox(height: 8),

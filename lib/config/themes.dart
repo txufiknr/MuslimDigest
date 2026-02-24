@@ -9,22 +9,28 @@ class AppThemes {
   // Text sizes
   static const double displayLargeSize = 36;
   static const double displayMediumSize = 28;
+
   static const double headlineLargeSize = 24;
-  static const double headlineMediumSize = 20;
+  static const double headlineMediumSize = 22;
+  static const double headlineSmallSize = 20;
+
   static const double titleLargeSize = 22;
   static const double titleMediumSize = 20;
-  static const double titleSmallSize = 16;
-  static const double bodyLargeSize = 21;
-  static const double bodyMediumSize = 17;
+  static const double titleSmallSize = 18;
+
+  static const double bodyLargeSize = 18;
+  static const double bodyMediumSize = 16;
   static const double bodySmallSize = 14;
-  static const double labelLargeSize = 22;
-  static const double labelSmallSize = 18;
+
+  static const double labelLargeSize = 20;
+  static const double labelSmallSize = 16;
+
   static const double buttonLargeSize = 20;
   static const double buttonSmallSize = 16;
 
-  static const double buttonHeight = 50.0;
-  static const double buttonRadius = 25.0;
-  static const double contentPadding = 22.0;
+  static const double buttonHeight = 50;
+  static const double buttonRadius = 25;
+  static const double contentPadding = 22;
 
   // Color Schemes
   static ColorScheme _buildColorScheme({
@@ -207,6 +213,11 @@ class AppThemes {
         color: primaryColor,
         fontWeight: FontWeight.w600,
         fontSize: headlineMediumSize,
+      ),
+      headlineSmall: _buildTextStyle(
+        color: primaryColor,
+        fontWeight: FontWeight.w600,
+        fontSize: headlineSmallSize,
       ),
       titleLarge: _buildTextStyle(
         color: primaryColor,

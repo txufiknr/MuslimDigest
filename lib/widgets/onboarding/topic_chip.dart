@@ -89,7 +89,7 @@ class TopicChip extends StatelessWidget {
       visualDensity: VisualDensity.compact,
       label: Text(
         topic.toCapitalized(),
-        style: h.currentTextTheme.bodyMedium?.copyWith(
+        style: h.currentTextTheme.titleSmall?.copyWith(
           color: colors.getTextColor(state),
           fontWeight: FontWeight.w500,
         ),
@@ -112,14 +112,12 @@ class TopicChip extends StatelessWidget {
       },
       backgroundColor: colors.getBackgroundColor(state),
       selectedColor: colors.getBackgroundColor(state),
-
       elevation: 0,
       pressElevation: 0,
       surfaceTintColor: Colors.transparent,
       shadowColor: Colors.transparent,
       selectedShadowColor: Colors.transparent,
       showCheckmark: false,
-
       side: BorderSide(
         color: colors.getBorderColor(state).withValues(alpha: 0.5),
         width: 1,

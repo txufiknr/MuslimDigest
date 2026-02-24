@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:muslimdigest/config/colors.dart';
 import 'package:muslimdigest/config/themes.dart';
 import 'package:muslimdigest/models/feed.dart';
 import 'package:muslimdigest/services/api.dart';
 import 'package:muslimdigest/utils/extensions.dart';
 import 'package:muslimdigest/utils/helpers.dart';
+import 'package:muslimdigest/variables/feed.dart';
 import 'package:muslimdigest/widgets/animations/loader.dart';
 import 'package:muslimdigest/widgets/components/app_bar.dart';
 import 'package:muslimdigest/widgets/components/cached_image.dart';
@@ -14,20 +16,20 @@ import 'package:muslimdigest/widgets/components/placeholder.dart';
 
 abstract class FeedListBasePage extends ConsumerStatefulWidget {
   final String title;
-  final String endpoint;
   final IconData actionIcon;
   final String actionTooltip;
   final IconData placeholderIcon;
   final String placeholderTooltip;
+  final FeedType feedType;
 
   const FeedListBasePage({
     super.key,
     required this.title,
-    required this.endpoint,
     required this.actionIcon,
     required this.actionTooltip,
     required this.placeholderIcon,
     required this.placeholderTooltip,
+    required this.feedType,
   });
 
   @override
@@ -80,7 +82,7 @@ class _FeedListBasePageState extends ConsumerState<FeedListBasePage> {
         queryParams['cursor'] = _cursor!;
       }
 
-      final response = await ApiService.get(widget.endpoint, queryParams: queryParams);
+      final response = await ApiService.get(widget.feedType.endpoint, queryParams: queryParams);
       
       if (response.successful && response.data != null) {
         final data = response.data as Map<String, dynamic>;
@@ -105,7 +107,7 @@ class _FeedListBasePageState extends ConsumerState<FeedListBasePage> {
   Future<void> _onActionPressed(FeedItem feed) async {
     try {
       // Unlike/Unsave the feed
-      final actionEndpoint = widget.endpoint.contains('liked') ? 'like' : 'save';
+      final actionEndpoint = widget.feedType.endpoint.contains('liked') ? 'like' : 'save';
       final response = await ApiService.post('$actionEndpoint/${feed.id}');
       
       if (response.successful) {
@@ -239,7 +241,7 @@ class _FeedListBasePageState extends ConsumerState<FeedListBasePage> {
         ],
       ),
     ).onTap(() {
-      // TODO: Navigate to feed detail
+      context.push('/feed/${feed.id}?feedType=${widget.feedType.name}');
     });
   }
 

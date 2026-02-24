@@ -1,3 +1,4 @@
+import 'package:muslimdigest/config/settings.dart';
 import 'package:muslimdigest/utils/users.dart';
 import 'package:muslimdigest/variables/feed.dart';
 import 'package:muslimdigest/variables/user.dart';
@@ -238,7 +239,7 @@ class UserSettings {
 
   UserSettings({
     required this.userId,
-    this.textSize = 18,
+    this.textSize = DEFAULT_TEXT_SIZE,
     this.swipeDirection = SwipeDirection.defaultDirection,
     this.createdAt,
     this.updatedAt,
@@ -247,7 +248,7 @@ class UserSettings {
   factory UserSettings.fromJson(Map<String, dynamic> json) {
     return UserSettings(
       userId: json['userId'],
-      textSize: json['textSize'] ?? 18,
+      textSize: json['textSize'] ?? DEFAULT_TEXT_SIZE,
       swipeDirection: json['swipeDirection'] == null ? SwipeDirection.defaultDirection : SwipeDirection.fromString(json['swipeDirection']),
       createdAt: json['createdAt'] != null ? DateTime.parse(json['createdAt']) : null,
       updatedAt: json['updatedAt'] != null ? DateTime.parse(json['updatedAt']) : null,

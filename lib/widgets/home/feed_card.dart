@@ -209,15 +209,18 @@ class _FeedHeader extends StatelessWidget {
           
           // YouTube play button
           if (hasYouTubeVideo)
-            MyIconButton(
-              icon: CupertinoIcons.play_circle,
-              iconColor: Colors.white,
-              iconSize: 64,
-              size: 64,
-              onPressed: () {
-                openUrl(feedItem.videoUrl!);
-              },
-            ).center(),
+            // MyIconButton(
+            //   icon: CupertinoIcons.play_circle,
+            //   iconColor: Colors.white,
+            //   iconSize: 64,
+            //   size: 64,
+            //   onPressed: () {
+            //     openUrl(feedItem.videoUrl!);
+            //   },
+            // ).center().fill(),
+            Image.asset('assets/images/youtube-play.png', width: 64).onTap(() {
+              openUrl(feedItem.videoUrl!);
+            }).center().fill(),
 
           // Title overlay
           Positioned(
