@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:muslimdigest/config/colors.dart';
 import 'package:muslimdigest/config/themes.dart';
 import 'package:muslimdigest/models/feed.dart';
+import 'package:muslimdigest/providers/feed/base_feed_notifier.dart';
 import 'package:muslimdigest/services/api.dart';
 import 'package:muslimdigest/utils/extensions.dart';
 import 'package:muslimdigest/utils/helpers.dart';
@@ -32,22 +33,25 @@ abstract class FeedListBasePage extends ConsumerStatefulWidget {
     required this.feedType,
   });
 
+  /// Get the appropriate provider for this feed type
+  NotifierProvider<BaseFeedNotifier, BaseFeedState> get provider;
+
   @override
   ConsumerState<FeedListBasePage> createState() => _FeedListBasePageState();
 }
 
 class _FeedListBasePageState extends ConsumerState<FeedListBasePage> {
   final ScrollController _scrollController = ScrollController();
-  final List<FeedItem> _feeds = [];
-  bool _isLoading = false;
-  bool _hasMore = true;
-  String? _cursor;
 
   @override
   void initState() {
     super.initState();
-    _loadFeeds();
     _scrollController.addListener(_onScroll);
+    
+    // Delay the initial load to avoid modifying provider during build cycle
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadInitialFeeds();
+    });
   }
 
   @override
@@ -57,51 +61,31 @@ class _FeedListBasePageState extends ConsumerState<FeedListBasePage> {
   }
 
   void _onScroll() {
-    if (!_isLoading && _hasMore) {
+    final state = ref.read(widget.provider);
+    if (!state.isLoading && !state.isLoadingMore && state.hasMore) {
       final maxScroll = _scrollController.position.maxScrollExtent;
       final currentScroll = _scrollController.position.pixels;
       if (currentScroll >= maxScroll - 200) {
-        _loadFeeds();
+        _loadMoreFeeds();
       }
     }
   }
 
-  Future<void> _loadFeeds() async {
-    if (_isLoading) return;
-
-    setState(() {
-      _isLoading = true;
-    });
-
-    try {
-      final queryParams = <String, String>{
-        'limit': '8',
-      };
-      
-      if (_cursor != null) {
-        queryParams['cursor'] = _cursor!;
-      }
-
-      final response = await ApiService.get(widget.feedType.endpoint, queryParams: queryParams);
-      
-      if (response.successful && response.data != null) {
-        final data = response.data as Map<String, dynamic>;
-        final feedsData = data['feeds'] as List<dynamic>? ?? [];
-        final newFeeds = feedsData.map((json) => FeedItem.fromJson(json)).toList();
-        
-        setState(() {
-          _feeds.addAll(newFeeds);
-          _hasMore = newFeeds.length == 8;
-          _cursor = data['cursor'] as String?;
-        });
-      }
-    } catch (e) {
-      // Handle error silently or show a snackbar
-    } finally {
-      setState(() {
-        _isLoading = false;
-      });
+  Future<void> _loadInitialFeeds() async {
+    // TODO: saved feed items is initially exists (shown 1 in list), but then immediatelly disappear (show "No saved feeds yet")
+    // can you check and fix the issue?
+    final state = ref.read(widget.provider);
+    
+    // Only load from API if we have no cached data
+    if (state.isEmpty) {
+      final notifier = ref.read(widget.provider.notifier);
+      await notifier.loadFromEndpoint(widget.feedType.endpoint);
     }
+  }
+
+  Future<void> _loadMoreFeeds() async {
+    final notifier = ref.read(widget.provider.notifier);
+    await notifier.loadMore();
   }
 
   Future<void> _onActionPressed(FeedItem feed) async {
@@ -111,9 +95,12 @@ class _FeedListBasePageState extends ConsumerState<FeedListBasePage> {
       final response = await ApiService.post(actionEndpoint, { 'clusterId': feed.id, 'value': false });
       
       if (response.successful) {
-        setState(() {
-          _feeds.removeWhere((item) => item.id == feed.id);
-        });
+        // Remove from provider state
+        final notifier = ref.read(widget.provider.notifier);
+        final currentState = ref.read(widget.provider);
+        final currentItems = currentState.items ?? [];
+        final updatedItems = currentItems.where((item) => item.id != feed.id).toList();
+        await notifier.setValue(updatedItems);
       }
     } catch (e) {
       // Handle error
@@ -123,14 +110,15 @@ class _FeedListBasePageState extends ConsumerState<FeedListBasePage> {
   @override
   Widget build(BuildContext context) {
     final h = MyHelper(context);
+    final state = ref.watch(widget.provider);
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: MyAppBar(title: widget.title),
       body: SafeArea(
-        child: _feeds.isEmpty && !_isLoading
+        child: state.isNone
             ? _buildEmptyState(h)
-            : _buildFeedList(h),
+            : _buildFeedList(h, state),
       ),
     );
   }
@@ -150,17 +138,19 @@ class _FeedListBasePageState extends ConsumerState<FeedListBasePage> {
     );
   }
 
-  Widget _buildFeedList(MyHelper h) {
+  Widget _buildFeedList(MyHelper h, BaseFeedState state) {
+    final feeds = state.items ?? [];
+    
     return ListView.builder(
       controller: _scrollController,
-      padding: const EdgeInsets.symmetric(horizontal: AppThemes.contentPadding),
-      itemCount: _feeds.length + (_hasMore ? 1 : 0),
+      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: AppThemes.contentPadding),
+      itemCount: feeds.length + (state.hasMore ? 1 : 0),
       itemBuilder: (context, index) {
-        if (index == _feeds.length) {
+        if (index == feeds.length) {
           return _buildLoadingIndicator();
         }
         
-        return _buildFeedItem(h, _feeds[index]);
+        return _buildFeedItem(h, feeds[index]);
       },
     );
   }
@@ -192,7 +182,7 @@ class _FeedListBasePageState extends ConsumerState<FeedListBasePage> {
             children: [
               Text(
                 feed.title,
-                style: h.currentTextTheme.titleMedium,
+                style: h.currentTextTheme.titleSmall,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),
@@ -207,7 +197,7 @@ class _FeedListBasePageState extends ConsumerState<FeedListBasePage> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
-                    feed.topic!,
+                    feed.topic!.toCapitalized(),
                     style: h.currentTextTheme.bodySmall?.copyWith(
                       color: AppColors.primary,
                       fontWeight: FontWeight.w500,

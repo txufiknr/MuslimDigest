@@ -114,6 +114,7 @@ class _FeedbackFormState extends State<FeedbackForm> {
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(AppThemes.buttonRadius),
               ),
+              side: BorderSide(color: isSelected ? AppColors.accent : h.currentTheme.colorScheme.outline)
             );
           }).toList(),
         ).fullWidth(),

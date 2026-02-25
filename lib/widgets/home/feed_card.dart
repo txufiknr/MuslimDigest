@@ -436,7 +436,6 @@ class _FeedFooter extends ConsumerWidget {
     ) ?? false;
     if (!context.mounted || !confirm) return;
     // TODO: remove from swiper
-    showSnackBarSuccess(context, 'Marked as not interested');
   }
 
   Future<void> _avoidSource(BuildContext context, WidgetRef ref) async {

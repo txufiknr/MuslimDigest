@@ -28,7 +28,7 @@ class _PopupMenuItemContent extends StatelessWidget {
     
     return Row(
       children: [
-        Icon(icon, size: 16),
+        Icon(icon, size: 16, color: h.currentTheme.colorScheme.onSurface),
         const SizedBox(width: 8),
         Text(text, style: h.currentTheme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.normal)),
       ],

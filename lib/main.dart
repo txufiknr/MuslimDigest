@@ -37,6 +37,8 @@ Future<void> main() async {
         'feed', // Cached feed items (JSON string)
         'feed/trending', // Cached trending feed items (JSON string)
         'feed/latest', // Cached latest feed items (JSON string)
+        'feed/liked', // Cached liked feed items (JSON string)
+        'feed/saved', // Cached saved feed items (JSON string)
         'ingest_last_date', // Last feed ingestion date (YYYY-MM-DD)
         'topic', // Selected feed topic (string)
         'topics', // List of available topics (JSON string)
