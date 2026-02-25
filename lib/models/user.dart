@@ -93,6 +93,19 @@ User(
   updatedAt: $updatedAt
 )''';
   }
+
+  @override
+  int get hashCode => 1;
+
+  @override
+  bool operator ==(Object other) => identical(this, other) || (
+    other is User &&
+    runtimeType == other.runtimeType &&
+    other.userId == userId &&
+    other.name == name &&
+    other.gender == gender &&
+    other.ageGroup == ageGroup
+  );
 }
 
 class UserStreaks {
@@ -143,6 +156,18 @@ UserStreaks(
   lastReadAt: $lastReadAt
 )''';
   }
+  
+  @override
+  int get hashCode => 1;
+
+  @override
+  bool operator ==(Object other) => identical(this, other) || (
+    other is UserStreaks &&
+    runtimeType == other.runtimeType &&
+    other.currentStreak == currentStreak &&
+    other.longestStreak == longestStreak &&
+    other.lastReadAt == lastReadAt
+  );
 }
 
 class UserPreferences {

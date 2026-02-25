@@ -24,6 +24,22 @@ class MyHelper {
   TextStyle? get hintStyle => inputStyle?.copyWith(color: currentTheme.hintColor);
 
   // Theme helpers
+  int pickShade(int lightShade) {
+    switch (lightShade) {
+      case 50: return isLightTheme ? 50 : 900;
+      case 100: return isLightTheme ? 100 : 800;
+      case 200: return isLightTheme ? 200 : 700;
+      case 300: return isLightTheme ? 300 : 600;
+      case 400: return isLightTheme ? 400 : 500;
+      case 500: return isLightTheme ? 500 : 400;
+      case 600: return isLightTheme ? 600 : 300;
+      case 700: return isLightTheme ? 700 : 200;
+      case 800: return isLightTheme ? 800 : 100;
+      case 900: return isLightTheme ? 900 : 50;
+      default: return isLightTheme ? lightShade : 500;
+    }
+  }
+  Color? useColor(MaterialColor color, [int lightShade = 500]) => color[pickShade(lightShade)];
   Color pickColor(Color light, Color dark) => isLightTheme ? light : dark;
   void nextTheme() => ThemeProvider.controllerOf(context).nextTheme();
 

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:muslimdigest/utils/helpers.dart';
 
 class MyBadge extends StatelessWidget {
   final MaterialColor color;
@@ -8,19 +9,21 @@ class MyBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final h = MyHelper(context);
+
     return Tooltip(
       message: description ?? text,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         decoration: BoxDecoration(
-          color: color[50],
+          color: h.useColor(color, 50),
           borderRadius: BorderRadius.circular(8),
         ),
         child: Text(
           text,
           style: TextStyle(
             fontSize: 11,
-            color: color[700],
+            color: h.useColor(color, 700),
             fontWeight: FontWeight.w400,
           ),
         ),

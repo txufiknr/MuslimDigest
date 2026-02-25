@@ -36,6 +36,25 @@ class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver
 
   UserPreferences? lastUserPreferences;
 
+  /// Save all user data
+  void _saveAllData() {
+    fireAndForget(saveAllData);
+  }
+
+  void _saveUserPreferences() {
+    lastUserPreferences = ref.read(preferencesProvider);
+  }
+
+  void _compareUserPreferences() {
+    if (lastUserPreferences == null) return;
+    final userPreferences = ref.read(preferencesProvider);
+    if (userPreferences != lastUserPreferences) {
+      _initReadCount(force: true);
+    }
+    lastUserPreferences = null;
+    _saveAllData();
+  }
+
   @override
   void initState() {
     _feedType = r.homeFeedType;
@@ -44,7 +63,7 @@ class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       _initReadCount();
-      fireAndForget(saveAllData);
+      _saveAllData();
     });
   }
 
@@ -66,17 +85,14 @@ class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver
   @override
   void didPushNext() {
     debugPrint('HOME onPause - Away from this page to another page');
-    lastUserPreferences = ref.read(preferencesProvider);
+    _saveUserPreferences();
   }
 
   /// Called when the top route is popped and this route becomes visible again.
   @override
   void didPopNext() {
     debugPrint('HOME onResume - Returning to this page from another page');
-    final userPreferences = ref.read(preferencesProvider);
-    if (userPreferences != lastUserPreferences) {
-      _initReadCount(force: true);
-    }
+    _compareUserPreferences();
   }
 
   /// Called when this route is popped from the navigator.
@@ -97,7 +113,7 @@ class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
     if (state == AppLifecycleState.inactive) {
-      fireAndForget(saveAllData);
+      _saveAllData();
     } else if (state == AppLifecycleState.resumed) {
       _initReadCount();
     }
@@ -172,7 +188,7 @@ class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver
         if (didPop) return;
         if (!_isWillExit) {
           // Save all user data before exit
-          fireAndForget(saveAllData);
+          _saveAllData();
           _isWillExit = true;
           showSnackBar(context, 'Press back again to exit');
           delay(2000, () {

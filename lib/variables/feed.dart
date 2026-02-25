@@ -9,6 +9,28 @@ import 'package:muslimdigest/providers/feed/feed_saved.dart';
 import 'package:muslimdigest/providers/feed/feed_trending.dart';
 import 'package:muslimdigest/utils/extensions.dart';
 
+enum FeedbackCategory {
+  suggestion,
+  inappropriate_content,
+  fake_news,
+  bug_report,
+  other;
+
+  String get label {
+    return name.unslug().toCapitalized();
+  }
+
+  IconData get icon {
+    switch (this) {
+      case suggestion: return CupertinoIcons.lightbulb;
+      case inappropriate_content: return CupertinoIcons.exclamationmark_triangle;
+      case fake_news: return CupertinoIcons.exclamationmark_shield;
+      case bug_report: return CupertinoIcons.bandage;
+      case other: return CupertinoIcons.question_circle;
+    }
+  }
+}
+
 enum FeedType {
   digest,
   trending,

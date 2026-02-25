@@ -26,6 +26,10 @@ class AppThemes {
   static const double labelMediumSize = 17;
   static const double labelSmallSize = 16;
 
+  static const double iconLargeSize = 24;
+  static const double iconMediumSize = 20;
+  static const double iconSmallSize = 16;
+
   static const double buttonLargeSize = 20;
   static const double buttonSmallSize = 16;
 

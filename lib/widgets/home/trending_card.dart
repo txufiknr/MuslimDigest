@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:muslimdigest/models/feed.dart';
 import 'package:muslimdigest/utils/helpers.dart';
 import 'package:muslimdigest/variables/feed.dart';
@@ -22,7 +23,7 @@ class _TrendingFeedsCardState extends ConsumerState<TrendingFeedsCard> {
   List<FeedItem> get _feedItems => FeedType.trending.watchItems(ref);
 
   void _read(FeedItem feed) {
-    // TODO: Open feed
+    context.push('/feed/${feed.id}?feedType=${FeedType.trending.name}');
   }
 
   void _next() {

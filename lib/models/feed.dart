@@ -192,6 +192,18 @@ FeedItem(
   likeCount: $likeCount,
 )''';
   }
+  
+  @override
+  int get hashCode => 1;
+
+  @override
+  bool operator ==(Object other) => identical(this, other) || (
+    other is FeedItem &&
+    runtimeType == other.runtimeType &&
+    other.id == id &&
+    other.title == title &&
+    other.cluster == cluster
+  );
 }
 
 class Cluster {
@@ -265,6 +277,16 @@ Cluster(
   lastPublishedAt: $lastPublishedAt
 )''';
   }
+  
+  @override
+  int get hashCode => 1;
+
+  @override
+  bool operator ==(Object other) => identical(this, other) || (
+    other is Cluster &&
+    runtimeType == other.runtimeType &&
+    other.id == id
+  );
 }
 
 class Source {

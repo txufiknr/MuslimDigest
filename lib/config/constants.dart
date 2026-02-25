@@ -12,11 +12,8 @@ const APP_COMPANY = "TARRA Soft";
 const APP_COMPANY_EMAIL = "flias.test@gmail.com";
 
 // App URLs
-// TODO: Update these URLs with actual values
-const APP_URL_APPSTORE = null; // "https://apps.apple.com/id/app/foom-now/id6470125134";
 const APP_URL_PLAYSTORE = "https://play.google.com/store/apps/details?id=com.tarra.muslimdigest";
-const APP_URL_PRIVACY = "https://www.termsfeed.com/live/4dcaac7c-a1ba-479c-b8c6-5874e7528f51";
-
+const APP_URL_PRIVACY = "https://www.termsfeed.com/live/f42c0040-062b-46d8-b070-ddcf8df1bdb4";
 const APP_URL_DONATE = "https://sociabuzz.com/txufiknr/donate";
 
 // API URLs from environment variables

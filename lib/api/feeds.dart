@@ -14,3 +14,11 @@ Future<bool> save(String clusterId, bool value) async {
   final response = await ApiService.post('feed/save', {'clusterId': clusterId, 'value': value});
   return response.successful;
 }
+
+Future<ApiResponse> submitFeedback(String clusterId, String category, String message) {
+  return ApiService.post('feed/feedback', {
+    'clusterId': clusterId,
+    'category': category,
+    'message': message,
+  });
+}

@@ -40,6 +40,7 @@ Future<void> main() async {
         'ingest_last_date', // Last feed ingestion date (YYYY-MM-DD)
         'topic', // Selected feed topic (string)
         'topics', // List of available topics (JSON string)
+        'notification_type', // Active notification type
       },
     ),
   );

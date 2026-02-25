@@ -98,6 +98,7 @@ Future<dynamic> showBottomModalSheetContent(BuildContext context, {required Stri
 Future<dynamic> showBottomModalSheetMessage(BuildContext context, String message, {
   List<ModalButtonConfig> buttons = const [],
   String? title,
+  Widget? header,
   String? footer,
 }) {
   final h = MyHelper(context);
@@ -112,6 +113,9 @@ Future<dynamic> showBottomModalSheetMessage(BuildContext context, String message
           fontWeight: FontWeight.w600,
         ),
       ).withPadding(bottom: 24),
+
+      // Header section
+      ?header?.withPadding(bottom: 16),
 
       // Message section
       Text(
@@ -177,6 +181,7 @@ Future<bool?> showBottomModalConfirm(
   BuildContext context, {
     required String message,
     String? title,
+    Widget? header,
     String? footer,
     String? confirmButtonText,
     Widget? confirmButtonIcon,
@@ -189,6 +194,7 @@ Future<bool?> showBottomModalConfirm(
     context,
     message,
     title: title,
+    header: header,
     footer: footer,
     buttons: [
       ModalButtonConfig(
@@ -255,14 +261,30 @@ void showSnackBar(BuildContext context, String message, {Widget? icon, List<Widg
   );
 }
 
-void showSnackBarSuccess(BuildContext context, String message) {
+void showSnackBarMessage(BuildContext context, String message, Widget icon) {
   showSnackBar(
     context,
     message,
-    icon: Icon(CupertinoIcons.checkmark_circle_fill, color: AppColors.success),
+    icon: icon,
     buttons: [
       TextButton(onPressed: () => hideSnackBar(context), child: Text('Done')),
     ],
+  );
+}
+
+void showSnackBarSuccess(BuildContext context, String message) {
+  showSnackBarMessage(
+    context,
+    message,
+    Icon(CupertinoIcons.checkmark_circle_fill, color: AppColors.success),
+  );
+}
+
+void showSnackBarError(BuildContext context, String message) {
+  showSnackBarMessage(
+    context,
+    message,
+    Icon(CupertinoIcons.exclamationmark_circle_fill, color: AppColors.error),
   );
 }
 

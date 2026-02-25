@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:muslimdigest/models/user.dart';
 import 'package:muslimdigest/variables/app.dart';
+import 'package:muslimdigest/variables/settings.dart';
 import 'package:uuid/uuid.dart';
 
 enum Gender {
@@ -129,4 +130,10 @@ class PrefData {
   // static String? get currentTopic => prefs.getString('topic');
   // static String? get feedLastIngest => prefs.getString('ingest_last_date');
   // static DateTime? get feedLastIngestDate => feedLastIngest != null ? DateTime.parse(feedLastIngest!) : null;
+
+  static NotificationType get notificationType {
+    final value = prefs.getString('notification_type');
+    if (value == null) return NotificationType.all;
+    return NotificationType.fromString(value);
+  }
 }

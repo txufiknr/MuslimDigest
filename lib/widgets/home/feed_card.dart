@@ -1,15 +1,13 @@
-// import 'dart:math' show max;
-
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:lottie/lottie.dart';
 import 'package:muslimdigest/config/colors.dart';
 import 'package:muslimdigest/config/constants.dart';
 import 'package:muslimdigest/config/settings.dart';
 import 'package:muslimdigest/config/themes.dart';
 import 'package:muslimdigest/providers/feed/base_feed_notifier.dart';
+import 'package:muslimdigest/providers/user/preferences.dart';
 import 'package:muslimdigest/providers/user/settings.dart';
 import 'package:muslimdigest/providers/user/streaks.dart';
 import 'package:muslimdigest/utils/dialogs.dart';
@@ -29,6 +27,7 @@ import 'package:muslimdigest/widgets/components/icon_button.dart';
 import 'package:muslimdigest/widgets/components/logo.dart';
 import 'package:muslimdigest/widgets/components/popup_menu_item.dart';
 import 'package:muslimdigest/widgets/components/popup_menu.dart';
+import 'package:muslimdigest/widgets/home/feedback_form.dart';
 import 'package:path_provider/path_provider.dart';
 import '../../models/feed.dart';
 import 'package:screenshot/screenshot.dart';
@@ -302,9 +301,9 @@ class _FeedContent extends ConsumerWidget {
           if (feedItem.hook != null) Container(
             margin: EdgeInsets.only(bottom: 16),
             decoration: BoxDecoration(
-              color: Colors.teal[50],
+              color: h.useColor(Colors.teal, 50),
               borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: Colors.teal[100]!, width: 1),
+              border: Border.all(color: h.useColor(Colors.teal, 100)!, width: 1),
             ),
             padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             child: Text(
@@ -312,7 +311,7 @@ class _FeedContent extends ConsumerWidget {
               style: h.currentTextTheme.bodyMedium?.copyWith(
                 fontWeight: FontWeight.w500,
                 fontStyle: FontStyle.italic,
-                color: Colors.teal[800],
+                color: h.useColor(Colors.teal, 800),
                 fontSize: textSize,
               ),
             ),
@@ -384,7 +383,7 @@ class _FeedFooter extends ConsumerWidget {
             MyPopupMenu(
               icon: Icon(CupertinoIcons.ellipsis, color: h.currentTheme.colorScheme.tertiary),
               onSelected: (String value) {
-                _handleMenuAction(context, value);
+                _handleMenuAction(context, ref, value);
               },
               items: [
                 MyPopupMenuItem(
@@ -401,11 +400,6 @@ class _FeedFooter extends ConsumerWidget {
                   value: 'send_feedback',
                   icon: CupertinoIcons.chat_bubble_text,
                   text: 'Send feedback',
-                ),
-                MyPopupMenuItem(
-                  value: 'report',
-                  icon: CupertinoIcons.exclamationmark_triangle,
-                  text: 'Report',
                 ),
               ],
             ).right(),
@@ -439,41 +433,50 @@ class _FeedFooter extends ConsumerWidget {
       message: "Are you sure you are not interested in this feed?",
       confirmButtonText: "Not Interested",
       cancelButtonText: "I've changed my mind",
-    );
-    if (!context.mounted || confirm != true) return;
+    ) ?? false;
+    if (!context.mounted || !confirm) return;
+    // TODO: remove from swiper
     showSnackBarSuccess(context, 'Marked as not interested');
   }
 
-  Future<void> _feedback(BuildContext context) async {
-    final result = await showBottomModalSheetContent(context, title: "Send Feedback", widgets: [
-
-      // TODO: extract this into separate FeedbackForm widget:
-      Column(mainAxisSize: MainAxisSize.min, children: <Widget>[
-        // TODO: add text input for feedback message (multiline)
-        MyButton(text: "Feedback", icon: Icon(CupertinoIcons.paperplane), onPressed: () => context.pop(true)),
-        MyButton(text: "Cancel", outlined: true, onPressed: context.pop),
-      ].addItemInBetween(SizedBox(height: 16))),
-
-    ], isDismissible: false);
-    if (!context.mounted || result != true) return;
-    showSnackBarSuccess(context, 'Your feedback has been sent!');
+  Future<void> _avoidSource(BuildContext context, WidgetRef ref) async {
+    final sourceName = feedItem.source.name ?? 'this source';
+    final sourceIcon = feedItem.source.siteIcon;
+    final confirm = await showBottomModalConfirm(
+      context,
+      header: sourceIcon != null ? CachedImageWidget(imageUrl: sourceIcon, width: 48, height: 48, fit: BoxFit.contain) : null,
+      title: "Don't like $sourceName?",
+      message: "Are you sure you don't want to see more from $sourceName?",
+      confirmButtonText: "Yes, don't recommend",
+      cancelButtonText: "I've changed my mind",
+    ) ?? false;
+    if (!context.mounted || !confirm) return;
+    final preferences = ref.read(preferencesProvider);
+    ref.read(preferencesProvider.notifier).setValue(preferences.copyWith(
+      avoidedSources: [...preferences.avoidedSources, feedItem.source.id],
+    ));
+    showSnackBarSuccess(context, "Won't recommend feeds from $sourceName");
   }
 
-  void _handleMenuAction(BuildContext context, String action) {
+  Future<void> _feedback(BuildContext context) async {
+    await showBottomModalSheetContent(
+      context, 
+      title: "Send Feedback", 
+      widgets: [FeedbackForm(feedId: feedItem.id)],
+      isDismissible: false,
+    );
+  }
+
+  void _handleMenuAction(BuildContext context, WidgetRef ref, String action) {
     switch (action) {
       case 'not_interested':
         _notInterested(context);
         break;
       case 'dont_recommend_source':
-        // TODO: Implement "Don't recommend source" functionality
-        showSnackBar(context, "Won't recommend this source");
+        _avoidSource(context, ref);
         break;
       case 'send_feedback':
         _feedback(context);
-        break;
-      case 'report':
-        // TODO: Implement "Report" functionality
-        showSnackBar(context, 'Report submitted');
         break;
     }
   }
@@ -682,6 +685,8 @@ class _FeedBadgeChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final h = MyHelper(context);
+
     return Semantics(
       label: _badgeDescription,
       tooltip: _badgeDescription,
@@ -691,15 +696,15 @@ class _FeedBadgeChip extends StatelessWidget {
           vertical: 4,
         ),
         decoration: BoxDecoration(
-          color: _badgeColor[50],
+          color: h.useColor(_badgeColor, 50),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: _badgeColor[200]!),
+          border: Border.all(color: h.useColor(_badgeColor, 200)!),
         ),
         child: Text(
           _badgeText,
           style: TextStyle(
             fontSize: 12,
-            color: _badgeColor[700],
+            color: h.useColor(_badgeColor, 700),
             fontWeight: FontWeight.w400,
           ),
         ),

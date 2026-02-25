@@ -107,8 +107,8 @@ class _FeedListBasePageState extends ConsumerState<FeedListBasePage> {
   Future<void> _onActionPressed(FeedItem feed) async {
     try {
       // Unlike/Unsave the feed
-      final actionEndpoint = widget.feedType.endpoint.contains('liked') ? 'like' : 'save';
-      final response = await ApiService.post('$actionEndpoint/${feed.id}');
+      final actionEndpoint = widget.feedType.endpoint.contains('liked') ? 'feed/like' : 'feed/save';
+      final response = await ApiService.post(actionEndpoint, { 'clusterId': feed.id, 'value': false });
       
       if (response.successful) {
         setState(() {
@@ -176,56 +176,46 @@ class _FeedListBasePageState extends ConsumerState<FeedListBasePage> {
             width: 80,
             height: 80,
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
               color: Theme.of(context).colorScheme.surfaceContainerHighest,
             ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: CachedImageWidget(
-                imageUrl: feed.imageUrl,
-                width: 80,
-                height: 80,
-                fit: BoxFit.cover,
-              ),
+            child: CachedImageWidget(
+              imageUrl: feed.imageUrl,
+              fit: BoxFit.cover,
             ),
-          ),
+          ).clipRadius(12),
           
           const SizedBox(width: 12),
           
           // Center: Title and Topic
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  feed.title,
-                  style: h.currentTextTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w600,
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                feed.title,
+                style: h.currentTextTheme.titleMedium,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+              
+              const SizedBox(height: 8),
+              
+              if (feed.topic != null)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
+                  child: Text(
+                    feed.topic!,
+                    style: h.currentTextTheme.bodySmall?.copyWith(
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
                 ),
-                
-                const SizedBox(height: 8),
-                
-                if (feed.topic != null)
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: AppColors.primary.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      feed.topic!,
-                      style: h.currentTextTheme.bodySmall?.copyWith(
-                        color: AppColors.primary,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-          ),
+            ],
+          ).expand(),
           
           const SizedBox(width: 12),
           

@@ -7,6 +7,7 @@ import 'package:muslimdigest/config/colors.dart';
 import 'package:muslimdigest/config/constants.dart';
 import 'package:muslimdigest/config/themes.dart';
 import 'package:muslimdigest/providers/user/user.dart';
+import 'package:muslimdigest/screens/settings/notification_settings.dart';
 import 'package:muslimdigest/utils/app.dart';
 import 'package:muslimdigest/utils/app_repository.dart';
 import 'package:muslimdigest/utils/dialogs.dart';
@@ -83,10 +84,6 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                   SettingsSection(
                     title: 'App Settings',
                     child: AppSettingsSection(
-                      // darkMode: h.isDarkTheme,
-                      // onDarkModeChanged: (value) {
-                      //   h.nextTheme();
-                      // },
                       onResetData: _showResetDataDialog,
                     ),
                   ),
@@ -240,14 +237,10 @@ class PersonalSettingsSection extends ConsumerWidget {
 }
 
 class AppSettingsSection extends StatelessWidget {
-  // final bool darkMode;
-  // final ValueChanged<bool> onDarkModeChanged;
   final VoidCallback onResetData;
   
   const AppSettingsSection({
     super.key,
-    // required this.darkMode,
-    // required this.onDarkModeChanged,
     required this.onResetData,
   });
 
@@ -262,7 +255,9 @@ class AppSettingsSection extends StatelessWidget {
             icon: CupertinoIcons.bell_fill,
             title: 'Notifications',
             onTap: () {
-              // TODO: Navigate to notifications settings
+              showBottomModalSheetContent(context, title: "Notification", widgets: [
+                NotificationSettings()
+              ]);
             },
           ),
           SettingsDivider(),
@@ -270,8 +265,6 @@ class AppSettingsSection extends StatelessWidget {
             icon: CupertinoIcons.moon_fill,
             title: 'Dark Mode',
             trailing: MySwitch(
-              // value: darkMode,
-              // onChanged: onDarkModeChanged,
               value: h.isDarkTheme,
               onChanged: (value) {
                 h.nextTheme();
