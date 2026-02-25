@@ -90,7 +90,7 @@ class TopicChip extends StatelessWidget {
       labelPadding: EdgeInsets.zero,
       label: Text(
         topic.toCapitalized(),
-        style: h.currentTextTheme.titleSmall?.copyWith(
+        style: h.currentTextTheme.bodyMedium?.copyWith(
           color: colors.getTextColor(state),
           fontWeight: FontWeight.w500,
         ),

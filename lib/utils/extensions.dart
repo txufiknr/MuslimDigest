@@ -38,7 +38,7 @@ extension NullableStringExtension on String? {
 }
 
 extension WidgetExtension on Widget {
-  Widget fullWidth([bool enable = true]) => enable ? SizedBox(width: double.infinity, child: this) : this;
+  // Widget fullWidth([bool enable = true]) => enable ? SizedBox(width: double.infinity, child: this) : this;
   Widget moveTo(Offset offset) => Transform.translate(offset: offset, child: this);
   Widget moveIt(double x, double y) => moveTo(Offset(x, y));
   Widget moveX(double x) => moveTo(Offset(x, 0));
@@ -54,6 +54,7 @@ extension WidgetExtension on Widget {
   Widget expand() => Expanded(child: this);
   Widget fill() => Positioned.fill(child: this);
   Widget flexible() => Flexible(child: this);
+  Widget fullWidth() => sized(width: double.infinity);
   Widget hero(String tag) => Hero(tag: tag, child: this);
   Widget ignore([bool ignoring = true]) => IgnorePointer(ignoring: ignoring, child: this,);
   Widget invisible([bool hide = true]) => Visibility(

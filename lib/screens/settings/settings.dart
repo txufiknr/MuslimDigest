@@ -16,6 +16,7 @@ import 'package:muslimdigest/utils/format.dart';
 import 'package:muslimdigest/utils/functions.dart';
 import 'package:muslimdigest/variables/app.dart';
 import 'package:muslimdigest/utils/helpers.dart';
+import 'package:muslimdigest/variables/user.dart';
 import 'package:muslimdigest/widgets/components/button.dart';
 import 'package:muslimdigest/widgets/components/logo.dart';
 import 'package:muslimdigest/widgets/components/icon_button.dart';
@@ -85,6 +86,12 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                     title: 'App Settings',
                     child: AppSettingsSection(
                       onResetData: _showResetDataDialog,
+                      onNotificationSettings: () async {
+                        await showBottomModalSheetContent(context, title: "Notification", widgets: [
+                          NotificationSettings()
+                        ]);
+                        setState(() {});
+                      },
                     ),
                   ),
                   const SizedBox(height: 24),
@@ -238,10 +245,12 @@ class PersonalSettingsSection extends ConsumerWidget {
 
 class AppSettingsSection extends StatelessWidget {
   final VoidCallback onResetData;
+  final VoidCallback onNotificationSettings;
   
   const AppSettingsSection({
     super.key,
     required this.onResetData,
+    required this.onNotificationSettings,
   });
 
   @override
@@ -254,11 +263,8 @@ class AppSettingsSection extends StatelessWidget {
           SettingsTile(
             icon: CupertinoIcons.bell_fill,
             title: 'Notifications',
-            onTap: () {
-              showBottomModalSheetContent(context, title: "Notification", widgets: [
-                NotificationSettings()
-              ]);
-            },
+            value: PrefData.notificationType.name.toCapitalized(),
+            onTap: onNotificationSettings,
           ),
           SettingsDivider(),
           SettingsTile(
@@ -316,6 +322,7 @@ class SettingsTile extends StatelessWidget {
   final IconData icon;
   final String title;
   final Widget? trailing;
+  final String? value;
   final VoidCallback? onTap;
   final int? total;
   
@@ -324,6 +331,7 @@ class SettingsTile extends StatelessWidget {
     required this.icon,
     required this.title,
     this.trailing,
+    this.value,
     this.onTap,
     this.total,
   });
@@ -371,6 +379,13 @@ class SettingsTile extends StatelessWidget {
               ),
             )
           ),
+          if (value != null) Text(
+            value!,
+            textAlign: TextAlign.right,
+            style: h.currentTextTheme.bodyMedium?.copyWith(
+              color: Colors.white.withValues(alpha: 0.7),
+            ),
+          ).withPadding(right: 4),
           trailing ?? Icon(
             Icons.chevron_right,
             color: Colors.white.withValues(alpha: 0.7),

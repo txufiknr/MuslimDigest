@@ -109,6 +109,7 @@ class AppRepository {
       return false;
     }
     final results = await Future.wait<bool>([
+      _ref.read(userProvider.notifier).load(),
       _ref.read(feedLikedProvider.notifier).load(),
       _ref.read(feedSavedProvider.notifier).load(),
     ]);

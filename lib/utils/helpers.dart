@@ -7,8 +7,7 @@ class MyHelper {
   
   // Screen dimensions
   MediaQueryData get mediaQuery => MediaQuery.of(context);
-  // EdgeInsets get viewInsets => EdgeInsets.fromViewPadding(View.of(context).viewInsets, View.of(context).devicePixelRatio);
-  EdgeInsets get viewInsets => mediaQuery.viewInsets;
+  EdgeInsets get viewInsets => EdgeInsets.fromViewPadding(View.of(context).viewInsets, View.of(context).devicePixelRatio);
   double get screenWidth => mediaQuery.size.width;
   double get screenHeight => mediaQuery.size.height;
   double get viewInsetsBottom => viewInsets.bottom;

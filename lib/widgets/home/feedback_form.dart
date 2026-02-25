@@ -47,111 +47,92 @@ class _FeedbackFormState extends State<FeedbackForm> {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        // Feedback type selection
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Feedback Type',
-              style: h.currentTheme.textTheme.labelMedium,
-            ),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: FeedbackCategory.values.map((type) {
-                final isSelected = _selectedCategory == type;
-                return ChoiceChip(
-                  label: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        type.icon,
-                        size: AppThemes.iconMediumSize,
-                        color: isSelected ? Colors.white : AppColors.textSecondaryLight,
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        type.label,
-                        style: h.currentTheme.textTheme.bodyMedium?.copyWith(
-                          color: isSelected ? Colors.white : AppColors.textSecondaryLight,
-                          fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                        ),
-                      ),
-                    ],
-                  ),
-                  selected: isSelected,
-                  onSelected: (selected) {
-                    if (selected) {
-                      setState(() => _selectedCategory = type);
-                    }
-                  },
-                  backgroundColor: AppColors.backgroundLight,
-                  selectedColor: AppColors.accent,
-                  // side: BorderSide(
-                  //   color: isSelected ? AppColors.accent : AppColors.textSecondaryLight.withValues(alpha: 0.3),
-                  // ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(AppThemes.buttonRadius),
-                  ),
-                  padding: EdgeInsets.zero,
-                  visualDensity: VisualDensity.compact,
-                  // padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                );
-              }).toList(),
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 8),
+        Text('Message', style: h.currentTheme.textTheme.labelMedium).left(),
+        const SizedBox(height: 8),
         
         // Message input
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Message',
-              style: h.currentTheme.textTheme.labelMedium,
+        Container(
+          decoration: BoxDecoration(
+            color: AppColors.backgroundLight,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: AppColors.textSecondaryLight.withValues(alpha: 0.3)),
+          ),
+          child: TextField(
+            controller: _textController,
+            maxLines: 5,
+            minLines: 3,
+            style: h.currentTheme.textTheme.bodyMedium,
+            decoration: InputDecoration(
+              hintText: 'Share your thoughts, suggestions, or report issues...',
+              hintStyle: h.hintStyle,
+              border: InputBorder.none,
+              contentPadding: EdgeInsets.all(16),
             ),
-            const SizedBox(height: 8),
-            Container(
-              decoration: BoxDecoration(
-                color: AppColors.backgroundLight,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.textSecondaryLight.withValues(alpha: 0.3)),
-              ),
-              child: TextField(
-                controller: _textController,
-                maxLines: 5,
-                minLines: 3,
-                style: h.currentTheme.textTheme.bodyMedium,
-                decoration: const InputDecoration(
-                  hintText: 'Share your thoughts, suggestions, or report issues...',
-                  border: InputBorder.none,
-                  contentPadding: EdgeInsets.all(16),
-                ),
-              ),
-            ),
-          ],
+          ),
         ),
+
         const SizedBox(height: 16),
+
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: FeedbackCategory.values.map((type) {
+            final isSelected = _selectedCategory == type;
+            return ChoiceChip(
+              showCheckmark: false,
+              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              padding: EdgeInsets.zero,
+              visualDensity: VisualDensity.compact,
+              label: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    type.icon,
+                    size: AppThemes.iconMediumSize,
+                    color: isSelected ? Colors.white : AppColors.textSecondaryLight,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    type.label,
+                    style: h.currentTheme.textTheme.bodyMedium?.copyWith(
+                      color: isSelected ? Colors.white : AppColors.textSecondaryLight,
+                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                ],
+              ),
+              selected: isSelected,
+              onSelected: (selected) {
+                if (selected) {
+                  setState(() => _selectedCategory = type);
+                }
+              },
+              backgroundColor: AppColors.backgroundLight,
+              selectedColor: AppColors.accent,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppThemes.buttonRadius),
+              ),
+            );
+          }).toList(),
+        ).fullWidth(),
+    
+        SizedBox(height: 32,),
         
         // Action buttons
-        Row(
-          children: [
-            MyButton(
-              text: "Send ${_selectedCategory.label}",
-              icon: Icon(CupertinoIcons.paperplane),
-              onPressed: _submit,
-            ).expand(),
-            const SizedBox(width: 12),
-            MyButton(
-              text: "Cancel",
-              outlined: true,
-              onPressed: context.pop,
-            ).expand(),
-          ],
+        MyButton(
+          text: "Send Feedback",
+          icon: Icon(CupertinoIcons.paperplane),
+          onPressed: _submit,
+        ),
+        const SizedBox(height: 12),
+        MyButton(
+          text: "Cancel",
+          outlined: true,
+          onPressed: context.pop,
         ),
       ],
-    ).withPaddingAll(AppThemes.contentPadding);
+    );
   }
 }

@@ -40,7 +40,7 @@ Future<dynamic> showBottomModalSheet(BuildContext context, List<Widget> widgets,
     builder: (BuildContext context) {
       return Padding(
         padding: EdgeInsets.all(AppThemes.contentPadding).copyWith(
-          bottom: h.viewInsetsBottom + AppThemes.contentPadding,
+          bottom: h.viewInsetsBottom + AppThemes.contentPadding * 2,
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -70,7 +70,10 @@ Future<dynamic> showBottomModalSheetContent(BuildContext context, {required Stri
   return showBottomModalSheet(context, [
     Text(title, textAlign: TextAlign.left, style: h.currentTextTheme.titleLarge,).left(),
     MyDivider().withPaddingVertical(12),
-    ...widgets,
+    SingleChildScrollView(
+      padding: EdgeInsets.zero,
+      child: widgets.length == 1 ? widgets.first : Column(mainAxisSize: MainAxisSize.min, children: widgets),
+    ).fullWidth().flexible(),
   ], isDismissible: isDismissible);
 }
 

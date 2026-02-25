@@ -22,7 +22,7 @@ class MyPopupMenu extends StatelessWidget {
       tooltip: 'More actions',
       padding: EdgeInsets.zero,
       position: PopupMenuPosition.over,
-      offset: Offset(0, -200),
+      offset: Offset(0, -160),
       popUpAnimationStyle: AnimationStyle.noAnimation,
       icon: icon,
       color: h.currentTheme.colorScheme.surface,
