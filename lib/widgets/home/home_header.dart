@@ -20,7 +20,6 @@ import 'package:muslimdigest/providers/user/preferences.dart';
 import 'package:muslimdigest/variables/feed.dart' show FeedType;
 import 'package:muslimdigest/widgets/components/button.dart';
 import 'package:muslimdigest/widgets/components/card.dart';
-import 'package:muslimdigest/widgets/components/divider.dart';
 import '../components/icon_button.dart';
 
 const TAB_HEIGHT = AppThemes.buttonHeight;
@@ -109,9 +108,7 @@ class _HomeHeaderState extends ConsumerState<HomeHeader> {
     final streakMessage = isStreakAlive ? "You’ve been learning for ${formatNumber(currentStreak)} days in a row 🌱" : "Let’s start a fresh reading rhythm 🌱";
     final streakHint = isStreak ? "Come back tomorrow for another streak." : "Read ${DAILY_READ_TARGET - readCount} more for next streak!";
 
-    await showBottomModalSheet(context, [
-      Text("Reading Streak", textAlign: TextAlign.left, style: h.currentTextTheme.titleLarge,).left(),
-      MyDivider().withPaddingVertical(12),
+    await showBottomModalSheetContent(context, title: "Reading Streak", widgets: [
       Text("$GREETINGS, $firstName. $streakMessage", style: h.currentTextTheme.bodyMedium,),
       StreaksCard().withPaddingVertical(16),
       Text(streakHint, style: h.currentTextTheme.bodyMedium?.copyWith(fontSize: 15, fontStyle: FontStyle.italic),),
@@ -126,6 +123,7 @@ class _HomeHeaderState extends ConsumerState<HomeHeader> {
     final trendingCount = ref.watch(feedTrendingProvider).total;
     final isTrending = widget.feedType == FeedType.trending;
     final homeFeedType = ref.watch(userProvider.notifier).homeFeedType;
+    final activeHomeFeedType = widget.feedType.isHomeFeed ? widget.feedType : homeFeedType;
 
     return Container(
       height: TAB_HEIGHT,
@@ -161,10 +159,9 @@ class _HomeHeaderState extends ConsumerState<HomeHeader> {
 
               // Home feed
               _TopicTab(
-                title: homeFeedType.label,
-                icon: homeFeedType.icon,
-                // isSelected: _currentTopic == null && !isTrending,
-                isSelected: widget.feedType == homeFeedType,
+                title: activeHomeFeedType.label,
+                icon: activeHomeFeedType.icon,
+                isSelected: widget.feedType == activeHomeFeedType,
                 onTap: widget.onSeeHome,
               ),
 

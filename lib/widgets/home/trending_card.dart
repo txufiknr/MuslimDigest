@@ -66,7 +66,7 @@ class _TrendingFeedsCardState extends ConsumerState<TrendingFeedsCard> {
                 onTap: () => _read(feedItem),
                 child: ListView(
                   children: [
-                    Text(feedItem.title, textAlign: TextAlign.center, style: h.currentTextTheme.titleSmall,),
+                    Text(feedItem.title, textAlign: TextAlign.center, style: h.currentTextTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),),
                     SizedBox(height: 6,),
                     Text(feedItem.summary, textAlign: TextAlign.center, style: h.currentTextTheme.bodySmall,),
                   ],

@@ -87,6 +87,7 @@ class TopicChip extends StatelessWidget {
     return FilterChip(
       materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
       visualDensity: VisualDensity.compact,
+      labelPadding: EdgeInsets.zero,
       label: Text(
         topic.toCapitalized(),
         style: h.currentTextTheme.titleSmall?.copyWith(

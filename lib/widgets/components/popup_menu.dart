@@ -19,12 +19,16 @@ class MyPopupMenu extends StatelessWidget {
     final h = MyHelper(context);
     
     return PopupMenuButton<String>(
+      tooltip: 'More actions',
+      padding: EdgeInsets.zero,
       position: PopupMenuPosition.over,
       offset: Offset(0, -200),
       popUpAnimationStyle: AnimationStyle.noAnimation,
       icon: icon,
       color: h.currentTheme.colorScheme.surface,
       style: ButtonStyle(
+        padding: WidgetStatePropertyAll(EdgeInsets.zero),
+        visualDensity: VisualDensity.compact,
         backgroundColor: WidgetStatePropertyAll(h.currentTheme.colorScheme.surface),
       ),
       shape: h.popupShape,

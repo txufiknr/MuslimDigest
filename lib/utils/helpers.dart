@@ -6,8 +6,12 @@ class MyHelper {
   final BuildContext context;
   
   // Screen dimensions
-  double get screenWidth => MediaQuery.of(context).size.width;
-  double get screenHeight => MediaQuery.of(context).size.height;
+  MediaQueryData get mediaQuery => MediaQuery.of(context);
+  // EdgeInsets get viewInsets => EdgeInsets.fromViewPadding(View.of(context).viewInsets, View.of(context).devicePixelRatio);
+  EdgeInsets get viewInsets => mediaQuery.viewInsets;
+  double get screenWidth => mediaQuery.size.width;
+  double get screenHeight => mediaQuery.size.height;
+  double get viewInsetsBottom => viewInsets.bottom;
 
   // Theme configurations
   AppTheme get appTheme => ThemeProvider.themeOf(context);
@@ -16,6 +20,8 @@ class MyHelper {
   bool get isLightTheme => currentThemeID == Brightness.light.name;
   bool get isDarkTheme => !isLightTheme;
   TextTheme get currentTextTheme => currentTheme.textTheme;
+  TextStyle? get inputStyle => currentTextTheme.bodyMedium;
+  TextStyle? get hintStyle => inputStyle?.copyWith(color: currentTheme.hintColor);
 
   // Theme helpers
   Color pickColor(Color light, Color dark) => isLightTheme ? light : dark;

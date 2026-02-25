@@ -22,7 +22,7 @@ class BaseFeedState {
   bool get isEmpty => items?.isEmpty ?? true;
   bool get isGetting => isEmpty && isLoading;
   bool get isNone => isEmpty && !isLoading;
-  bool get isLoadingMoreData => isLoadingMore;
+  bool get isAvailable => !isEmpty && !isLoading;
   int get total => items?.length ?? 0;
 
   const BaseFeedState({
@@ -59,8 +59,6 @@ class BaseFeedState {
 }
 
 abstract class BaseFeedNotifier extends Notifier<BaseFeedState> {
-  String get cacheKey;
-  
   /// Generate cursor from feed item in format: publishedAt|id
   String? generateCursor(FeedItem? item) {
     if (item == null || item.publishedAt == null) return null;
@@ -74,7 +72,7 @@ abstract class BaseFeedNotifier extends Notifier<BaseFeedState> {
     }
     
     return await loadFromEndpoint(
-      'feed/latest',
+      endpoint,
       queryParams: {
         'cursor': state.nextCursor!,
         'limit': (limit ?? CURSOR_PAGINATION_LIMIT).toString(),
@@ -83,9 +81,12 @@ abstract class BaseFeedNotifier extends Notifier<BaseFeedState> {
     );
   }
   
+  /// Get the endpoint for this feed type - must be implemented by subclasses
+  String get endpoint;
+  
   @override
   BaseFeedState build() {
-    final jsonString = ref.watch(preferencesRepositoryProvider).getString(cacheKey);
+    final jsonString = ref.watch(preferencesRepositoryProvider).getString(endpoint);
     if (jsonString == null) return const BaseFeedState();
     final feedItems = List<FeedItem>.from(List<Map<String, dynamic>>.from(jsonDecode(jsonString)).map(FeedItem.fromJson));
     return BaseFeedState(items: feedItems);
@@ -94,12 +95,12 @@ abstract class BaseFeedNotifier extends Notifier<BaseFeedState> {
   Future<void> setValue(List<FeedItem>? value) async {
     state = state.copyWith(items: value);
     final feedItemsString = value == null ? null : jsonEncode(value.map((item) => item.toJson()).toList());
-    await ref.read(preferencesRepositoryProvider).setString(cacheKey, feedItemsString);
+    await ref.read(preferencesRepositoryProvider).setString(endpoint, feedItemsString);
   }
 
   Future<void> clear() async {
     state = const BaseFeedState();
-    await ref.read(preferencesRepositoryProvider).remove(cacheKey);
+    await ref.read(preferencesRepositoryProvider).remove(endpoint);
   }
 
   Future<void> update(String feedId, {bool? isLiked, bool? isSaved}) async {
@@ -135,7 +136,7 @@ abstract class BaseFeedNotifier extends Notifier<BaseFeedState> {
     
     // Update cached data
     final feedItemsString = updatedItems == null ? null : jsonEncode(updatedItems.map((item) => item.toJson()).toList());
-    await ref.read(preferencesRepositoryProvider).setString(cacheKey, feedItemsString);
+    await ref.read(preferencesRepositoryProvider).setString(endpoint, feedItemsString);
   }
 
   Future<bool> loadFromEndpoint(String endpoint, {Map<String, String>? queryParams, ApiOptions? options, bool isLoadMore = false}) async {
@@ -180,7 +181,6 @@ abstract class BaseFeedNotifier extends Notifier<BaseFeedState> {
         if (endpoint == 'feed') {
           final lastIngestDate = response.result?['lastIngestDate'] as String?;
           if (lastIngestDate != null) {
-            // await ref.read(preferencesRepositoryProvider).setString('ingest_last_date', lastIngestDate);
             await ref.read(ingestLastDateProvider.notifier).setValue(DateTime.parse(lastIngestDate));
           }
         }

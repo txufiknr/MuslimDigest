@@ -1,4 +1,3 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:muslimdigest/config/colors.dart';
@@ -53,7 +52,7 @@ class GenderOption extends StatelessWidget {
           const SizedBox(width: 8),
           Text(
             gender.label,
-            style: h.currentTextTheme.bodyMedium?.copyWith(
+            style: h.inputStyle?.copyWith(
               color: isSelected
                   ? AppColors.primary
                   : h.currentTheme.colorScheme.onSurface,
@@ -136,17 +135,13 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
             ListView(
               children: <Widget>[
                 // Name Field
-                Text(
-                  'Name',
-                  style: h.currentTextTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
+                Text('Name', style: h.currentTextTheme.labelMedium),
             
                 TextFormField(
                   controller: _nameController,
                   decoration: InputDecoration(
                     hintText: 'Enter your name',
+                    hintStyle: h.hintStyle,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                       borderSide: BorderSide(
@@ -169,7 +164,7 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
                     filled: true,
                     fillColor: h.currentTheme.colorScheme.surface,
                   ),
-                  style: h.currentTextTheme.bodyMedium,
+                  style: h.inputStyle,
                   validator: (value) {
                     if (value == null || value.trim().isEmpty) {
                       return 'Please enter your name';
@@ -184,12 +179,7 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
                 const SizedBox(height: 8),
                 
                 // Age Group Field
-                Text(
-                  'Age Group',
-                  style: h.currentTextTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
+                Text('Age Group', style: h.currentTextTheme.labelMedium),
                 
                 Container(
                   width: double.infinity,
@@ -204,13 +194,8 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
                   child: DropdownButtonHideUnderline(
                     child: DropdownButton<String>(
                       value: _selectedAgeGroup,
-                      hint: Text(
-                        'Select age group',
-                        style: h.currentTextTheme.bodyMedium?.copyWith(
-                          color: h.currentTheme.hintColor,
-                        ),
-                      ),
-                      style: h.currentTextTheme.bodyMedium,
+                      hint: Text('Select age group', style: h.hintStyle),
+                      style: h.inputStyle,
                       items: [...USER_AGE_GROUPS, 'Prefer not to say'].map((ageGroup) {
                         return DropdownMenuItem<String>(
                           value: ageGroup,
@@ -230,12 +215,7 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
                 const SizedBox(height: 8),
                 
                 // Gender Field
-                Text(
-                  'Gender',
-                  style: h.currentTextTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
+                Text('Gender', style: h.currentTextTheme.labelMedium),
                 
                 Row(
                   children: [
@@ -294,13 +274,6 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
     setState(() {
       _isDirty = false;
     });
-    showSnackBar(
-      context,
-      'Profile updated successfully',
-      icon: Icon(CupertinoIcons.checkmark_circle_fill, color: AppColors.success),
-      buttons: [
-        TextButton(onPressed: Navigator.of(context).pop, child: Text('Done')),
-      ],
-    );
+    showSnackBarSuccess(context, 'Profile updated successfully');
   }
 }

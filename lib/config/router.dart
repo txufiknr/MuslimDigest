@@ -10,10 +10,12 @@ import '../screens/onboarding/onboarding.dart';
 import '../screens/settings/settings.dart';
 import '../screens/onboarding/welcome.dart';
 import '../variables/feed.dart';
+import '../variables/app.dart';
 
 class AppRouter {
   static final GoRouter router = GoRouter(
     initialLocation: '/splash',
+    observers: [routeObserver],
     routes: [
       GoRoute(
         path: '/splash',

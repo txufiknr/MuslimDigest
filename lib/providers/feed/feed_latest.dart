@@ -9,13 +9,12 @@ final feedLatestProvider = NotifierProvider<FeedLatestNotifier, FeedLatestState>
 
 class FeedLatestNotifier extends BaseFeedNotifier {
   @override
-  String get cacheKey => 'feed/latest';
+  String get endpoint => 'feed/latest';
 
   Future<bool> load({String? topic, int? limit}) async {
     final topicValue = topic ?? ref.read(topicProvider);
-    // * GET feed/latest?cursor=2023-01-01T12:00:00Z|cluster-123&limit=5
     return await loadFromEndpoint(
-      'feed/latest',
+      endpoint,
       queryParams: {
         'limit': (limit ?? CURSOR_PAGINATION_LIMIT).toString(),
         'topic': ?topicValue,
@@ -36,8 +35,9 @@ class FeedLatestNotifier extends BaseFeedNotifier {
     if (cursor == null) return false;
     final topicValue = topic ?? ref.read(topicProvider);
     
+    // * GET feed/latest?cursor=2023-01-01T12:00:00Z|cluster-123&limit=5
     return await loadFromEndpoint(
-      'feed/latest',
+      endpoint,
       queryParams: {
         'cursor': cursor,
         'limit': (limit ?? CURSOR_PAGINATION_LIMIT).toString(),

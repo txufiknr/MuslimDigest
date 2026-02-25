@@ -8,14 +8,33 @@ final feedTrendingProvider = NotifierProvider<FeedTrendingNotifier, FeedTrending
 
 class FeedTrendingNotifier extends BaseFeedNotifier {
   @override
-  String get cacheKey => 'feed/trending';
+  String get endpoint => 'feed/trending';
 
   Future<bool> load({int? limit}) async {
+    return await loadFromEndpoint(endpoint, queryParams: {
+      'limit': (limit ?? CURSOR_PAGINATION_LIMIT).toString(),
+    });
+  }
+  
+  @override
+  Future<bool> loadMore({int? limit}) async {
+    if (!state.hasMore || state.isLoadingMore || state.items == null || state.items!.isEmpty) {
+      return false;
+    }
+    
+    // Generate cursor from the last item
+    final lastItem = state.items!.last;
+    final cursor = generateCursor(lastItem);
+    
+    if (cursor == null) return false;
+    
     return await loadFromEndpoint(
-      'feed/trending',
+      endpoint,
       queryParams: {
+        'cursor': cursor,
         'limit': (limit ?? CURSOR_PAGINATION_LIMIT).toString(),
       },
+      isLoadMore: true,
     );
   }
 }

@@ -8,7 +8,6 @@ import 'package:muslimdigest/config/feeds.dart';
 import 'package:muslimdigest/config/themes.dart';
 import 'package:muslimdigest/models/user.dart';
 import 'package:muslimdigest/providers/read_count.dart';
-import 'package:muslimdigest/providers/read_last_date.dart';
 import 'package:muslimdigest/providers/topic.dart';
 import 'package:muslimdigest/providers/user/settings.dart';
 import 'package:muslimdigest/utils/app.dart';
@@ -16,16 +15,13 @@ import 'package:muslimdigest/utils/app_repository.dart';
 import 'package:muslimdigest/utils/extensions.dart';
 import 'package:muslimdigest/api/feeds.dart';
 import 'package:muslimdigest/utils/functions.dart';
-import 'package:muslimdigest/utils/time.dart';
 import 'package:muslimdigest/variables/feed.dart';
-import 'package:muslimdigest/variables/time.dart';
 import 'package:muslimdigest/widgets/components/button.dart';
 import 'package:muslimdigest/widgets/components/divider.dart';
 import 'package:muslimdigest/widgets/home/feed_card.dart';
 import 'package:muslimdigest/widgets/home/trending_card.dart';
 import '../../widgets/components/placeholder.dart';
 import '../../models/feed.dart';
-import '../../providers/feed/feed_latest.dart';
 
 /// Feed swiper widget for displaying news cards with swipe navigation
 class FeedSwiper extends ConsumerStatefulWidget {
@@ -50,13 +46,9 @@ class FeedSwiperState extends ConsumerState<FeedSwiper> {
   final _readCountStates = <String, int>{};
 
   // Feed type
-  // bool get _isHomeFeed => widget.feedType == _homeFeedType;
   bool get _isDigestFeed => widget.feedType == FeedType.digest;
-  // bool get _isDailyDigest => _isDigestFeed && _currentTopic == null;
-  // bool get _isTopicDigest => _isDigestFeed && _currentTopic != null;
   bool get _isLatestFeed => widget.feedType == FeedType.latest;
   bool get _isTopicFeed => _isLatestFeed && _currentTopic != null;
-  // bool get _isTrendingFeed => widget.feedType == FeedType.trending;
 
   // Feed states
   // TODO: cache feed per type & topic
@@ -88,21 +80,17 @@ class FeedSwiperState extends ConsumerState<FeedSwiper> {
   // Lazy loading
   bool get _shouldTriggerLazyLoad {
     if (_isDigestFeed) return false;
-    // TODO: implement infinity lazy load, except for _isDigestFeed
-
-    if (widget.feedType != FeedType.latest) return false;
     
-    final feedState = ref.read(feedLatestProvider);
+    final feedState = widget.feedType.read(ref);
     if (!feedState.hasMore || feedState.isLoadingMore) return false;
     
-    // Trigger when _currentItemIndex is 3 pages before CURSOR_PAGINATION_LIMIT * _currentPage
-    final threshold = (CURSOR_PAGINATION_LIMIT * _currentPage) - 3;
-    return _currentItemIndex >= threshold && _currentItemIndex < _feedItems.length - 3;
+    final threshold = (CURSOR_PAGINATION_LIMIT * _currentPage) - CURSOR_PAGINATION_TRIGGER;
+    return _currentItemIndex >= threshold && _currentItemIndex < _feedItems.length - CURSOR_PAGINATION_TRIGGER;
   }
 
   Future<void> _triggerLazyLoad() async {
     if (_shouldTriggerLazyLoad) {
-      await ref.read(feedLatestProvider.notifier).loadMore();
+      await widget.feedType.getNotifier(ref).loadMore();
     }
   }
 
@@ -136,13 +124,11 @@ class FeedSwiperState extends ConsumerState<FeedSwiper> {
 
   Future<void> _incrementReadCount(String lastClusterId) async {
     if (widget.feedType == FeedType.digest) {
-      final readLastDate = ref.read(readLastDateProvider) ?? today;
       final readCount = ref.read(readCountProvider);
-      final newCount = isToday(readLastDate) ? (readCount + 1).clamp(0, DAILY_READ_TARGET) : 1;
+      final newCount = (readCount + 1).clamp(0, DAILY_READ_TARGET);
       await Future.wait([
         if (newCount == DAILY_READ_TARGET) logStreak(ref),
         ref.read(readCountProvider.notifier).setValue(newCount),
-        ref.read(readLastDateProvider.notifier).setValue(today),
       ]);
     } else {
       setState(() {
@@ -150,6 +136,14 @@ class FeedSwiperState extends ConsumerState<FeedSwiper> {
           _readCountName: _readCountState + 1,
         });
       });
+
+      // Trigger lazy loading after swipe
+      _triggerLazyLoad();
+    }
+
+    // Request review after 5 swipes every 5 feed items
+    if (_currentItemIndex > 5 && _currentItemIndex % 5 == 0) {
+      requestReview();
     }
     
     // Track reading history to backend
@@ -257,9 +251,6 @@ class FeedSwiperState extends ConsumerState<FeedSwiper> {
 
         // log('[feed] Swiped item: ${previousItem.title}');
         _incrementReadCount(previousItem.cluster.id);
-        
-        // Trigger lazy loading after swipe
-        _triggerLazyLoad();
         
         return true;
       },

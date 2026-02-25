@@ -1,8 +1,11 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:muslimdigest/config/colors.dart';
+import 'package:muslimdigest/config/themes.dart';
 import 'package:muslimdigest/utils/extensions.dart';
 import 'package:muslimdigest/utils/helpers.dart';
 import 'package:muslimdigest/widgets/components/button.dart';
+import 'package:muslimdigest/widgets/components/divider.dart';
 
 /// Configuration class for modal buttons
 class ModalButtonConfig {
@@ -24,18 +27,21 @@ class ModalButtonConfig {
 }
 
 /// Shows a bottom modal sheet
-Future<dynamic> showBottomModalSheet(BuildContext context, List<Widget> widgets) {
+Future<dynamic> showBottomModalSheet(BuildContext context, List<Widget> widgets, {bool isDismissible = true}) {
   final h = MyHelper(context);
 
   return showModalBottomSheet<dynamic>(
     context: context,
+    isScrollControlled: true,
+    isDismissible: isDismissible,
+    backgroundColor: h.currentTheme.colorScheme.surface,
+    shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(AppThemes.modalRadius))),
+    clipBehavior: Clip.antiAlias,
     builder: (BuildContext context) {
-      return Container(
-        decoration: BoxDecoration(
-          color: h.currentTheme.colorScheme.surface,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      return Padding(
+        padding: EdgeInsets.all(AppThemes.contentPadding).copyWith(
+          bottom: h.viewInsetsBottom + AppThemes.contentPadding,
         ),
-        padding: const EdgeInsets.all(24),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.center,
@@ -56,6 +62,16 @@ Future<dynamic> showBottomModalSheet(BuildContext context, List<Widget> widgets)
       );
     },
   );
+}
+
+Future<dynamic> showBottomModalSheetContent(BuildContext context, {required String title, List<Widget> widgets = const [], bool isDismissible = true}) {
+  final h = MyHelper(context);
+
+  return showBottomModalSheet(context, [
+    Text(title, textAlign: TextAlign.left, style: h.currentTextTheme.titleLarge,).left(),
+    MyDivider().withPaddingVertical(12),
+    ...widgets,
+  ], isDismissible: isDismissible);
 }
 
 /// Shows a bottom modal sheet with customizable message and buttons
@@ -236,6 +252,17 @@ void showSnackBar(BuildContext context, String message, {Widget? icon, List<Widg
         )
         : null,
     ),
+  );
+}
+
+void showSnackBarSuccess(BuildContext context, String message) {
+  showSnackBar(
+    context,
+    message,
+    icon: Icon(CupertinoIcons.checkmark_circle_fill, color: AppColors.success),
+    buttons: [
+      TextButton(onPressed: () => hideSnackBar(context), child: Text('Done')),
+    ],
   );
 }
 

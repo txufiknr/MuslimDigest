@@ -8,6 +8,7 @@ import 'package:muslimdigest/config/constants.dart';
 import 'package:muslimdigest/config/themes.dart';
 import 'package:muslimdigest/providers/user/user.dart';
 import 'package:muslimdigest/utils/app.dart';
+import 'package:muslimdigest/utils/app_repository.dart';
 import 'package:muslimdigest/utils/dialogs.dart';
 import 'package:muslimdigest/utils/extensions.dart';
 import 'package:muslimdigest/utils/format.dart';
@@ -27,11 +28,14 @@ class SettingsPage extends ConsumerStatefulWidget {
 }
 
 class _SettingsPageState extends ConsumerState<SettingsPage> {
+  AppRepository get r => ref.read(appRepositoryProvider);
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(userProvider.notifier).load();
+      fireAndForget(saveAllData);
+      r.initSettingsData();
     });
   }
 
@@ -120,11 +124,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
 
     if (!mounted) return;
     context.go('/onboarding');
-    showSnackBar(
-      context,
-      'User data reset successfully',
-      icon: Icon(CupertinoIcons.checkmark_circle_fill, color: AppColors.success),
-    );
+    showSnackBarSuccess(context, 'User data reset successfully');
   }
 }
 
@@ -218,9 +218,6 @@ class PersonalSettingsSection extends ConsumerWidget {
           ),
           SettingsDivider(),
           SettingsTile(
-            // icon: CupertinoIcons.square_grid_2x2_fill,
-            // icon: CupertinoIcons.square_fill_on_square_fill,
-            // icon: CupertinoIcons.rectangle_fill_on_rectangle_angled_fill,
             icon: CupertinoIcons.rectangle_3_offgrid_fill,
             title: 'Personalize Feed',
             onTap: () {

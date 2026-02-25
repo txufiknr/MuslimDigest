@@ -1,20 +1,19 @@
 import 'dart:async';
-import 'dart:developer' show log;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:muslimdigest/api/user.dart';
-import 'package:muslimdigest/providers/read_count.dart';
-import 'package:muslimdigest/providers/read_last_date.dart';
+import 'package:muslimdigest/models/user.dart';
 import 'package:muslimdigest/providers/topic.dart';
+import 'package:muslimdigest/providers/user/preferences.dart';
 import 'package:muslimdigest/utils/app.dart';
 import 'package:muslimdigest/utils/app_repository.dart';
 import 'package:muslimdigest/utils/debounce.dart';
 import 'package:muslimdigest/utils/dialogs.dart';
 import 'package:muslimdigest/utils/extensions.dart';
 import 'package:muslimdigest/utils/functions.dart';
+import 'package:muslimdigest/variables/app.dart';
 import 'package:muslimdigest/variables/feed.dart';
-import 'package:muslimdigest/variables/time.dart';
 import 'package:muslimdigest/widgets/animations/loading_indicator_bar.dart';
 import '../widgets/home/home_header.dart';
 import '../widgets/home/feed_swiper.dart';
@@ -27,13 +26,15 @@ class HomePage extends ConsumerStatefulWidget {
   ConsumerState<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver {
+class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver, RouteAware {
   AppRepository get r => ref.read(appRepositoryProvider);
   bool get _isFeedLoading => _feedType.watch(ref).isLoading;
 
   late final Debounce _topicChangeDebounce = const Duration(milliseconds: 500).debounce;
   late FeedType _feedType;
   var _isWillExit = false;
+
+  UserPreferences? lastUserPreferences;
 
   @override
   void initState() {
@@ -43,14 +44,51 @@ class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       _initReadCount();
-      _loadFeed();
       fireAndForget(saveAllData);
     });
   }
 
   @override
+  void didChangeDependencies() {
+    routeObserver.subscribe(this, ModalRoute.of(context) as PageRoute<dynamic>);
+    super.didChangeDependencies();
+  }
+
+  // RouteAware lifecycle methods - called in sequence during navigation
+  
+  /// Called when this route is pushed onto the navigator.
+  @override
+  void didPush() {
+    debugPrint('HOME onStart - Page pushed onto navigator');
+  }
+
+  /// Called when a new route is pushed on top of this route.
+  @override
+  void didPushNext() {
+    debugPrint('HOME onPause - Away from this page to another page');
+    lastUserPreferences = ref.read(preferencesProvider);
+  }
+
+  /// Called when the top route is popped and this route becomes visible again.
+  @override
+  void didPopNext() {
+    debugPrint('HOME onResume - Returning to this page from another page');
+    final userPreferences = ref.read(preferencesProvider);
+    if (userPreferences != lastUserPreferences) {
+      _initReadCount(force: true);
+    }
+  }
+
+  /// Called when this route is popped from the navigator.
+  @override
+  void didPop() {
+    debugPrint('HOME onStop - Page is completely removed');
+  }
+
+  @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    routeObserver.unsubscribe(this);
     _topicChangeDebounce.dispose();
     super.dispose();
   }
@@ -62,7 +100,6 @@ class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver
       fireAndForget(saveAllData);
     } else if (state == AppLifecycleState.resumed) {
       _initReadCount();
-      _loadFeed();
     }
   }
 
@@ -71,7 +108,11 @@ class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver
     setState(() {
       _feedType = feedType ?? r.homeFeedType;
     });
-    _loadFeed();
+    if (_feedType == FeedType.digest) {
+      _initReadCount();
+    } else {
+      _loadFeed();
+    }
   }
 
   Future<void> _openFeedLatest() => _openFeed(FeedType.latest);
@@ -82,14 +123,11 @@ class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver
     if (mounted && !success) return _showLoadFeedFailed(() => _loadFeed(topic));
   }
 
-  /// Reset read count if it's a new day
-  void _initReadCount() {
-    if (r.isNewDay) {
-      log("[home] It's a new day, so reset the read count");
-      ref.read(readCountProvider.notifier).setValue(0);
-      ref.read(readLastDateProvider.notifier).setValue(today);
-    } else {
-      log("[home] Welcome back, it's still the same day");
+  /// Reset read count if it's a new daily digest
+  Future<void> _initReadCount({bool force = false}) async {
+    final isCountReset = await r.initReadCount(force: force);
+    if (isCountReset) {
+      _loadFeed();
     }
   }
 

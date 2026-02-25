@@ -10,6 +10,7 @@ class FeedItem {
   final String? topic;
   final String? imageUrl;
   final String? videoUrl;
+  final String? videoTitle;
   final String? riskLevel;
   final DateTime? publishedAt;
   final List<String> sources;
@@ -34,6 +35,7 @@ class FeedItem {
     this.topic,
     this.imageUrl,
     this.videoUrl,
+    this.videoTitle,
     this.riskLevel,
     this.publishedAt,
     this.sources = const [],
@@ -46,6 +48,11 @@ class FeedItem {
     this.likeCount = 0,
   });
 
+  bool get hasVideo => videoUrl != null;
+  bool get hasYouTubeVideo => videoUrl?.contains('youtu') == true;
+
+  // Display labels on feed card
+  String get displayTitle => hasVideo ? (videoTitle ?? title) : title;
   String get sourceLabel => source.siteName ?? source.id;
   String? get sourceLink => canonicalUrl ?? sourceUrl;
 
@@ -68,6 +75,7 @@ class FeedItem {
       topic: json['topic'],
       imageUrl: json['imageUrl'],
       videoUrl: json['videoUrl'],
+      videoTitle: json['videoTitle'],
       riskLevel: json['riskLevel'],
       publishedAt: json['publishedAt'] == null ? null : DateTime.parse(json['publishedAt']),
       sources: List<String>.from(json['sources'] ?? []),
@@ -94,6 +102,7 @@ class FeedItem {
       'topic': topic,
       'imageUrl': imageUrl,
       'videoUrl': videoUrl,
+      'videoTitle': videoTitle,
       'riskLevel': riskLevel,
       'publishedAt': publishedAt?.toIso8601String(),
       'sources': sources,
@@ -119,6 +128,7 @@ class FeedItem {
     String? topic,
     String? imageUrl,
     String? videoUrl,
+    String? videoTitle,
     String? riskLevel,
     DateTime? publishedAt,
     List<String>? sources,
@@ -142,6 +152,7 @@ class FeedItem {
       topic: topic ?? this.topic,
       imageUrl: imageUrl ?? this.imageUrl,
       videoUrl: videoUrl ?? this.videoUrl,
+      videoTitle: videoTitle ?? this.videoTitle,
       riskLevel: riskLevel ?? this.riskLevel,
       publishedAt: publishedAt ?? this.publishedAt,
       sources: sources ?? this.sources,

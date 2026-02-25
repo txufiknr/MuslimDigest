@@ -228,6 +228,21 @@ UserPreferences(
   updatedAt: $updatedAt
 )''';
   }
+
+  @override
+  int get hashCode => 1;
+
+  @override
+  bool operator ==(Object other) => identical(this, other) || (
+    other is UserPreferences &&
+    runtimeType == other.runtimeType &&
+    other.userId == userId &&
+    other.topics == topics &&
+    other.madhahib == madhahib &&
+    other.sources == sources &&
+    other.avoidedTopics == avoidedTopics &&
+    other.avoidedSources == avoidedSources
+  );
 }
 
 class UserSettings {
@@ -292,4 +307,16 @@ UserSettings(
   updatedAt: $updatedAt
 )''';
   }
+
+  @override
+  int get hashCode => 1;
+
+  @override
+  bool operator ==(Object other) => identical(this, other) || (
+    other is UserSettings &&
+    runtimeType == other.runtimeType &&
+    other.userId == userId &&
+    other.textSize == textSize &&
+    other.swipeDirection == swipeDirection
+  );
 }

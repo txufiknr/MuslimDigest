@@ -19,9 +19,11 @@ enum FeedType {
   static FeedType fromString(String name) {
     return FeedType.values.firstWhere(
       (type) => type.name == name,
-      orElse: () => FeedType.digest,
+      orElse: () => digest,
     );
   }
+
+  bool get isHomeFeed => [digest, latest].contains(this);
 
   String get label {
     switch (this) {

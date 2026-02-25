@@ -9,7 +9,7 @@ final feedProvider = NotifierProvider<FeedNotifier, FeedState>(FeedNotifier.new)
 
 class FeedNotifier extends BaseFeedNotifier {
   @override
-  String get cacheKey => 'feed';
+  String get endpoint => 'feed';
 
   Future<bool> load({int? timeoutMs}) async {
     final options = timeoutMs == null ? null : ApiOptions(timeout: Duration(milliseconds: timeoutMs));
@@ -19,7 +19,7 @@ class FeedNotifier extends BaseFeedNotifier {
     };
     
     return await loadFromEndpoint(
-      'feed',
+      endpoint,
       queryParams: queryParams,
       options: options,
     );

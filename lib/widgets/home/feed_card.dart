@@ -3,9 +3,11 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lottie/lottie.dart';
 import 'package:muslimdigest/config/colors.dart';
 import 'package:muslimdigest/config/constants.dart';
+import 'package:muslimdigest/config/settings.dart';
 import 'package:muslimdigest/config/themes.dart';
 import 'package:muslimdigest/providers/feed/base_feed_notifier.dart';
 import 'package:muslimdigest/providers/user/settings.dart';
@@ -171,15 +173,17 @@ class _FeedCardState extends ConsumerState<FeedCard> with AutomaticKeepAliveClie
 }
 
 /// Feed header containing image and title
-class _FeedHeader extends StatelessWidget {
+class _FeedHeader extends ConsumerWidget {
   final FeedItem feedItem;
 
   const _FeedHeader({required this.feedItem});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final h = MyHelper(context);
-    final hasYouTubeVideo = feedItem.videoUrl?.contains('youtu') == true;
+    final hasYouTubeVideo = feedItem.hasYouTubeVideo;
+    final settings = ref.watch(settingsProvider);
+    final textSize = settings.textSize.toDouble();
 
     return ClipRRect(
       borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
@@ -209,15 +213,6 @@ class _FeedHeader extends StatelessWidget {
           
           // YouTube play button
           if (hasYouTubeVideo)
-            // MyIconButton(
-            //   icon: CupertinoIcons.play_circle,
-            //   iconColor: Colors.white,
-            //   iconSize: 64,
-            //   size: 64,
-            //   onPressed: () {
-            //     openUrl(feedItem.videoUrl!);
-            //   },
-            // ).center().fill(),
             Image.asset('assets/images/youtube-play.png', width: 64).onTap(() {
               openUrl(feedItem.videoUrl!);
             }).center().fill(),
@@ -240,8 +235,9 @@ class _FeedHeader extends StatelessWidget {
                 ),
               ),
               child: Text(
-                feedItem.title,
+                feedItem.displayTitle,
                 style: h.currentTextTheme.titleMedium?.copyWith(
+                  fontSize: textSize * TITLE_TEXT_SIZE_MULTIPLIER,
                   color: Colors.white,
                 ),
                 maxLines: 2,
@@ -436,19 +432,44 @@ class _FeedFooter extends ConsumerWidget {
     ).withPaddingAll(AppThemes.contentPadding - 8);
   }
 
+  Future<void> _notInterested(BuildContext context) async {
+    final confirm = await showBottomModalConfirm(
+      context,
+      title: "Not Interested?",
+      message: "Are you sure you are not interested in this feed?",
+      confirmButtonText: "Not Interested",
+      cancelButtonText: "I've changed my mind",
+    );
+    if (!context.mounted || confirm != true) return;
+    showSnackBarSuccess(context, 'Marked as not interested');
+  }
+
+  Future<void> _feedback(BuildContext context) async {
+    final result = await showBottomModalSheetContent(context, title: "Send Feedback", widgets: [
+
+      // TODO: extract this into separate FeedbackForm widget:
+      Column(mainAxisSize: MainAxisSize.min, children: <Widget>[
+        // TODO: add text input for feedback message (multiline)
+        MyButton(text: "Feedback", icon: Icon(CupertinoIcons.paperplane), onPressed: () => context.pop(true)),
+        MyButton(text: "Cancel", outlined: true, onPressed: context.pop),
+      ].addItemInBetween(SizedBox(height: 16))),
+
+    ], isDismissible: false);
+    if (!context.mounted || result != true) return;
+    showSnackBarSuccess(context, 'Your feedback has been sent!');
+  }
+
   void _handleMenuAction(BuildContext context, String action) {
     switch (action) {
       case 'not_interested':
-        // TODO: Implement "Not interested" functionality
-        showSnackBar(context, 'Marked as not interested');
+        _notInterested(context);
         break;
       case 'dont_recommend_source':
         // TODO: Implement "Don't recommend source" functionality
         showSnackBar(context, "Won't recommend this source");
         break;
       case 'send_feedback':
-        // TODO: Implement "Send feedback" functionality
-        showSnackBar(context, 'Feedback form opened');
+        _feedback(context);
         break;
       case 'report':
         // TODO: Implement "Report" functionality
