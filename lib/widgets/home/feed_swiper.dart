@@ -9,6 +9,7 @@ import 'package:muslimdigest/config/colors.dart';
 import 'package:muslimdigest/config/feeds.dart';
 import 'package:muslimdigest/config/themes.dart';
 import 'package:muslimdigest/models/user.dart';
+import 'package:muslimdigest/providers/feed_type.dart';
 import 'package:muslimdigest/providers/read_count.dart';
 import 'package:muslimdigest/providers/topic.dart';
 import 'package:muslimdigest/providers/user/settings.dart';
@@ -32,13 +33,11 @@ class FeedSwiper extends ConsumerStatefulWidget {
   final VoidCallback onReload;
   final VoidCallback onSeeLatest;
   final VoidCallback onSeeHome;
-  final FeedType feedType;
   
   const FeedSwiper({super.key, 
     required this.onReload,
     required this.onSeeLatest,
     required this.onSeeHome,
-    required this.feedType,
   });
 
   @override
@@ -51,13 +50,15 @@ class FeedSwiperState extends ConsumerState<FeedSwiper> {
   Map<String, int> get _readCountStates => PrefData.readCountStates;
 
   // Feed type
-  bool get _isDigestFeed => widget.feedType == FeedType.digest;
-  bool get _isLatestFeed => widget.feedType == FeedType.latest;
+  FeedType get _feedType => ref.watch(feedTypeProvider);
+
+  bool get _isDigestFeed => _feedType == FeedType.digest;
+  bool get _isLatestFeed => _feedType == FeedType.latest;
   bool get _isTopicFeed => _isLatestFeed && _currentTopic != null;
 
   // Feed states
-  List<FeedItem> get _feedItems => widget.feedType.watchItems(ref);
-  bool get _isFeedLoading => widget.feedType.watch(ref).isLoading;
+  List<FeedItem> get _feedItems => _feedType.watchItems(ref);
+  bool get _isFeedLoading => _feedType.watch(ref).isLoading;
   int get _readCount => ref.watch(readCountProvider);
   FeedType get _homeFeedType => ref.read(appRepositoryProvider).homeFeedType;
   String? get _currentTopic => ref.watch(topicProvider);
@@ -66,7 +67,7 @@ class FeedSwiperState extends ConsumerState<FeedSwiper> {
     : _feedItems.length;
 
   // Read state
-  String get _readCountName => _isTopicFeed ? _currentTopic! : widget.feedType.name;
+  String get _readCountName => _isTopicFeed ? _currentTopic! : _feedType.name;
   int get _readCountState => _readCountStates[_readCountName] ?? 0;
   int get _currentItemIndex => _isDigestFeed ? _readCount : _readCountState;
   int get _initialItemIndex => _cardsCount == 0 ? 0 : _currentItemIndex.clamp(0, _cardsCount - 1);
@@ -85,7 +86,7 @@ class FeedSwiperState extends ConsumerState<FeedSwiper> {
   bool get _shouldTriggerLazyLoad {
     if (_isDigestFeed) return false;
     
-    final feedState = widget.feedType.read(ref);
+    final feedState = _feedType.read(ref);
     if (!feedState.hasMore || feedState.isLoadingMore) return false;
     
     final threshold = (CURSOR_PAGINATION_LIMIT * _currentPage) - CURSOR_PAGINATION_TRIGGER;
@@ -94,31 +95,31 @@ class FeedSwiperState extends ConsumerState<FeedSwiper> {
 
   Future<void> _triggerLazyLoad() async {
     if (_shouldTriggerLazyLoad) {
-      await widget.feedType.getNotifier(ref).loadMore();
+      await _feedType.getNotifier(ref).loadMore();
     }
   }
 
-  @override
-  void didUpdateWidget(covariant FeedSwiper oldWidget) {
-    if (oldWidget.feedType != widget.feedType) {
-      // Reset initialIndex to 0 when feed type changes
-      // Note: initialIndex is not directly accessible on CardSwiperController
-      // We'll handle this by rebuilding the swiper with new key
-      final feedTotal = widget.feedType.readItems(ref).length;
-      debugPrint("Resetting swiper to index 0");
-      debugPrint("current feedType: ${widget.feedType.label}");
-      debugPrint("current feedType length: $feedTotal");
-      if (feedTotal > 0) {
-        debugPrint("first feed: ${widget.feedType.readItems(ref).first.title}");
-      }
-      debugPrint("cardsCount: $_cardsCount");
-      debugPrint("initialIndex: $_initialItemIndex");
-      // setState(() {
-      //   _controller.moveTo(_initialItemIndex);
-      // });
-    }
-    super.didUpdateWidget(oldWidget);
-  }
+  // @override
+  // void didUpdateWidget(covariant FeedSwiper oldWidget) {
+  //   if (oldWidget.feedType != widget.feedType) {
+  //     // Reset initialIndex to 0 when feed type changes
+  //     // Note: initialIndex is not directly accessible on CardSwiperController
+  //     // We'll handle this by rebuilding the swiper with new key
+  //     final feedTotal = widget.feedType.readItems(ref).length;
+  //     debugPrint("Resetting swiper to index 0");
+  //     debugPrint("current feedType: ${widget.feedType.label}");
+  //     debugPrint("current feedType length: $feedTotal");
+  //     if (feedTotal > 0) {
+  //       debugPrint("first feed: ${widget.feedType.readItems(ref).first.title}");
+  //     }
+  //     debugPrint("cardsCount: $_cardsCount");
+  //     debugPrint("initialIndex: $_initialItemIndex");
+  //     // setState(() {
+  //     //   _controller.moveTo(_initialItemIndex);
+  //     // });
+  //   }
+  //   super.didUpdateWidget(oldWidget);
+  // }
 
   @override
   void dispose() {
@@ -127,7 +128,7 @@ class FeedSwiperState extends ConsumerState<FeedSwiper> {
   }
 
   Future<void> _incrementReadCount(String lastClusterId) async {
-    if (widget.feedType == FeedType.digest) {
+    if (_isDigestFeed) {
       final readCount = ref.read(readCountProvider);
       final newCount = (readCount + 1).clamp(0, DAILY_READ_TARGET);
       await Future.wait([
@@ -155,21 +156,34 @@ class FeedSwiperState extends ConsumerState<FeedSwiper> {
   }
 
   Future<void> _decreaseReadCount() async {
-    if (widget.feedType == FeedType.digest) {
+    if (_isDigestFeed) {
       final readCount = ref.read(readCountProvider);
       if (readCount == 0) return;
       await ref.read(readCountProvider.notifier).setValue(readCount - 1);
     } else if (_readCountState > 0) {
-      setState(() {
-        _readCountStates.addAll({
-          _readCountName: _readCountState - 1,
-        });
+      final newReadCountStates = Map<String, int>.from(_readCountStates)..addAll({
+        _readCountName: _readCountState - 1,
       });
+      await prefs.setString('read_count_states', jsonEncode(newReadCountStates));
+      setState(() {});
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    // Listen for topic changes and trigger load feed with debounce
+    ref.listen<FeedType>(feedTypeProvider, (previous, next) {
+      if (!mounted || previous == next) return;
+      final feedTotal = next.readItems(ref).length;
+      debugPrint("current feedType: ${next.label}");
+      debugPrint("current feedType length: $feedTotal");
+      if (feedTotal > 0) {
+        debugPrint("first feed: ${next.readItems(ref).first.title}");
+      }
+      debugPrint("cardsCount: $_cardsCount");
+      debugPrint("initialIndex: $_initialItemIndex");
+    });
+
     // Check for lazy loading trigger
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _triggerLazyLoad();
@@ -196,7 +210,7 @@ class FeedSwiperState extends ConsumerState<FeedSwiper> {
             onRetry: widget.onReload,
             retryLabel: "Reload",
           ).center().expand(),
-          if (widget.feedType != _homeFeedType) ...[
+          if (_feedType != _homeFeedType) ...[
             MyDivider().withPaddingVertical(AppThemes.contentPadding),
             MyButton(
               text: "Back to ${_homeFeedType.label}",
@@ -226,7 +240,7 @@ class FeedSwiperState extends ConsumerState<FeedSwiper> {
       cardsCount: _cardsCount,
       cardBuilder: (context, index, percentThresholdX, percentThresholdY) {
         return FeedCard(
-          widget.feedType,
+          _feedType,
           feedItem: _isDigestFeed && index == DAILY_READ_TARGET ? null : _feedItems[index],
           onSeeLatest: widget.onSeeLatest,
         );

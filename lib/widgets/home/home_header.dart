@@ -8,6 +8,7 @@ import 'package:muslimdigest/config/feeds.dart';
 import 'package:muslimdigest/config/themes.dart';
 import 'package:muslimdigest/models/user.dart';
 import 'package:muslimdigest/providers/feed/feed_trending.dart';
+import 'package:muslimdigest/providers/feed_type.dart';
 import 'package:muslimdigest/providers/read_count.dart';
 import 'package:muslimdigest/providers/user/streaks.dart';
 import 'package:muslimdigest/providers/topic.dart';
@@ -32,12 +33,10 @@ final topicKeysProvider = Provider<List<GlobalKey>>((ref) {
 
 /// Header widget for the home page containing hamburger menu and topic tabs
 class HomeHeader extends ConsumerStatefulWidget {
-  final FeedType feedType;
   final VoidCallback onSeeTrending;
   final VoidCallback onSeeHome;
   const HomeHeader({
     super.key,
-    required this.feedType,
     required this.onSeeTrending,
     required this.onSeeHome,
   });
@@ -120,10 +119,11 @@ class _HomeHeaderState extends ConsumerState<HomeHeader> {
   @override
   Widget build(BuildContext context) {
     final h = MyHelper(context);
+    final feedType = ref.watch(feedTypeProvider);
     final trendingCount = ref.watch(feedTrendingProvider).total;
-    final isTrending = widget.feedType == FeedType.trending;
+    final isTrending = feedType == FeedType.trending;
     final homeFeedType = ref.watch(userProvider.notifier).homeFeedType;
-    final activeHomeFeedType = widget.feedType.isHomeFeed ? widget.feedType : homeFeedType;
+    final activeHomeFeedType = feedType.isHomeFeed ? feedType : homeFeedType;
 
     return Container(
       height: TAB_HEIGHT,
@@ -161,7 +161,7 @@ class _HomeHeaderState extends ConsumerState<HomeHeader> {
               _TopicTab(
                 title: activeHomeFeedType.label,
                 icon: activeHomeFeedType.icon,
-                isSelected: widget.feedType == activeHomeFeedType && _currentTopic == null,
+                isSelected: feedType == activeHomeFeedType && _currentTopic == null,
                 onTap: widget.onSeeHome,
               ),
 

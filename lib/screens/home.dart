@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:muslimdigest/api/user.dart';
 import 'package:muslimdigest/models/user.dart';
+import 'package:muslimdigest/providers/feed_type.dart';
 import 'package:muslimdigest/providers/topic.dart';
 import 'package:muslimdigest/providers/user/preferences.dart';
 import 'package:muslimdigest/utils/app.dart';
@@ -29,9 +30,9 @@ class HomePage extends ConsumerStatefulWidget {
 class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver, RouteAware {
   AppRepository get r => ref.read(appRepositoryProvider);
   bool get _isFeedLoading => _feedType.watch(ref).isLoading;
+  FeedType get _feedType => ref.read(feedTypeProvider);
 
   late final Debounce _topicChangeDebounce = const Duration(milliseconds: 500).debounce;
-  late FeedType _feedType;
   var _isWillExit = false;
 
   UserPreferences? lastUserPreferences;
@@ -57,7 +58,6 @@ class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver
 
   @override
   void initState() {
-    _feedType = r.homeFeedType;
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -119,10 +119,10 @@ class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver
   }
 
   Future<void> _openFeed([FeedType? feedType]) async {
-    await ref.read(topicProvider.notifier).clear();
-    setState(() {
-      _feedType = feedType ?? r.homeFeedType;
-    });
+    await Future.wait([
+      ref.read(topicProvider.notifier).clear(),
+      ref.read(feedTypeProvider.notifier).setValue(feedType ?? r.homeFeedType),
+    ]);
     if (_feedType == FeedType.digest) {
       r.loadUserFeed();
     } else {
@@ -133,18 +133,11 @@ class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver
   Future<void> _openFeedLatest() => _openFeed(FeedType.latest);
   Future<void> _openFeedTrending() => _openFeed(FeedType.trending);
 
-  Future<void> _loadFeed([String? topic]) async {
-    final success = await r.loadFeed(feedType: _feedType, topic: topic);
-    if (mounted && !success) return _showLoadFeedFailed(() => _loadFeed(topic));
+  Future<void> _loadFeed([FeedType? feedType, String? topic]) async {
+    feedType ??= _feedType;
+    final success = await r.loadFeed(feedType: feedType, topic: topic);
+    if (mounted && !success) return _showLoadFeedFailed(() => _loadFeed(feedType, topic));
   }
-
-  /// Reset read count if it's a new daily digest
-  // Future<void> _initReadCount({bool force = false}) async {
-  //   final isCountReset = await r.initReadCount(force: force);
-  //   if (isCountReset) {
-  //     _loadFeed();
-  //   }
-  // }
 
   Future<void> _showLoadFeedFailed(Future<void> Function() onRetry) async {
     final shouldRetry = await showRetryableError(
@@ -173,11 +166,8 @@ class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver
       // Debounce rapid topic tab switching to prevent excessive API calls
       _topicChangeDebounce.run(() {
         if (!mounted) return;
-        setState(() {
-          // _feedType = next == null ? r.homeFeedType : FeedType.latest;
-          _feedType = FeedType.latest;
-        });
-        _loadFeed(next);
+        ref.read(feedTypeProvider.notifier).setValue(FeedType.latest);
+        _loadFeed(FeedType.latest, next);
       });
     });
 
@@ -203,12 +193,10 @@ class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver
           child: Column(
             children: [
               HomeHeader(
-                feedType: _feedType,
                 onSeeTrending: _openFeedTrending,
                 onSeeHome: _openFeed,
               ),
               FeedSwiper(
-                feedType: _feedType,
                 onReload: _loadFeed,
                 onSeeLatest: _openFeedLatest,
                 onSeeHome: _openFeed,
