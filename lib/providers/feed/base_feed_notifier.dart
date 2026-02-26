@@ -11,6 +11,7 @@ import 'package:muslimdigest/utils/functions.dart';
 import 'package:muslimdigest/api/feeds.dart';
 import 'package:muslimdigest/utils/extensions.dart';
 import 'package:muslimdigest/config/feeds.dart' show CURSOR_PAGINATION_LIMIT;
+import 'package:muslimdigest/utils/feed_cache.dart';
 
 class BaseFeedState {
   final List<FeedItem>? items;
@@ -102,6 +103,10 @@ abstract class BaseFeedNotifier extends Notifier<BaseFeedState> {
   Future<void> clear() async {
     state = const BaseFeedState();
     await ref.read(preferencesRepositoryProvider).remove(endpoint);
+    
+    // Also clear the cache for this endpoint
+    final cache = ref.read(feedCacheProvider);
+    await cache.invalidateAllCacheForEndpoint(endpoint);
   }
 
   Future<void> update(String feedId, {bool? isLiked, bool? isSaved}) async {
@@ -116,15 +121,28 @@ abstract class BaseFeedNotifier extends Notifier<BaseFeedState> {
     int? newLikedCount;
     int? newSavedCount;
 
-    // Fire and forget API calls
+    // Track which operations actually changed state to avoid redundant cache invalidation
+    final List<String> cachesToInvalidate = [];
+    
+    // Fire and forget API calls and track changes
     if (isLiked != null && isLiked != currentItem.isLiked) {
       newLikeCount = isLiked ? currentItem.likeCount + 1 : currentItem.likeCount - 1;
       newLikedCount = isLiked ? currentUser.likedCount + 1 : currentUser.likedCount - 1;
       fireAndForget(() => like(feedId, isLiked));
+      
+      cachesToInvalidate.add('feed/liked');
+      if (endpoint == 'feed') {
+        cachesToInvalidate.add(endpoint);
+      }
     }
     if (isSaved != null && isSaved != currentItem.isSaved) {
       newSavedCount = isSaved ? currentUser.savedCount + 1 : currentUser.savedCount - 1;
       fireAndForget(() => save(feedId, isSaved));
+      
+      cachesToInvalidate.add('feed/saved');
+      if (endpoint == 'feed') {
+        cachesToInvalidate.add(endpoint);
+      }
     }
 
     // Update feed item state
@@ -150,10 +168,35 @@ abstract class BaseFeedNotifier extends Notifier<BaseFeedState> {
     // Update cached data
     final feedItemsString = updatedItems == null ? null : jsonEncode(updatedItems.map((item) => item.toJson()).toList());
     await ref.read(preferencesRepositoryProvider).setString(endpoint, feedItemsString);
+    
+    // Invalidate caches only when actual changes occurred
+    if (cachesToInvalidate.isNotEmpty) {
+      final cache = ref.read(feedCacheProvider);
+      // Use a Set to avoid duplicate invalidations
+      final uniqueCaches = cachesToInvalidate.toSet();
+      for (final cacheKey in uniqueCaches) {
+        await cache.invalidateCache(cacheKey);
+      }
+    }
   }
 
-  Future<bool> loadFromEndpoint(String endpoint, {Map<String, String>? queryParams, ApiOptions? options, bool isLoadMore = false}) async {
-    // TODO: get & set cache with expiration & invalidation
+  Future<bool> loadFromEndpoint(String endpoint, {Map<String, String>? queryParams, ApiOptions? options, bool isLoadMore = false, bool forceRefresh = false}) async {
+    final cache = ref.read(feedCacheProvider);
+    
+    // Try to load from cache first (unless force refresh or load more)
+    if (!forceRefresh && !isLoadMore) {
+      final cachedItems = await cache.getCachedFeed(endpoint, queryParams: queryParams);
+      if (cachedItems != null) {
+        await setValue(cachedItems);
+        // Set pagination state for cached data
+        state = state.copyWith(
+          isLoading: false,
+          isLoadingMore: false,
+          hasMore: true, // Assume more data available for cached content
+        );
+        return true;
+      }
+    }
 
     state = state.copyWith(
       isLoading: !isLoadMore, 
@@ -183,6 +226,11 @@ abstract class BaseFeedNotifier extends Notifier<BaseFeedState> {
         final nextCursor = response.result?['nextCursor'];
         
         await setValue(updatedItems);
+        
+        // Cache the response (only for initial loads, not load more)
+        if (!isLoadMore) {
+          await cache.setCachedFeed(endpoint, updatedItems, queryParams: queryParams);
+        }
         
         // Update pagination state
         state = state.copyWith(

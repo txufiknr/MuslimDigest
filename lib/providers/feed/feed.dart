@@ -11,7 +11,7 @@ class FeedNotifier extends BaseFeedNotifier {
   @override
   String get endpoint => 'feed';
 
-  Future<bool> load({int? timeoutMs}) async {
+  Future<bool> load({int? timeoutMs, bool forceRefresh = false}) async {
     final options = timeoutMs == null ? null : ApiOptions(timeout: Duration(milliseconds: timeoutMs));
     
     final queryParams = <String, String>{
@@ -22,6 +22,7 @@ class FeedNotifier extends BaseFeedNotifier {
       endpoint,
       queryParams: queryParams,
       options: options,
+      forceRefresh: forceRefresh,
     );
   }
 }
