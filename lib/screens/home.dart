@@ -49,7 +49,7 @@ class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver
     if (lastUserPreferences == null) return;
     final userPreferences = ref.read(preferencesProvider);
     if (userPreferences != lastUserPreferences) {
-      _initReadCount(force: true);
+      r.loadUserFeed(force: true);
     }
     lastUserPreferences = null;
     _saveAllData();
@@ -62,7 +62,6 @@ class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver
     WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      _initReadCount();
       _saveAllData();
     });
   }
@@ -115,7 +114,7 @@ class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver
     if (state == AppLifecycleState.inactive) {
       _saveAllData();
     } else if (state == AppLifecycleState.resumed) {
-      _initReadCount();
+      r.loadUserFeed();
     }
   }
 
@@ -125,7 +124,7 @@ class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver
       _feedType = feedType ?? r.homeFeedType;
     });
     if (_feedType == FeedType.digest) {
-      _initReadCount();
+      r.loadUserFeed();
     } else {
       _loadFeed();
     }
@@ -140,12 +139,12 @@ class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver
   }
 
   /// Reset read count if it's a new daily digest
-  Future<void> _initReadCount({bool force = false}) async {
-    final isCountReset = await r.initReadCount(force: force);
-    if (isCountReset) {
-      _loadFeed();
-    }
-  }
+  // Future<void> _initReadCount({bool force = false}) async {
+  //   final isCountReset = await r.initReadCount(force: force);
+  //   if (isCountReset) {
+  //     _loadFeed();
+  //   }
+  // }
 
   Future<void> _showLoadFeedFailed(Future<void> Function() onRetry) async {
     final shouldRetry = await showRetryableError(

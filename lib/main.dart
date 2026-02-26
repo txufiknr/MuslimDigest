@@ -32,6 +32,7 @@ Future<void> main() async {
         'theme', // Theme preference ("dark" or "light")
         'read_last_date', // Last read date (YYYY-MM-DD)
         'read_count', // Daily read count (number)
+        'read_count_states', // Daily read count states (JSON string)
         'settings', // User settings data (JSON string)
         'streaks', // User streaks data (JSON string)
         'feed', // Cached feed items (JSON string)

@@ -7,7 +7,7 @@ import 'package:muslimdigest/utils/app.dart';
 import 'package:muslimdigest/utils/app_repository.dart';
 import 'package:muslimdigest/utils/extensions.dart';
 import 'package:muslimdigest/utils/functions.dart';
-import 'package:muslimdigest/variables/app.dart';
+import 'package:muslimdigest/variables/user.dart';
 import '../../config/colors.dart';
 import '../../widgets/animations/loading_indicator_bar.dart';
 import '../../widgets/components/logo.dart';
@@ -24,16 +24,13 @@ class SplashPage extends ConsumerStatefulWidget {
 
 class _SplashPageState extends ConsumerState<SplashPage> {
   AppRepository get r => ref.read(appRepositoryProvider);
-  final isFirstRun = prefs.getString('user') == null;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      fireAndForget(_loadAppData);
-      fireAndForget(r.initData);
-      unawaited(_startSplash());
+      [_loadAppData, r.initData, r.loadUserFeed, _startSplash].forEach(fireAndForget);
     });
   }
 

@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_card_swiper/flutter_card_swiper.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -15,7 +17,9 @@ import 'package:muslimdigest/utils/app_repository.dart';
 import 'package:muslimdigest/utils/extensions.dart';
 import 'package:muslimdigest/api/feeds.dart';
 import 'package:muslimdigest/utils/functions.dart';
+import 'package:muslimdigest/variables/app.dart';
 import 'package:muslimdigest/variables/feed.dart';
+import 'package:muslimdigest/variables/user.dart';
 import 'package:muslimdigest/widgets/components/button.dart';
 import 'package:muslimdigest/widgets/components/divider.dart';
 import 'package:muslimdigest/widgets/home/feed_card.dart';
@@ -43,7 +47,8 @@ class FeedSwiper extends ConsumerStatefulWidget {
 
 class FeedSwiperState extends ConsumerState<FeedSwiper> {
   final _controller = CardSwiperController();
-  final _readCountStates = <String, int>{};
+  // final _readCountStates = <String, int>{}; // TODO: change to prefs, reset on ingestLastDate update
+  Map<String, int> get _readCountStates => PrefData.readCountStates;
 
   // Feed type
   bool get _isDigestFeed => widget.feedType == FeedType.digest;
@@ -51,7 +56,6 @@ class FeedSwiperState extends ConsumerState<FeedSwiper> {
   bool get _isTopicFeed => _isLatestFeed && _currentTopic != null;
 
   // Feed states
-  // TODO: cache feed per type & topic
   List<FeedItem> get _feedItems => widget.feedType.watchItems(ref);
   bool get _isFeedLoading => widget.feedType.watch(ref).isLoading;
   int get _readCount => ref.watch(readCountProvider);
@@ -131,11 +135,11 @@ class FeedSwiperState extends ConsumerState<FeedSwiper> {
         ref.read(readCountProvider.notifier).setValue(newCount),
       ]);
     } else {
-      setState(() {
-        _readCountStates.addAll({
-          _readCountName: _readCountState + 1,
-        });
+      final newReadCountStates = Map<String, int>.from(_readCountStates)..addAll({
+        _readCountName: _readCountState + 1,
       });
+      await prefs.setString('read_count_states', jsonEncode(newReadCountStates));
+      setState(() {});
 
       // Trigger lazy loading after swipe
       _triggerLazyLoad();

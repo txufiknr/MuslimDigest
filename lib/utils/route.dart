@@ -8,7 +8,7 @@ class MyRouteObserver extends RouteObserver<PageRoute<dynamic>> {
   void _setTitle(String what, PageRoute<dynamic> routeFrom, PageRoute<dynamic> routeTo) {
     final oldScreenName = routeFrom.settings.name;
     final newScreenName = routeTo.settings.name;
-    log("route changed: $what ($oldScreenName -> $newScreenName)");
+    log("📍 Route changed: $oldScreenName -> $newScreenName ($what)");
     currentRoute = newScreenName;
   }
 

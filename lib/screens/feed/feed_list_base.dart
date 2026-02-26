@@ -75,6 +75,10 @@ class _FeedListBasePageState extends ConsumerState<FeedListBasePage> {
     // TODO: saved feed items is initially exists (shown 1 in list), but then immediatelly disappear (show "No saved feeds yet")
     // can you check and fix the issue?
     final state = ref.read(widget.provider);
+
+    debugPrint('[init] state.isLoading: ${state.isLoading}');
+    debugPrint('[init] state.isEmpty: ${state.isEmpty}');
+    debugPrint('[init] state.isNone: ${state.isNone}');
     
     // Only load from API if we have no cached data
     if (state.isEmpty) {
@@ -111,6 +115,10 @@ class _FeedListBasePageState extends ConsumerState<FeedListBasePage> {
   Widget build(BuildContext context) {
     final h = MyHelper(context);
     final state = ref.watch(widget.provider);
+
+    debugPrint('[build] state.isLoading: ${state.isLoading}');
+    debugPrint('[build] state.isEmpty: ${state.isEmpty}');
+    debugPrint('[build] state.isNone: ${state.isNone}');
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,

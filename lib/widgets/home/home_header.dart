@@ -161,7 +161,7 @@ class _HomeHeaderState extends ConsumerState<HomeHeader> {
               _TopicTab(
                 title: activeHomeFeedType.label,
                 icon: activeHomeFeedType.icon,
-                isSelected: widget.feedType == activeHomeFeedType,
+                isSelected: widget.feedType == activeHomeFeedType && _currentTopic == null,
                 onTap: widget.onSeeHome,
               ),
 

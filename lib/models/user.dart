@@ -10,6 +10,7 @@ class User {
   final String? ageGroup;
   final int likedCount;
   final int savedCount;
+  final int readCount;
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
@@ -20,6 +21,7 @@ class User {
     this.ageGroup,
     this.likedCount = 0,
     this.savedCount = 0,
+    this.readCount = 0,
     this.createdAt,
     this.updatedAt,
   });
@@ -42,6 +44,7 @@ class User {
       ageGroup: json['ageGroup'],
       likedCount: json['likedCount'] ?? 0,
       savedCount: json['savedCount'] ?? 0,
+      readCount: json['readCount'] ?? 0,
       createdAt: json['createdAt'] != null ? DateTime.parse(json['createdAt']) : null,
       updatedAt: json['updatedAt'] != null ? DateTime.parse(json['updatedAt']) : null,
     );
@@ -55,6 +58,7 @@ class User {
       'ageGroup': ageGroup,
       'likedCount': likedCount,
       'savedCount': savedCount,
+      'readCount': readCount,
       'createdAt': createdAt?.toIso8601String(),
       'updatedAt': updatedAt?.toIso8601String(),
     };
@@ -66,6 +70,7 @@ class User {
     String? ageGroup,
     int? likedCount,
     int? savedCount,
+    int? readCount,
   }) {
     return User(
       userId: userId,
@@ -74,6 +79,7 @@ class User {
       ageGroup: ageGroup ?? this.ageGroup,
       likedCount: likedCount ?? this.likedCount,
       savedCount: savedCount ?? this.savedCount,
+      readCount: readCount ?? this.readCount,
       createdAt: createdAt,
       updatedAt: updatedAt,
     );
@@ -89,6 +95,7 @@ User(
   ageGroup: $ageGroup,
   likedCount: $likedCount,
   savedCount: $savedCount,
+  readCount: $readCount,
   createdAt: $createdAt,
   updatedAt: $updatedAt
 )''';

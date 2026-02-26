@@ -4,6 +4,7 @@ import 'dart:math' show max;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:muslimdigest/models/feed.dart';
 import 'package:muslimdigest/providers/ingest_last_date.dart';
+import 'package:muslimdigest/providers/user/user.dart';
 import 'package:muslimdigest/services/api.dart';
 import 'package:muslimdigest/utils/repository.dart';
 import 'package:muslimdigest/utils/functions.dart';
@@ -107,20 +108,26 @@ abstract class BaseFeedNotifier extends Notifier<BaseFeedState> {
     final currentItem = state.items?.firstWhere((item) => item.id == feedId);
     if (currentItem == null) return;
 
-    // Calculate new like count
+    // Calculate new like count for feed item
     int? newLikeCount;
-    if (isLiked != null && isLiked != currentItem.isLiked) {
-      newLikeCount = isLiked ? currentItem.likeCount + 1 : currentItem.likeCount - 1;
-    }
+
+    // Calculate new like count for user
+    final currentUser = ref.read(userProvider);
+    int? newLikedCount;
+    int? newSavedCount;
 
     // Fire and forget API calls
     if (isLiked != null && isLiked != currentItem.isLiked) {
+      newLikeCount = isLiked ? currentItem.likeCount + 1 : currentItem.likeCount - 1;
+      newLikedCount = isLiked ? currentUser.likedCount + 1 : currentUser.likedCount - 1;
       fireAndForget(() => like(feedId, isLiked));
     }
     if (isSaved != null && isSaved != currentItem.isSaved) {
+      newSavedCount = isSaved ? currentUser.savedCount + 1 : currentUser.savedCount - 1;
       fireAndForget(() => save(feedId, isSaved));
     }
 
+    // Update feed item state
     final updatedItems = state.items?.map((item) {
       if (item.id == feedId) {
         return item.copyWith(
@@ -133,6 +140,12 @@ abstract class BaseFeedNotifier extends Notifier<BaseFeedState> {
     }).toList();
     
     state = state.copyWith(items: updatedItems);
+
+    // Update user state and cache
+    ref.read(userProvider.notifier).setValue(currentUser.copyWith(
+      likedCount: max(0, newLikedCount ?? currentUser.likedCount),
+      savedCount: max(0, newSavedCount ?? currentUser.savedCount),
+    ));
     
     // Update cached data
     final feedItemsString = updatedItems == null ? null : jsonEncode(updatedItems.map((item) => item.toJson()).toList());
@@ -140,6 +153,8 @@ abstract class BaseFeedNotifier extends Notifier<BaseFeedState> {
   }
 
   Future<bool> loadFromEndpoint(String endpoint, {Map<String, String>? queryParams, ApiOptions? options, bool isLoadMore = false}) async {
+    // TODO: get & set cache with expiration & invalidation
+
     state = state.copyWith(
       isLoading: !isLoadMore, 
       isLoadingMore: isLoadMore, 
@@ -181,7 +196,10 @@ abstract class BaseFeedNotifier extends Notifier<BaseFeedState> {
         if (endpoint == 'feed') {
           final lastIngestDate = response.result?['lastIngestDate'] as String?;
           if (lastIngestDate != null) {
-            await ref.read(ingestLastDateProvider.notifier).setValue(DateTime.parse(lastIngestDate));
+            await Future.wait([
+              ref.read(ingestLastDateProvider.notifier).setValue(DateTime.parse(lastIngestDate)),
+              ref.read(preferencesRepositoryProvider).remove('read_count_states'),
+            ]);
           }
         }
 

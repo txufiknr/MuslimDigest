@@ -106,7 +106,7 @@ class ApiService {
       cleanedBody.remove('createdAt');
       cleanedBody.remove('updatedAt');
       
-      log('[api] POST $baseUrl/$path $cleanedBody');
+      log('🌐 POST /$path $cleanedBody');
 
       // Build headers with common information
       final headers = await _buildHeaders();
@@ -122,7 +122,7 @@ class ApiService {
       final result = jsonDecode(response.body) as Map<String, dynamic>;
 
       // Check for successful HTTP status codes (200 OK or 201 Created)
-      log('[api] POST $baseUrl/$path response status code: ${response.statusCode}');
+      log('🌐 POST /$path response status code: ${response.statusCode}');
       if (response.statusCode == 200 || response.statusCode == 201) {
         // Parse the successful JSON response and return success result
         return ApiResponse(
@@ -167,7 +167,7 @@ class ApiService {
       cleanedBody.remove('createdAt');
       cleanedBody.remove('updatedAt');
       
-      log('[api] PUT $baseUrl/$path $cleanedBody');
+      log('🌐 PUT /$path $cleanedBody');
 
       // Build headers with common information
       final headers = await _buildHeaders();
@@ -182,7 +182,7 @@ class ApiService {
       final result = jsonDecode(response.body) as Map<String, dynamic>;
 
       // Check for successful HTTP status (200 OK for PUT operations)
-      log('[api] PUT /$path response status code: ${response.statusCode}');
+      log('🌐 PUT /$path response status code: ${response.statusCode}');
       if (response.statusCode == 200) {
         // Parse the successful JSON response and return success result
         return ApiResponse(
@@ -222,11 +222,11 @@ class ApiService {
   /// Returns [ApiResponse] with success status, data, or error information
   static Future<ApiResponse> get(String path, {Map<String, String>? queryParams, ApiOptions? options}) async {
     try {
-      log('[api] GET $baseUrl/$path${queryParams != null ? '?${Uri(queryParameters: queryParams).query}' : ''}');
+      log('🌐 GET /$path${queryParams != null ? '?${Uri(queryParameters: queryParams).query}' : ''}');
 
       // Build headers with common information
       final headers = await _buildHeaders();
-      log('[api] GET headers: $headers');
+      log('🌐 GET headers: $headers');
 
       // Construct the full URL with query parameters if provided
       var uri = Uri.parse('$baseUrl/$path');
@@ -243,7 +243,7 @@ class ApiService {
       final result = jsonDecode(response.body) as Map<String, dynamic>;
 
       // Check for successful HTTP status (200 OK for GET operations)
-      log('[api] GET /$path response status code: ${response.statusCode}');
+      log('🌐 GET /$path response status code: ${response.statusCode}');
       if (response.statusCode == 200) {
         // Parse the successful JSON response and return success result
         return ApiResponse(

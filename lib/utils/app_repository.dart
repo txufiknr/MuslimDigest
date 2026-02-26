@@ -17,6 +17,8 @@ import 'package:muslimdigest/utils/app.dart';
 import 'package:muslimdigest/utils/extensions.dart';
 import 'package:muslimdigest/utils/time.dart';
 import 'package:muslimdigest/variables/feed.dart' show FeedType;
+import 'package:muslimdigest/variables/time.dart';
+import 'package:muslimdigest/variables/user.dart';
 
 /// Business-logic repository. Uses Ref, never WidgetRef.
 /// Expose via provider so it can be watched or read anywhere.
@@ -31,10 +33,11 @@ class AppRepository {
   DateTime? get ingestLastDate => _ref.read(ingestLastDateProvider);
   DateTime? get readLastDate => _ref.read(readLastDateProvider);
   int get readCount => _ref.read(readCountProvider);
+  FeedState get feedState => _ref.read(feedProvider);
 
   /// Whether today's digest feed fetch is done or due
-  bool get isDailyDigestUpToDate => ingestLastDate != null && isToday(ingestLastDate!) && _ref.read(feedProvider).isAvailable;
-  bool get shouldFetchDailyDigest => !isDailyDigestUpToDate;
+  bool get isDailyDigestUpToDate => ingestLastDate != null && isToday(ingestLastDate!) && feedState.isAvailable;
+  bool get shouldFetchDailyDigest => !isDailyDigestUpToDate; // && !feedState.isLoading;
 
   /// Digest feed is newer than last read (even though it's not today)
   bool get newDigestFeedAvailable => readLastDate == null || ingestLastDate?.isAfter(readLastDate!) == true;
@@ -53,43 +56,61 @@ class AppRepository {
   /// Reset read count if it's a new daily digest
   Future<bool> initReadCount({bool force = false}) async {
     if (newDigestFeedAvailable || force) {
-      log("[home] It's a new daily digest, so reset the read count");
+      log("[home] 🧾 It's a new daily digest, read count has been reset");
       await Future.wait([
         _ref.read(readCountProvider.notifier).setValue(0),
         _ref.read(readLastDateProvider.notifier).setValue(ingestLastDate),
       ]);
       return true;
     } else {
-      log("[home] Welcome back, it's still the same daily digest");
+      log("[home] 👋 Welcome back, it's still the same daily digest");
       return false;
     }
   }
   
   /// Determine home feed type
-  FeedType get homeFeedType => isDailyDigestDone ? FeedType.latest : FeedType.digest;
+  FeedType get homeFeedType => shouldFetchDailyDigest || !isDailyDigestDone ? FeedType.digest : FeedType.latest;
 
-  Future<bool> loadFeed({FeedType? feedType, String? topic}) async {
+  Future<bool> loadFeed({FeedType? feedType, String? topic, bool force = false}) async {
     feedType ??= homeFeedType;
 
     // Check if we should load the feed
-    if (feedType == FeedType.digest && isDailyDigestUpToDate) {
-      log("[loadFeed] ${feedType.name.toCapitalized()} feed is up to date");
+    if (!force && feedType == FeedType.digest && isDailyDigestUpToDate) {
+      log("[loadFeed] ✅ ${feedType.name.toCapitalized()} feed is up to date");
       return true;
     }
 
     // Check internet connectivity
     if (!await isOnline()) {
-      log("[loadFeed] No internet connection, skipping feed load");
+      log("[loadFeed] ⚠️ No internet connection, skipping feed load");
       return false;
     }
 
     return feedType.loadWithRef(_ref, topic: topic);
   }
 
+  Future<void> loadUserFeed({bool force = false}) async {
+    if (isFirstRun) return;
+    if (!force && !shouldFetchDailyDigest) return;
+    log('[loadUserFeed] isDailyDigestUpToDate: $isDailyDigestUpToDate');
+    log('[loadUserFeed] isDailyDigestDone: $isDailyDigestDone');
+    log('[loadUserFeed] readLastDate: $readLastDate');
+    log('[loadUserFeed] ingestLastDate: $ingestLastDate');
+    log('[loadUserFeed] today: $today');
+    log('[loadUserFeed] isToday(ingestLastDate): ${isToday(ingestLastDate!)}');
+    log('[loadUserFeed] homeFeedType: ${homeFeedType.name}');
+    log('[loadUserFeed] shouldFetchDailyDigest: $shouldFetchDailyDigest');
+    final isFeedLoaded = await loadFeed(force: true);
+    log("[loadUserFeed] ${isFeedLoaded ? '✅ Feed loaded successfully (${homeFeedType.name})' : '❌ Failed to load feed (${homeFeedType.name})'}");
+    if (isFeedLoaded && homeFeedType == FeedType.digest) {
+      await initReadCount(force: true);
+    }
+  }
+
   /// Load initial user and feed data on app launch/resume
   Future<bool> initData() async {
     if (!await isOnline()) {
-      log("[initData] No internet connection, skipping feed load");
+      log("[initData] ⚠️ No internet connection, skipping feed load");
       return false;
     }
     final results = await Future.wait<bool>([
@@ -105,7 +126,7 @@ class AppRepository {
   /// Load initial settings data on navigate to settings
   Future<bool> initSettingsData() async {
     if (!await isOnline()) {
-      log("[initSettingsData] No internet connection, skipping load");
+      log("[initSettingsData] ⚠️ No internet connection, skipping load");
       return false;
     }
     final results = await Future.wait<bool>([

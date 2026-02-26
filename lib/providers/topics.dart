@@ -1,5 +1,3 @@
-import 'dart:developer' show log;
-
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:muslimdigest/services/api.dart';
 import 'package:muslimdigest/utils/repository.dart';
@@ -60,7 +58,7 @@ class TopicsNotifier extends Notifier<TopicsState> {
     try {
       final response = await ApiService.get('topics');
       if (response.successful) {
-        log('[TopicsNotifier] Available topics: ${response.data}');
+        // log('[TopicsNotifier] Available topics: ${response.data}');
         await setValue(List<String>.from(response.data));
         state = state.copyWith(isLoading: false);
         return true;

@@ -1,9 +1,13 @@
 import 'dart:convert';
 
 import 'package:muslimdigest/models/user.dart';
+import 'package:muslimdigest/utils/extensions.dart';
 import 'package:muslimdigest/variables/app.dart';
 import 'package:muslimdigest/variables/settings.dart';
 import 'package:uuid/uuid.dart';
+
+final isFirstRun = prefs.getString('user') == null;
+final isExistingUser = !isFirstRun;
 
 enum Gender {
   male,
@@ -16,8 +20,8 @@ enum Gender {
     }
   }
 
-  static Gender fromString(String name) {
-    return values.firstWhere((e) => e.name == name);
+  static Gender? fromString(String name) {
+    return values.firstWhereOrNull((e) => e.name == name);
   }
 }
 
@@ -26,20 +30,6 @@ class PrefData {
   /// 
   /// This file provides centralized access to user-related data from SharedPreferences
   /// with proper null safety and JSON parsing.
-
-  /// Returns user ID, generating a new one if it doesn't exist
-  /// 
-  /// This ensures a consistent user identifier across app sessions.
-  /// 
-  /// Example:
-  /// ```
-  /// final id = PrefData.userId;
-  /// print('User ID: $id');
-  /// ```
-  // static String get userId {
-  //   final existingUserId = user.userId;
-  //   return existingUserId;
-  // }
 
   /// Returns cached user data from SharedPreferences
   /// 
@@ -127,13 +117,25 @@ class PrefData {
     return DateTime.parse(dateStr);
   }
 
-  // static String? get currentTopic => prefs.getString('topic');
-  // static String? get feedLastIngest => prefs.getString('ingest_last_date');
-  // static DateTime? get feedLastIngestDate => feedLastIngest != null ? DateTime.parse(feedLastIngest!) : null;
-
   static NotificationType get notificationType {
     final value = prefs.getString('notification_type');
     if (value == null) return NotificationType.all;
     return NotificationType.fromString(value);
+  }
+
+  /// Returns cached user read count states from SharedPreferences
+  /// 
+  /// Retrieves stored user read count states and parses them into a map.
+  /// Returns empty map if no states are stored.
+  /// 
+  /// Example:
+  /// ```
+  /// final readCountStates = PrefData.readCountStates;
+  /// print('Read count states: $readCountStates');
+  /// ```
+  static Map<String, int> get readCountStates {
+    final statesString = prefs.getString('read_count_states');
+    if (statesString == null) return {};
+    return jsonDecode(statesString);
   }
 }
