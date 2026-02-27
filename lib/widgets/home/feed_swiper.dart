@@ -14,6 +14,7 @@ import 'package:muslimdigest/providers/read_count.dart';
 import 'package:muslimdigest/providers/read_count_states.dart';
 import 'package:muslimdigest/providers/topic.dart';
 import 'package:muslimdigest/providers/user/settings.dart';
+import 'package:muslimdigest/providers/user/streaks.dart';
 import 'package:muslimdigest/utils/app.dart';
 import 'package:muslimdigest/utils/app_repository.dart';
 import 'package:muslimdigest/utils/extensions.dart';
@@ -286,7 +287,7 @@ class FeedSwiperState extends ConsumerState<FeedSwiper> {
         );
       },
       isDisabled: false,
-      isLoop: false, // TODO: set to true
+      isLoop: false,
       onEnd: requestReview,
       onSwipe: (previousIndex, currentIndex, direction) async {
         // When an undo swipe is detected
@@ -304,6 +305,11 @@ class FeedSwiperState extends ConsumerState<FeedSwiper> {
         // log('[feed] Swiped item: ${previousItem.title}');
 
         _incrementReadCount(previousItem.cluster.id);
+
+        final isStreakToday = ref.read(streaksProvider.notifier).isStreakToday;
+        if (isStreakToday && currentIndex == DAILY_READ_TARGET) {
+          widget.onSeeLatest();
+        }
         
         return true;
       },
