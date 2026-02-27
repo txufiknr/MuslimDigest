@@ -6,12 +6,13 @@ import 'package:muslimdigest/widgets/components/button.dart';
 
 class MyPlaceholder extends StatelessWidget {
   final String text;
+  final Widget? header;
   final String? footer;
   final Widget? icon;
   final VoidCallback? onRetry;
   final String? retryLabel;
   final double? padding;
-  const MyPlaceholder(this.text, {this.padding, this.footer, this.icon, this.onRetry, this.retryLabel, super.key});
+  const MyPlaceholder(this.text, {this.padding, this.header, this.footer, this.icon, this.onRetry, this.retryLabel, super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -21,6 +22,11 @@ class MyPlaceholder extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         ?icon,
+
+        // Header section
+        ?header,
+
+        // Message text
         Text(text, textAlign: TextAlign.center, style: h.currentTextTheme.bodyLarge),
 
         // Footer section

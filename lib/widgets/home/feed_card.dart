@@ -139,7 +139,7 @@ class _FeedCardState extends ConsumerState<FeedCard> with AutomaticKeepAliveClie
     return Container(
       width: double.infinity,
       decoration: h.cardDecoration,
-      padding: isStreakCard || isNotInterested ? EdgeInsets.all(AppThemes.contentPadding) : EdgeInsets.zero,
+      padding: isStreakCard ? EdgeInsets.all(AppThemes.contentPadding) : EdgeInsets.zero,
       child: isStreakCard ? Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         mainAxisAlignment: MainAxisAlignment.center,
@@ -230,8 +230,16 @@ class _NotInterestedPlaceholder extends ConsumerWidget {
       ? Icon(reason!.icon, size: 80, color: AppColors.accent)
       : Icon(CupertinoIcons.hand_thumbsdown, size: 80, color: AppColors.accent);
     
+    final h = MyHelper(context);
     return MyPlaceholder(
       title,
+      header: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          Text(feedItem.displayTitle, textAlign: TextAlign.center, style: h.currentTextTheme.titleSmall,),
+          _FeedFooterSource(feedItem),
+        ].addItemInBetween(SizedBox(height: 8,)),
+      ),
       footer: footer,
       icon: icon,
       onRetry: () => _undo(context, ref),
@@ -510,7 +518,7 @@ class _FeedFooter extends ConsumerWidget {
       log("markNotInterested response: ${response.result}");
       
       if (response.success) {
-        showSnackBarSuccess(context, "Feed removed. We'll show less content like this.");
+        showSnackBarSuccess(context, "Feed hidden. We'll show less content like this.");
 
         // Remove the feed item from the current feed
         final notifier = feedType.getNotifier(ref);

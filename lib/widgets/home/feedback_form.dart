@@ -48,9 +48,7 @@ class _FeedbackFormState extends State<FeedbackForm> {
       mainAxisSize: MainAxisSize.min,
       children: [
         const SizedBox(height: 8),
-        Text('Message', style: h.currentTheme.textTheme.labelMedium).left(),
-        const SizedBox(height: 8),
-        
+
         // Message input
         Container(
           decoration: BoxDecoration(
@@ -65,7 +63,7 @@ class _FeedbackFormState extends State<FeedbackForm> {
             style: h.inputStyleLarge,
             decoration: InputDecoration(
               hintText: 'Share your thoughts, suggestions, or report issues...',
-              // hintStyle: h.hintStyleLarge,
+              hintStyle: h.hintStyleLarge,
               border: InputBorder.none,
               contentPadding: EdgeInsets.all(16),
             ),
