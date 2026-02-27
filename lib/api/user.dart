@@ -1,8 +1,8 @@
 import 'dart:async';
-import 'dart:math';
+import 'dart:math' show max;
+import 'dart:developer' show log;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter/material.dart';
 import 'package:muslimdigest/models/user.dart';
 import 'package:muslimdigest/providers/feed/feed.dart';
 import 'package:muslimdigest/providers/feed/feed_liked.dart';
@@ -41,10 +41,10 @@ Future<bool> saveAllData({bool force = false}) async {
   final failedCount = responses.length - successCount;
   
   if (failedCount > 0) {
-    debugPrint('[saveAllData] $failedCount requests failed after retries');
+    log('[saveAllData] ⚠️ $failedCount requests failed after retries');
   }
   
-  debugPrint('[saveAllData] Save result: $successCount/${responses.length} success');
+  log('[saveAllData] ${failedCount > 0 ? '⚠️' : '✅'} Save result: $successCount/${responses.length} success');
   return successCount == responses.length;
 }
 

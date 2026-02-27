@@ -30,7 +30,7 @@ class _SplashPageState extends ConsumerState<SplashPage> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      [_loadAppData, r.initData, r.loadUserFeed, _startSplash].forEach(fireAndForget);
+      [_loadAppData, r.initData, r.initActiveFeed, r.loadUserFeed, _startSplash].forEach(fireAndForget);
     });
   }
 

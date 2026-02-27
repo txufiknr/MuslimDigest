@@ -70,6 +70,8 @@ extension WidgetExtension on Widget {
   Widget withPaddingHorizontal(double padding) => Padding(padding: EdgeInsets.symmetric(horizontal: padding), child: this);
   Widget withPaddingVertical(double padding) => Padding(padding: EdgeInsets.symmetric(vertical: padding), child: this);
 
+  Widget withTooltip(String message) => Tooltip(message: message, child: this);
+
   /// Function for tap widget action with GestureDetector
   Widget onTap(VoidCallback? onTap) {
     return onTap != null ? GestureDetector(onTap: onTap, child: this) : this;

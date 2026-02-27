@@ -122,8 +122,9 @@ class ApiService {
       final result = jsonDecode(response.body) as Map<String, dynamic>;
 
       // Check for successful HTTP status codes (200 OK or 201 Created)
-      log('🌐 POST /$path response status code: ${response.statusCode}');
-      if (response.statusCode == 200 || response.statusCode == 201) {
+      final isSuccess = response.statusCode == 200 || response.statusCode == 201;
+      log('🌐 POST /$path response status code: ${response.statusCode} ${isSuccess ? '✅' : '⚠️'}');
+      if (isSuccess) {
         // Parse the successful JSON response and return success result
         return ApiResponse(
           success: result['success'] ?? true,
@@ -142,6 +143,7 @@ class ApiService {
       }
     } catch (e) {
       // Handle network-level errors (connection timeout, DNS failure, etc.)
+      log('🌐 POST /$path response status code: $e ❌');
       return ApiResponse(
         success: false,
         error: 'Network error: $e',
@@ -182,8 +184,9 @@ class ApiService {
       final result = jsonDecode(response.body) as Map<String, dynamic>;
 
       // Check for successful HTTP status (200 OK for PUT operations)
-      log('🌐 PUT /$path response status code: ${response.statusCode}');
-      if (response.statusCode == 200) {
+      final isSuccess = response.statusCode == 200;
+      log('🌐 PUT /$path response status code: ${response.statusCode} ${isSuccess ? '✅' : '⚠️'}');
+      if (isSuccess) {
         // Parse the successful JSON response and return success result
         return ApiResponse(
           success: result['success'] ?? true,
@@ -202,6 +205,7 @@ class ApiService {
       }
     } catch (e) {
       // Handle network-level errors (connection timeout, DNS failure, etc.)
+      log('🌐 PUT /$path response status code: $e ❌');
       return ApiResponse(
         success: false,
         error: 'Network error: $e',
@@ -243,8 +247,9 @@ class ApiService {
       final result = jsonDecode(response.body) as Map<String, dynamic>;
 
       // Check for successful HTTP status (200 OK for GET operations)
-      log('🌐 GET /$path response status code: ${response.statusCode}');
-      if (response.statusCode == 200) {
+      final isSuccess = response.statusCode == 200;
+      log('🌐 GET /$path response status code: ${response.statusCode} ${isSuccess ? '✅' : '⚠️'}');
+      if (isSuccess) {
         // Parse the successful JSON response and return success result
         return ApiResponse(
           success: result['success'] ?? true,
@@ -263,6 +268,7 @@ class ApiService {
       }
     } catch (e) {
       // Handle network-level errors (connection timeout, DNS failure, etc.)
+      log('🌐 GET /$path response status code: $e ❌');
       return ApiResponse(
         success: false,
         error: 'Network error: $e',

@@ -1,4 +1,5 @@
 import 'dart:math' show max;
+import 'dart:developer' show log;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:muslimdigest/api/feeds.dart';
@@ -81,7 +82,15 @@ abstract class BaseFeedNotifier extends Notifier<BaseFeedState> {
   
   /// Load more items using cursor pagination
   Future<bool> loadMore({int? limit}) async {
+    log('[BaseFeedNotifier] loadMore called. hasMore: ${state.hasMore}, isLoadingMore: ${state.isLoadingMore}, nextCursor: ${state.nextCursor}');
     if (!state.hasMore || state.isLoadingMore || state.nextCursor == null) {
+      log('[BaseFeedNotifier] loadMore blocked - hasMore: ${state.hasMore}, isLoadingMore: ${state.isLoadingMore}, nextCursor: ${state.nextCursor}');
+      return false;
+    }
+    
+    // Additional safeguard: prevent too many items (indicates stuck cursor)
+    if (state.items != null && state.items!.length > 200) {
+      log('[BaseFeedNotifier] WARNING: Too many items (${state.items!.length}), stopping pagination to prevent infinite loop');
       return false;
     }
     
@@ -112,12 +121,12 @@ abstract class BaseFeedNotifier extends Notifier<BaseFeedState> {
     return const BaseFeedState();
   }
 
-  Future<void> setValue(List<FeedItem>? value) async {
+  Future<void> setValue(List<FeedItem>? value, {bool skipCache = false}) async {
     state = state.copyWith(items: value);
     
     // Update cache when called from UI actions (unlike/unsave)
     // This ensures cache stays in sync with user interactions
-    if (value != null) {
+    if (value != null && !skipCache) {
       final cache = ref.read(feedCacheProvider);
       await cache.setFeedItems(endpoint, value);
     }
@@ -147,7 +156,7 @@ abstract class BaseFeedNotifier extends Notifier<BaseFeedState> {
   
     // Invalidate cache since we marked an item as not interested
     final cache = ref.read(feedCacheProvider);
-    await cache.invalidateCache(endpoint);
+    await cache.invalidateAllCacheForEndpoint(endpoint);
   }
 
   /// Mark all feed items from the same source as not interested
@@ -176,7 +185,7 @@ abstract class BaseFeedNotifier extends Notifier<BaseFeedState> {
     
     // Invalidate cache since we marked items as not interested
     final cache = ref.read(feedCacheProvider);
-    await cache.invalidateCache(endpoint);
+    await cache.invalidateAllCacheForEndpoint(endpoint);
   }
 
   /// Unmark a feed item as not interested (undo)
@@ -191,7 +200,7 @@ abstract class BaseFeedNotifier extends Notifier<BaseFeedState> {
   
     // Invalidate cache since we unmarked an item as not interested
     final cache = ref.read(feedCacheProvider);
-    await cache.invalidateCache(endpoint);
+    await cache.invalidateAllCacheForEndpoint(endpoint);
   }
 
   /// Get the reason for a feed item being marked as not interested
@@ -335,20 +344,35 @@ abstract class BaseFeedNotifier extends Notifier<BaseFeedState> {
           response.data.map((item) => FeedItem.fromJson(item as Map<String, dynamic>))
         );
         
-        final List<FeedItem> updatedItems;
-        if (isLoadMore && state.items != null) {
-          // Append new items to existing ones
-          updatedItems = [...state.items!, ...feedItems];
-        } else {
-          // Replace all items for initial load
-          updatedItems = feedItems;
-        }
+        log('[BaseFeedNotifier] API response: received ${feedItems.length} items, isLoadMore: $isLoadMore');
+        log('[BaseFeedNotifier] Current state items: ${state.items?.length ?? 0}');
         
         // Extract pagination info from response
         final hasMore = response.result?['hasMore'] ?? true;
         final nextCursor = response.result?['nextCursor'];
         
-        await setValue(updatedItems);
+        // log('[BaseFeedNotifier] Full response result: ${response.result}');
+        log('[BaseFeedNotifier] Pagination: hasMore: $hasMore, nextCursor: $nextCursor');
+        log('[BaseFeedNotifier] Previous cursor: ${state.nextCursor}');
+        
+        final List<FeedItem> updatedItems;
+        if (isLoadMore && state.items != null) {
+          // Check if we're getting duplicate items (same cursor)
+          if (nextCursor == state.nextCursor) {
+            log('[BaseFeedNotifier] WARNING: Same cursor detected, skipping duplicate items');
+            return false;
+          }
+          
+          // Append new items to existing ones
+          updatedItems = [...state.items!, ...feedItems];
+          log('[BaseFeedNotifier] Appended items: ${state.items!.length} + ${feedItems.length} = ${updatedItems.length}');
+        } else {
+          // Replace all items for initial load
+          updatedItems = feedItems;
+          log('[BaseFeedNotifier] Replaced items: ${updatedItems.length}');
+        }
+        
+        await setValue(updatedItems, skipCache: isLoadMore);
         
         // Cache the response (only for initial loads, not load more)
         if (!isLoadMore) {

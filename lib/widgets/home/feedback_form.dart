@@ -62,10 +62,10 @@ class _FeedbackFormState extends State<FeedbackForm> {
             controller: _textController,
             maxLines: 5,
             minLines: 3,
-            style: h.currentTheme.textTheme.bodyMedium,
+            style: h.inputStyleLarge,
             decoration: InputDecoration(
               hintText: 'Share your thoughts, suggestions, or report issues...',
-              hintStyle: h.hintStyle,
+              // hintStyle: h.hintStyleLarge,
               border: InputBorder.none,
               contentPadding: EdgeInsets.all(16),
             ),

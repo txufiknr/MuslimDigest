@@ -6,7 +6,10 @@ import 'package:muslimdigest/providers/feed/feed.dart';
 import 'package:muslimdigest/providers/feed/feed_liked.dart';
 import 'package:muslimdigest/providers/feed/feed_saved.dart';
 import 'package:muslimdigest/providers/feed/feed_trending.dart';
+import 'package:muslimdigest/providers/feed_type.dart';
 import 'package:muslimdigest/providers/ingest_last_date.dart';
+import 'package:muslimdigest/providers/read_count_states.dart';
+import 'package:muslimdigest/providers/topic.dart';
 import 'package:muslimdigest/providers/user/preferences.dart';
 import 'package:muslimdigest/providers/read_count.dart';
 import 'package:muslimdigest/providers/read_last_date.dart';
@@ -100,11 +103,36 @@ class AppRepository {
     log('[loadUserFeed] isToday(ingestLastDate): ${isToday(ingestLastDate!)}');
     log('[loadUserFeed] homeFeedType: ${homeFeedType.name}');
     log('[loadUserFeed] shouldFetchDailyDigest: $shouldFetchDailyDigest');
-    final isFeedLoaded = await loadFeed(force: true);
+    final isFeedLoaded = await loadFeed(force: force);
     log("[loadUserFeed] ${isFeedLoaded ? '✅ Feed loaded successfully (${homeFeedType.name})' : '❌ Failed to load feed (${homeFeedType.name})'}");
     if (isFeedLoaded && homeFeedType == FeedType.digest) {
-      await initReadCount(force: true);
+      await initReadCount(force: force);
     }
+  }
+
+  /// Initialize active feed tab on every app launch
+  Future<void> initActiveFeed() async {
+    final currentFeedType = _ref.read(feedTypeProvider);
+    final currentTopic = _ref.read(topicProvider);
+    final trendingCount = _ref.watch(feedTrendingProvider).total;
+    if (!currentFeedType.isHomeFeed || currentTopic != null || (currentFeedType == FeedType.trending && trendingCount == 0)) {
+      // Go back to home feed tab without any topic selected
+      await Future.wait([
+        _ref.read(topicProvider.notifier).clear(),
+        _ref.read(feedTypeProvider.notifier).setValue(homeFeedType),
+        _initReadCountStates(),
+      ]);
+    }
+  }
+
+  Future<void> _initReadCountStates() async {
+    final currentReadCountStates = _ref.read(readCountStatesProvider);
+    final homeFeedTypes = FeedType.values.where((f) => f.isHomeFeed).map((f) => f.name);
+    currentReadCountStates.removeWhere((name, _) => !homeFeedTypes.contains(name));
+    await _ref.read(readCountStatesProvider.notifier).setValue({
+      ...currentReadCountStates
+    });
+    log('🧾 init read count states: ${_ref.read(readCountStatesProvider)}');
   }
 
   /// Load initial user and feed data on app launch/resume

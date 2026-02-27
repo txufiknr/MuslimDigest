@@ -15,7 +15,6 @@ import 'package:muslimdigest/utils/extensions.dart';
 import 'package:muslimdigest/utils/functions.dart';
 import 'package:muslimdigest/variables/app.dart';
 import 'package:muslimdigest/variables/feed.dart';
-import 'package:muslimdigest/widgets/animations/loading_indicator_bar.dart';
 import '../widgets/home/home_header.dart';
 import '../widgets/home/feed_swiper.dart';
 import '../widgets/home/reading_streak_footer.dart';
@@ -27,15 +26,14 @@ class HomePage extends ConsumerStatefulWidget {
   ConsumerState<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver, RouteAware {
+class _HomePageState extends ConsumerState<HomePage> with RouteAware {
   AppRepository get r => ref.read(appRepositoryProvider);
-  bool get _isFeedLoading => _feedType.watch(ref).isLoading;
-  FeedType get _feedType => ref.read(feedTypeProvider);
 
   late final Debounce _topicChangeDebounce = const Duration(milliseconds: 500).debounce;
+  late final AppLifecycleListener _lifeCycleListener;
+  UserPreferences? lastUserPreferences;
   var _isWillExit = false;
 
-  UserPreferences? lastUserPreferences;
 
   /// Save all user data
   void _saveAllData() {
@@ -59,7 +57,10 @@ class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addObserver(this);
+    _lifeCycleListener = AppLifecycleListener(
+      onInactive: _saveAllData,
+      onResume: r.loadUserFeed,
+    );
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       _saveAllData();
@@ -102,28 +103,19 @@ class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver
 
   @override
   void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
     routeObserver.unsubscribe(this);
     _topicChangeDebounce.dispose();
+    _lifeCycleListener.dispose();
     super.dispose();
   }
 
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    super.didChangeAppLifecycleState(state);
-    if (state == AppLifecycleState.inactive) {
-      _saveAllData();
-    } else if (state == AppLifecycleState.resumed) {
-      r.loadUserFeed();
-    }
-  }
-
   Future<void> _openFeed([FeedType? feedType]) async {
+    final currentFeedType = feedType ?? r.homeFeedType;
     await Future.wait([
       ref.read(topicProvider.notifier).clear(),
-      ref.read(feedTypeProvider.notifier).setValue(feedType ?? r.homeFeedType),
+      ref.read(feedTypeProvider.notifier).setValue(currentFeedType),
     ]);
-    if (_feedType == FeedType.digest) {
+    if (currentFeedType == FeedType.digest) {
       r.loadUserFeed();
     } else {
       _loadFeed();
@@ -134,7 +126,7 @@ class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver
   Future<void> _openFeedTrending() => _openFeed(FeedType.trending);
 
   Future<void> _loadFeed([FeedType? feedType, String? topic]) async {
-    feedType ??= _feedType;
+    feedType ??= ref.read(feedTypeProvider);
     final success = await r.loadFeed(feedType: feedType, topic: topic);
     if (mounted && !success) return _showLoadFeedFailed(() => _loadFeed(feedType, topic));
   }
@@ -192,21 +184,19 @@ class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver
         body: SafeArea(
           child: Column(
             children: [
+              // Feed type and topic tabs
               HomeHeader(
                 onSeeTrending: _openFeedTrending,
                 onSeeHome: _openFeed,
               ),
+              // Main feed swiper
               FeedSwiper(
                 onReload: _loadFeed,
                 onSeeLatest: _openFeedLatest,
                 onSeeHome: _openFeed,
               ).expand(),
-              if (_isFeedLoading)
-                // Loading indicator at the bottom
-                LoadingIndicatorBar()
-              else if (_feedType == FeedType.digest)
-                // Reading streak progress
-                ReadingStreakFooter(),
+              // Loader or reading streak progressbar
+              ReadingStreakFooter(),
             ],
           ),
         ),

@@ -645,13 +645,13 @@ class _FeedFooterSource extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
               softWrap: false,
             ).flexible(),
-
+    
             const SizedBox(width: 6),
             Icon(Icons.open_in_new, size: 14, color: h.currentTheme.colorScheme.tertiary),
           ],
         ).withPadding(horizontal: 8, vertical: 4),
       ),
-    );
+    ).withTooltip("Read full article");
   }
 }
 

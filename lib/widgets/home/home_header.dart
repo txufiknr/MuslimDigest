@@ -118,6 +118,15 @@ class _HomeHeaderState extends ConsumerState<HomeHeader> {
 
   @override
   Widget build(BuildContext context) {
+    // Listen for feed type changes and trigger tabs scroll
+    ref.listen<FeedType>(feedTypeProvider, (previous, next) {
+      if (!mounted || previous == next) return;
+      if (next.isHomeFeed && ref.read(topicProvider) == null) {
+        // Auto scroll to zero horizontal position
+        _scrollToSelectedTab(null);
+      }
+    });
+
     final h = MyHelper(context);
     final feedType = ref.watch(feedTypeProvider);
     final trendingCount = ref.watch(feedTrendingProvider).total;

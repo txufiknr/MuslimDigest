@@ -20,7 +20,10 @@ class MyHelper {
   bool get isDarkTheme => !isLightTheme;
   TextTheme get currentTextTheme => currentTheme.textTheme;
   TextStyle? get inputStyle => currentTextTheme.bodyMedium;
+  TextStyle? get inputStyleLarge => currentTextTheme.bodyLarge;
+  // TODO: are these used?
   TextStyle? get hintStyle => inputStyle?.copyWith(color: currentTheme.hintColor);
+  TextStyle? get hintStyleLarge => inputStyleLarge?.copyWith(color: currentTheme.hintColor);
 
   // Theme helpers
   int pickShade(int lightShade) {

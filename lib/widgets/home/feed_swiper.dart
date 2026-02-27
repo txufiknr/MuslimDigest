@@ -50,6 +50,7 @@ class FeedSwiper extends ConsumerStatefulWidget {
 class FeedSwiperState extends ConsumerState<FeedSwiper> {
   final _controller = CardSwiperController();
   late var _isLoading = widget.initialIndex != null;
+  bool _isLoadingMore = false;
 
   @override
   void initState() {
@@ -110,7 +111,7 @@ class FeedSwiperState extends ConsumerState<FeedSwiper> {
   bool get _shouldTriggerLazyLoad {
     if (_isDigestFeed) return false;
     
-    final feedState = _feedType.read(ref);
+    final feedState = _feedType.watch(ref);
     if (!feedState.hasMore || feedState.isLoadingMore) return false;
     
     final threshold = (CURSOR_PAGINATION_LIMIT * _currentPage) - CURSOR_PAGINATION_TRIGGER;
@@ -118,8 +119,13 @@ class FeedSwiperState extends ConsumerState<FeedSwiper> {
   }
 
   Future<void> _triggerLazyLoad() async {
-    if (_shouldTriggerLazyLoad) {
+    if (_isLoadingMore || !_shouldTriggerLazyLoad) return;
+    
+    _isLoadingMore = true;
+    try {
       await _feedType.getNotifier(ref).loadMore();
+    } finally {
+      _isLoadingMore = false;
     }
   }
 
@@ -195,7 +201,7 @@ class FeedSwiperState extends ConsumerState<FeedSwiper> {
     ref.listen<FeedType>(feedTypeProvider, (previous, next) {
       if (!mounted || previous == next) return;
       final feedTotal = next.readItems(ref).length;
-      debugPrint("current feedType: ${next.label}");
+      debugPrint("current feedType: ${next.label} (topic: $_currentTopic)");
       debugPrint("current feedType length: $feedTotal");
       if (feedTotal > 0) {
         debugPrint("first feed: ${next.readItems(ref).first.title}");
@@ -221,6 +227,7 @@ class FeedSwiperState extends ConsumerState<FeedSwiper> {
 
     // When feed is empty
     if (_feedItems.isEmpty) {
+      // log('current feed type: ${ref.read(feedTypeProvider)}');
       return Column(
         children: [
           MyPlaceholder(
@@ -248,9 +255,12 @@ class FeedSwiperState extends ConsumerState<FeedSwiper> {
     log('_initialItemIndex = $_initialItemIndex');
     log('_numberOfCardsDisplayed = $_numberOfCardsDisplayed');
     log('_cardsCount = $_cardsCount');
-    // [log] _initialItemIndex = 8
+    log('_canGoNext = $_canGoNext');
+    log('_canGoPrev = $_canGoPrev');
+    log('Swipe direction: $_swipeDirection, Undo direction: $_undoDirection');
+    // [log] _initialItemIndex = 15
     // [log] _numberOfCardsDisplayed = 2
-    // [log] _cardsCount = 9
+    // [log] _cardsCount = 240
 
     return CardSwiper(
       key: Key("CardSwiper_${_feedType}_{$_currentTopic}_$_currentItemIndex"),
@@ -266,8 +276,9 @@ class FeedSwiperState extends ConsumerState<FeedSwiper> {
       ),
       initialIndex: _initialItemIndex,
       numberOfCardsDisplayed: _numberOfCardsDisplayed,
-      cardsCount: _cardsCount,
+      cardsCount: _cardsCount + 1,
       cardBuilder: (context, index, percentThresholdX, percentThresholdY) {
+        if (index == _cardsCount) return SizedBox.shrink();
         return FeedCard(
           _feedType,
           feedItem: _isDigestFeed && index == DAILY_READ_TARGET ? null : _feedItems[index],
@@ -275,17 +286,9 @@ class FeedSwiperState extends ConsumerState<FeedSwiper> {
         );
       },
       isDisabled: false,
-      isLoop: false,
+      isLoop: false, // TODO: set to true
       onEnd: requestReview,
       onSwipe: (previousIndex, currentIndex, direction) async {
-        // Skip swipe processing for the extra congratulations card in digest
-        // if (_isDigest && previousIndex == DAILY_READ_TARGET) {
-        //   return true;
-        // }
-        
-        final previousItem = _feedItems[previousIndex];
-        // log('[feed] Swipe direction: $direction, previousItem: ${previousItem.title}');
-
         // When an undo swipe is detected
         if (direction != _swipeDirection) {
           // Trigger the undo action on the controller
@@ -296,7 +299,10 @@ class FeedSwiperState extends ConsumerState<FeedSwiper> {
           return false;
         }
 
+        final previousItem = _feedItems[previousIndex];
+        // log('[feed] Swipe direction: $direction, previousItem: ${previousItem.title}');
         // log('[feed] Swiped item: ${previousItem.title}');
+
         _incrementReadCount(previousItem.cluster.id);
         
         return true;
