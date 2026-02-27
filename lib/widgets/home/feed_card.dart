@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -7,7 +9,6 @@ import 'package:muslimdigest/config/constants.dart';
 import 'package:muslimdigest/config/settings.dart';
 import 'package:muslimdigest/config/themes.dart';
 import 'package:muslimdigest/providers/feed/base_feed_notifier.dart';
-import 'package:muslimdigest/providers/user/preferences.dart';
 import 'package:muslimdigest/providers/user/settings.dart';
 import 'package:muslimdigest/providers/user/streaks.dart';
 import 'package:muslimdigest/utils/dialogs.dart';
@@ -15,6 +16,7 @@ import 'package:muslimdigest/utils/extensions.dart';
 import 'package:muslimdigest/utils/format.dart';
 import 'package:muslimdigest/utils/functions.dart';
 import 'package:muslimdigest/utils/helpers.dart';
+import 'package:muslimdigest/utils/time.dart';
 import 'package:muslimdigest/variables/app.dart';
 import 'package:muslimdigest/variables/feed.dart';
 import 'package:muslimdigest/variables/time.dart';
@@ -27,7 +29,9 @@ import 'package:muslimdigest/widgets/components/icon_button.dart';
 import 'package:muslimdigest/widgets/components/logo.dart';
 import 'package:muslimdigest/widgets/components/popup_menu_item.dart';
 import 'package:muslimdigest/widgets/components/popup_menu.dart';
+import 'package:muslimdigest/widgets/components/placeholder.dart';
 import 'package:muslimdigest/widgets/home/feedback_form.dart';
+import 'package:muslimdigest/api/feeds.dart';
 import 'package:path_provider/path_provider.dart';
 import '../../models/feed.dart';
 import 'package:screenshot/screenshot.dart';
@@ -123,10 +127,19 @@ class _FeedCardState extends ConsumerState<FeedCard> with AutomaticKeepAliveClie
     final currentStreak = streaks.currentStreak;
     final isStreakCard = widget.feedItem == null;
 
+    // Check if this feed item is marked as not interested
+    final isNotInterested = widget.feedItem != null && 
+        widget.feedType.watch(ref).isNotInterested(widget.feedItem!.id);
+
+    // Get the reason if it's marked as not interested
+    final reason = isNotInterested 
+        ? widget.feedType.getNotifier(ref).getNotInterestedReason(widget.feedItem!.id)
+        : null;
+
     return Container(
       width: double.infinity,
       decoration: h.cardDecoration,
-      padding: isStreakCard ? EdgeInsets.all(AppThemes.contentPadding) : EdgeInsets.zero,
+      padding: isStreakCard || isNotInterested ? EdgeInsets.all(AppThemes.contentPadding) : EdgeInsets.zero,
       child: isStreakCard ? Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         mainAxisAlignment: MainAxisAlignment.center,
@@ -147,7 +160,11 @@ class _FeedCardState extends ConsumerState<FeedCard> with AutomaticKeepAliveClie
             ],
           ),
         ].addItemInBetween(SizedBox(height: 16,)),
-      ) : Column(
+      ) : isNotInterested ? _NotInterestedPlaceholder(
+        feedType: widget.feedType,
+        feedItem: widget.feedItem!,
+        reason: reason,
+      ).center() : Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Header with image and title
@@ -171,6 +188,58 @@ class _FeedCardState extends ConsumerState<FeedCard> with AutomaticKeepAliveClie
   }
 }
 
+/// Placeholder for feed items marked as not interested or reported
+class _NotInterestedPlaceholder extends ConsumerWidget {
+  final FeedType feedType;
+  final FeedItem feedItem;
+  final FeedbackCategory? reason;
+
+  const _NotInterestedPlaceholder({
+    required this.feedType,
+    required this.feedItem,
+    this.reason,
+  });
+
+  Future<void> _undo(BuildContext context, WidgetRef ref) async {
+    try {
+      // Call API to unmark as not interested (if there's an endpoint for it)
+      // For now, just remove from local state
+      final notifier = feedType.getNotifier(ref);
+      await notifier.unmarkAsNotInterested(feedItem.id);
+      
+      if (context.mounted) {
+        showSnackBarSuccess(context, "Feed restored");
+      }
+    } catch (e) {
+      if (context.mounted) {
+        showSnackBarError(context, "Failed to restore feed");
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isReportedContent = reason != null && reason!.shouldHideFeed;
+    final title = isReportedContent 
+      ? 'Content reported: ${reason!.label}'
+      : 'Feed marked as not interested';
+    final footer = isReportedContent
+      ? 'Thank you for helping improve our content quality.'
+      : 'We\'ll show less content like this in the future.';
+    final icon = isReportedContent
+      ? Icon(reason!.icon, size: 80, color: AppColors.accent)
+      : Icon(CupertinoIcons.hand_thumbsdown, size: 80, color: AppColors.accent);
+    
+    return MyPlaceholder(
+      title,
+      footer: footer,
+      icon: icon,
+      onRetry: () => _undo(context, ref),
+      retryLabel: "Undo",
+    );
+  }
+}
+
 /// Feed header containing image and title
 class _FeedHeader extends ConsumerWidget {
   final FeedItem feedItem;
@@ -189,18 +258,6 @@ class _FeedHeader extends ConsumerWidget {
       child: Stack(
         children: [
           // Image or video
-          // if (hasYouTubeVideo)
-          //   YoutubePlayer(
-          //     controller: YoutubePlayerController(
-          //       initialVideoId: feedItem.videoUrl!,
-          //       flags: const YoutubePlayerFlags(
-          //         autoPlay: false,
-          //       ),
-          //     ),
-          //     // aspectRatio: 16 / 9,
-          //     aspectRatio: h.screenWidth / 200,
-          //   )
-          // else
           CachedImageWidget(
             imageUrl: feedItem.imageUrl,
             height: 200,
@@ -215,6 +272,15 @@ class _FeedHeader extends ConsumerWidget {
             Image.asset('assets/images/youtube-play.png', width: 64).onTap(() {
               openUrl(feedItem.videoUrl!);
             }).center().fill(),
+
+          // Ramadan animation for fasting-related content during Ramadan
+          if (feedItem.badges.contains('topic:fasting') && isRamadan)
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              child: Lottie.asset('assets/lottie/vibes/ramadan.json', fit: BoxFit.contain),
+            ),
 
           // Title overlay
           Positioned(
@@ -244,7 +310,7 @@ class _FeedHeader extends ConsumerWidget {
               ),
             ),
           ),
-          
+
           // Image URL overlay
           // if (feedItem.imageUrl != null) Positioned(
           //   top: 0,
@@ -426,7 +492,7 @@ class _FeedFooter extends ConsumerWidget {
     ).withPaddingAll(AppThemes.contentPadding - 8);
   }
 
-  Future<void> _notInterested(BuildContext context) async {
+  Future<void> _notInterested(BuildContext context, WidgetRef ref) async {
     final confirm = await showBottomModalConfirm(
       context,
       title: "Not Interested?",
@@ -435,7 +501,29 @@ class _FeedFooter extends ConsumerWidget {
       cancelButtonText: "I've changed my mind",
     ) ?? false;
     if (!context.mounted || !confirm) return;
-    // TODO: remove from swiper
+    
+    try {
+      // Call API to mark as not interested
+      final response = await markNotInterested(feedItem.id);
+      if (!context.mounted) return;
+
+      log("markNotInterested response: ${response.result}");
+      
+      if (response.success) {
+        showSnackBarSuccess(context, "Feed removed. We'll show less content like this.");
+
+        // Remove the feed item from the current feed
+        final notifier = feedType.getNotifier(ref);
+        await notifier.markAsNotInterested(feedItem.id);
+
+      } else {
+        showSnackBarError(context, response.error ?? "Failed to mark as not interested");
+      }
+    } catch (e) {
+      if (context.mounted) {
+        showSnackBarError(context, "Network error: $e");
+      }
+    }
   }
 
   Future<void> _avoidSource(BuildContext context, WidgetRef ref) async {
@@ -450,32 +538,41 @@ class _FeedFooter extends ConsumerWidget {
       cancelButtonText: "I've changed my mind",
     ) ?? false;
     if (!context.mounted || !confirm) return;
-    final preferences = ref.read(preferencesProvider);
-    ref.read(preferencesProvider.notifier).setValue(preferences.copyWith(
-      avoidedSources: [...preferences.avoidedSources, feedItem.source.id],
-    ));
+    avoidSource(ref, feedItem.source.id);
     showSnackBarSuccess(context, "Won't recommend feeds from $sourceName");
+
+    // Remove all feed items from the same source
+    final notifier = feedType.getNotifier(ref);
+    await notifier.markAllFromSourceAsNotInterested(feedItem.source.id);
   }
 
-  Future<void> _feedback(BuildContext context) async {
-    await showBottomModalSheetContent(
+  Future<void> _feedback(BuildContext context, WidgetRef ref) async {
+    final feedbackResult = await showBottomModalSheetContent(
       context, 
       title: "Send Feedback", 
       widgets: [FeedbackForm(feedId: feedItem.id)],
       isDismissible: false,
-    );
+    ) as Map<String, dynamic>?;
+
+    final FeedbackCategory? category = feedbackResult?['category'];
+    final bool shouldHideFeed = category?.shouldHideFeed ?? false;
+    if (!context.mounted || !shouldHideFeed) return;
+    
+    // Remove the feed item from the current feed
+    final notifier = feedType.getNotifier(ref);
+    await notifier.markAsNotInterested(feedItem.id, reason: category);
   }
 
   void _handleMenuAction(BuildContext context, WidgetRef ref, String action) {
     switch (action) {
       case 'not_interested':
-        _notInterested(context);
+        _notInterested(context, ref);
         break;
       case 'dont_recommend_source':
         _avoidSource(context, ref);
         break;
       case 'send_feedback':
-        _feedback(context);
+        _feedback(context, ref);
         break;
     }
   }
@@ -488,10 +585,9 @@ class _FeedSummarizer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (provider == 'none') return SizedBox.shrink();
     final providerLabel = provider.toCapitalized();
     return MyBadge(
-      text: 'Summarizer: $providerLabel',
+      text: provider == 'none' ? 'Original text' : 'Summarizer: $providerLabel',
       description: 'AI-generated summary by $providerLabel',
     );
   }

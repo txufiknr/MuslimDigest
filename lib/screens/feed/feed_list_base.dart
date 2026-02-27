@@ -1,6 +1,8 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:pull_to_refresh/pull_to_refresh.dart';
 import 'package:muslimdigest/config/colors.dart';
 import 'package:muslimdigest/config/themes.dart';
 import 'package:muslimdigest/models/feed.dart';
@@ -42,6 +44,7 @@ abstract class FeedListBasePage extends ConsumerStatefulWidget {
 
 class _FeedListBasePageState extends ConsumerState<FeedListBasePage> {
   final ScrollController _scrollController = ScrollController();
+  final RefreshController _refreshController = RefreshController(initialRefresh: false);
 
   @override
   void initState() {
@@ -57,6 +60,7 @@ class _FeedListBasePageState extends ConsumerState<FeedListBasePage> {
   @override
   void dispose() {
     _scrollController.dispose();
+    _refreshController.dispose();
     super.dispose();
   }
 
@@ -90,6 +94,25 @@ class _FeedListBasePageState extends ConsumerState<FeedListBasePage> {
   Future<void> _loadMoreFeeds() async {
     final notifier = ref.read(widget.provider.notifier);
     await notifier.loadMore();
+  }
+
+  Future<void> _onRefresh() async {
+    try {
+      final notifier = ref.read(widget.provider.notifier);
+      
+      // Reset pagination cursor by clearing nextCursor
+      await notifier.resetPagination();
+      
+      // Load from endpoint with forceRefresh
+      await notifier.loadFromEndpoint(
+        widget.feedType.endpoint,
+        forceRefresh: true,
+      );
+      
+      _refreshController.refreshCompleted();
+    } catch (e) {
+      _refreshController.refreshFailed();
+    }
   }
 
   Future<void> _onActionPressed(FeedItem feed) async {
@@ -149,17 +172,41 @@ class _FeedListBasePageState extends ConsumerState<FeedListBasePage> {
   Widget _buildFeedList(MyHelper h, BaseFeedState state) {
     final feeds = state.items ?? [];
     
-    return ListView.builder(
-      controller: _scrollController,
-      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: AppThemes.contentPadding),
-      itemCount: feeds.length + (state.hasMore ? 1 : 0),
-      itemBuilder: (context, index) {
-        if (index == feeds.length) {
-          return _buildLoadingIndicator();
-        }
-        
-        return _buildFeedItem(h, feeds[index]);
-      },
+    return SmartRefresher(
+      controller: _refreshController,
+      onRefresh: _onRefresh,
+      // enablePullDown: true,
+      // enablePullUp: false,
+      // header: const ClassicHeader(
+      //   refreshText: 'Pull to refresh',
+      //   releaseText: 'Release to refresh',
+      //   completeText: 'Refresh complete',
+      //   refreshingText: 'Refreshing...',
+      //   idleText: 'Pull down to refresh',
+      // ),
+      footer: CustomFooter(
+        loadStyle: LoadStyle.ShowAlways,
+        builder: (context, mode) {
+          if (mode == LoadStatus.loading) {
+            return CupertinoActivityIndicator().squared(20).center();
+          }
+          return const SizedBox.shrink();
+        },
+      ),
+      enablePullUp: true,
+      enablePullDown: false,
+      child: ListView.builder(
+        controller: _scrollController,
+        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: AppThemes.contentPadding),
+        itemCount: feeds.length + (state.hasMore ? 1 : 0),
+        itemBuilder: (context, index) {
+          if (index == feeds.length) {
+            return _buildLoadingIndicator();
+          }
+          
+          return _buildFeedItem(h, feeds[index]);
+        },
+      ),
     );
   }
 
@@ -229,7 +276,7 @@ class _FeedListBasePageState extends ConsumerState<FeedListBasePage> {
         ],
       ),
     ).onTap(() {
-      context.push('/feed/${feed.id}?feedType=${widget.feedType.name}');
+      context.push('/feeds/${feed.id}?feedType=${widget.feedType.name}');
     });
   }
 

@@ -29,6 +29,10 @@ enum FeedbackCategory {
       case other: return CupertinoIcons.question_circle;
     }
   }
+
+  bool get shouldHideFeed {
+    return [inappropriate_content, fake_news, bug_report].contains(this);
+  }
 }
 
 enum FeedType {
@@ -101,8 +105,8 @@ enum FeedType {
       case digest: return ref.read(feedProvider.notifier).load(timeoutMs: timeoutMs);
       case latest: return ref.read(feedLatestProvider.notifier).load(topic: topic, limit: limit);
       case trending: return ref.read(feedTrendingProvider.notifier).load(limit: limit);
-      case liked: return ref.read(feedLikedProvider.notifier).load();
-      case saved: return ref.read(feedSavedProvider.notifier).load();
+      case liked: return ref.read(feedLikedProvider.notifier).load(limit: limit);
+      case saved: return ref.read(feedSavedProvider.notifier).load(limit: limit);
     }
   }
 
@@ -111,8 +115,8 @@ enum FeedType {
       case digest: return ref.read(feedProvider.notifier).load(timeoutMs: timeoutMs);
       case latest: return ref.read(feedLatestProvider.notifier).load(topic: topic, limit: limit);
       case trending: return ref.read(feedTrendingProvider.notifier).load(limit: limit);
-      case liked: return ref.read(feedLikedProvider.notifier).load();
-      case saved: return ref.read(feedSavedProvider.notifier).load();
+      case liked: return ref.read(feedLikedProvider.notifier).load(limit: limit);
+      case saved: return ref.read(feedSavedProvider.notifier).load(limit: limit);
     }
   }
 

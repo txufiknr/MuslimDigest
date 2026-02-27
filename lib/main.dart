@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'config/constants.dart';
 import 'config/themes.dart';
 import 'config/router.dart';
@@ -35,16 +36,22 @@ Future<void> main() async {
         'read_count_states', // Daily read count states (JSON string)
         'settings', // User settings data (JSON string)
         'streaks', // User streaks data (JSON string)
-        'feed', // Cached feed items (JSON string)
-        'feed/trending', // Cached trending feed items (JSON string)
-        'feed/latest', // Cached latest feed items (JSON string)
-        'feed/liked', // Cached liked feed items (JSON string)
-        'feed/saved', // Cached saved feed items (JSON string)
         'ingest_last_date', // Last feed ingestion date (YYYY-MM-DD)
         'topic', // Selected feed topic (string)
         'topics', // List of available topics (JSON string)
-        'notification_type', // Active notification type
+        'feed_type', // Active feed type (string)
+        'notification_type', // Active notification type (string)
       },
+    ),
+  );
+
+  // Initialize secure storage for feed cache
+  const secureStorage = FlutterSecureStorage(
+    aOptions: AndroidOptions(
+      // encryptedSharedPreferences: true, // Deprecated - using custom ciphers
+    ),
+    iOptions: IOSOptions(
+      accessibility: KeychainAccessibility.first_unlock_this_device,
     ),
   );
   
@@ -54,6 +61,7 @@ Future<void> main() async {
     ProviderScope(
       overrides: [
         sharedPreferencesProvider.overrideWithValue(prefs),
+        secureStorageProvider.overrideWithValue(secureStorage),
       ],
       child: const MyApp(),
     ),

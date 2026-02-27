@@ -138,7 +138,10 @@ class SettingsHeader extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final h = MyHelper(context);
-    final firstName = ref.watch(userProvider).firstName;
+    final user = ref.watch(userProvider);
+    final firstName = user.firstName;
+    final readCount = user.readCount;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -156,6 +159,42 @@ class SettingsHeader extends ConsumerWidget {
             color: Colors.white.withValues(alpha: 0.9),
           ),
         ),
+        const SizedBox(height: 16),
+        Text.rich(
+          TextSpan(
+            children: [
+              TextSpan(
+                text: "You have read ",
+                style: h.currentTextTheme.bodyMedium?.copyWith(
+                  color: Colors.white.withValues(alpha: 0.8),
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              TextSpan(
+                text: "$readCount",
+                style: h.currentTextTheme.bodyLarge?.copyWith(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              TextSpan(
+                text: " articles so far.",
+                style: h.currentTextTheme.bodyMedium?.copyWith(
+                  color: Colors.white.withValues(alpha: 0.8),
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ),
+        // const SizedBox(height: 16),
+        // Text(
+        //   getHijriDate(),
+        //   style: h.currentTextTheme.bodyMedium?.copyWith(
+        //     color: Colors.white.withValues(alpha: 0.8),
+        //     fontWeight: FontWeight.w500,
+        //   ),
+        // ),
       ],
     );
   }
@@ -181,8 +220,7 @@ class SettingsSection extends StatelessWidget {
           padding: const EdgeInsets.only(bottom: 12.0),
           child: Text(
             title,
-            style: h.currentTextTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.bold,
+            style: h.currentTextTheme.titleMedium?.copyWith(
               color: Colors.white,
             ),
           ),

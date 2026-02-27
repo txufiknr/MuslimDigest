@@ -136,6 +136,8 @@ class PrefData {
   static Map<String, int> get readCountStates {
     final statesString = prefs.getString('read_count_states');
     if (statesString == null) return {};
-    return jsonDecode(statesString);
+    // final decoded = jsonDecode(statesString) as Map<String, dynamic>;
+    // return decoded.map((key, value) => MapEntry(key, value as int));
+    return Map<String, int>.from(jsonDecode(statesString));
   }
 }

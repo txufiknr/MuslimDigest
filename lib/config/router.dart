@@ -1,4 +1,5 @@
 import 'package:go_router/go_router.dart';
+import 'package:muslimdigest/screens/feed/multi_feed.dart';
 import 'package:muslimdigest/screens/settings/edit_profile.dart';
 import 'package:muslimdigest/screens/feed/liked_feeds.dart';
 import 'package:muslimdigest/screens/settings/personalization.dart';
@@ -76,6 +77,18 @@ class AppRouter {
           final feedId = state.pathParameters['feedId']!;
           final feedType = state.uri.queryParameters['feedType'] ?? FeedType.digest.name;
           return SingleFeedPage(
+            feedId: feedId,
+            feedType: FeedType.fromString(feedType),
+          );
+        },
+      ),
+      GoRoute(
+        path: '/feeds/:feedId',
+        name: 'multi_feeds',
+        builder: (context, state) {
+          final feedId = state.pathParameters['feedId']!;
+          final feedType = state.uri.queryParameters['feedType'] ?? FeedType.digest.name;
+          return MultiFeedPage(
             feedId: feedId,
             feedType: FeedType.fromString(feedType),
           );

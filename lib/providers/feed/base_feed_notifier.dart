@@ -1,17 +1,17 @@
-import 'dart:convert';
 import 'dart:math' show max;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:muslimdigest/api/feeds.dart';
 import 'package:muslimdigest/models/feed.dart';
 import 'package:muslimdigest/providers/ingest_last_date.dart';
 import 'package:muslimdigest/providers/user/user.dart';
 import 'package:muslimdigest/services/api.dart';
+import 'package:muslimdigest/providers/feed/feed_cache.dart';
+import 'package:muslimdigest/variables/feed.dart';
 import 'package:muslimdigest/utils/repository.dart';
 import 'package:muslimdigest/utils/functions.dart';
-import 'package:muslimdigest/api/feeds.dart';
 import 'package:muslimdigest/utils/extensions.dart';
 import 'package:muslimdigest/config/feeds.dart' show CURSOR_PAGINATION_LIMIT;
-import 'package:muslimdigest/utils/feed_cache.dart';
 
 class BaseFeedState {
   final List<FeedItem>? items;
@@ -20,6 +20,8 @@ class BaseFeedState {
   final String? error;
   final bool hasMore;
   final String? nextCursor;
+  final Set<String> notInterestedItems;
+  final Map<String, FeedbackCategory> notInterestedReasons;
 
   bool get isEmpty => items?.isEmpty ?? true;
   bool get isGetting => isEmpty && isLoading;
@@ -34,6 +36,8 @@ class BaseFeedState {
     this.error,
     this.hasMore = true,
     this.nextCursor,
+    this.notInterestedItems = const {},
+    this.notInterestedReasons = const {},
   });
 
   BaseFeedState copyWith({
@@ -43,6 +47,8 @@ class BaseFeedState {
     String? error,
     bool? hasMore,
     String? nextCursor,
+    Set<String>? notInterestedItems,
+    Map<String, FeedbackCategory>? notInterestedReasons,
   }) {
     return BaseFeedState(
       items: items ?? this.items,
@@ -51,12 +57,18 @@ class BaseFeedState {
       error: error ?? this.error,
       hasMore: hasMore ?? this.hasMore,
       nextCursor: nextCursor ?? this.nextCursor,
+      notInterestedItems: notInterestedItems ?? this.notInterestedItems,
+      notInterestedReasons: notInterestedReasons ?? this.notInterestedReasons,
     );
   }
 
   /// Get a specific feed item by ID, returns null if not found
   FeedItem? getItem(String feedId) {
     return items?.firstWhereOrNull((item) => item.id == feedId);
+  }
+
+  bool isNotInterested(String id) {
+    return notInterestedItems.contains(id);
   }
 }
 
@@ -83,30 +95,108 @@ abstract class BaseFeedNotifier extends Notifier<BaseFeedState> {
     );
   }
   
+  /// Reset pagination state by clearing nextCursor and resetting hasMore
+  Future<void> resetPagination() async {
+    state = state.copyWith(
+      nextCursor: null,
+      hasMore: true,
+    );
+  }
+  
   /// Get the endpoint for this feed type - must be implemented by subclasses
   String get endpoint;
   
   @override
   BaseFeedState build() {
-    final jsonString = ref.watch(preferencesRepositoryProvider).getString(endpoint);
-    if (jsonString == null) return const BaseFeedState();
-    final feedItems = List<FeedItem>.from(List<Map<String, dynamic>>.from(jsonDecode(jsonString)).map(FeedItem.fromJson));
-    return BaseFeedState(items: feedItems);
+    // Feed cache data is now handled by SecureFeedCache, initialized with empty state
+    return const BaseFeedState();
   }
 
   Future<void> setValue(List<FeedItem>? value) async {
     state = state.copyWith(items: value);
-    final feedItemsString = value == null ? null : jsonEncode(value.map((item) => item.toJson()).toList());
-    await ref.read(preferencesRepositoryProvider).setString(endpoint, feedItemsString);
+    
+    // Update cache when called from UI actions (unlike/unsave)
+    // This ensures cache stays in sync with user interactions
+    if (value != null) {
+      final cache = ref.read(feedCacheProvider);
+      await cache.setFeedItems(endpoint, value);
+    }
   }
 
   Future<void> clear() async {
     state = const BaseFeedState();
-    await ref.read(preferencesRepositoryProvider).remove(endpoint);
     
-    // Also clear the cache for this endpoint
+    // Clear the cache for this endpoint from secure storage
     final cache = ref.read(feedCacheProvider);
     await cache.invalidateAllCacheForEndpoint(endpoint);
+  }
+
+  /// Mark a specific feed item as not interested (soft removal)
+  Future<void> markAsNotInterested(String feedId, {FeedbackCategory? reason}) async {
+    final updatedNotInterestedItems = Set<String>.from(state.notInterestedItems)..add(feedId);
+    final updatedNotInterestedReasons = Map<String, FeedbackCategory>.from(state.notInterestedReasons);
+  
+    if (reason != null) {
+      updatedNotInterestedReasons[feedId] = reason;
+    }
+  
+    state = state.copyWith(
+      notInterestedItems: updatedNotInterestedItems,
+      notInterestedReasons: updatedNotInterestedReasons,
+    );
+  
+    // Invalidate cache since we marked an item as not interested
+    final cache = ref.read(feedCacheProvider);
+    await cache.invalidateCache(endpoint);
+  }
+
+  /// Mark all feed items from the same source as not interested
+  Future<void> markAllFromSourceAsNotInterested(String sourceId, {FeedbackCategory? reason}) async {
+    if (state.items == null) return;
+    
+    // Find all feed items from the same source
+    final itemsFromSource = state.items!.where((item) => item.source.id == sourceId).toList();
+    if (itemsFromSource.isEmpty) return;
+    
+    // Mark all items from this source as not interested
+    final updatedNotInterestedItems = Set<String>.from(state.notInterestedItems);
+    final updatedNotInterestedReasons = Map<String, FeedbackCategory>.from(state.notInterestedReasons);
+    
+    for (final item in itemsFromSource) {
+      updatedNotInterestedItems.add(item.id);
+      if (reason != null) {
+        updatedNotInterestedReasons[item.id] = reason;
+      }
+    }
+    
+    state = state.copyWith(
+      notInterestedItems: updatedNotInterestedItems,
+      notInterestedReasons: updatedNotInterestedReasons,
+    );
+    
+    // Invalidate cache since we marked items as not interested
+    final cache = ref.read(feedCacheProvider);
+    await cache.invalidateCache(endpoint);
+  }
+
+  /// Unmark a feed item as not interested (undo)
+  Future<void> unmarkAsNotInterested(String feedId) async {
+    final updatedNotInterestedItems = Set<String>.from(state.notInterestedItems)..remove(feedId);
+    final updatedNotInterestedReasons = Map<String, FeedbackCategory>.from(state.notInterestedReasons)..remove(feedId);
+  
+    state = state.copyWith(
+      notInterestedItems: updatedNotInterestedItems,
+      notInterestedReasons: updatedNotInterestedReasons,
+    );
+  
+    // Invalidate cache since we unmarked an item as not interested
+    final cache = ref.read(feedCacheProvider);
+    await cache.invalidateCache(endpoint);
+  }
+
+  /// Get the reason for a feed item being marked as not interested
+  FeedbackCategory? getNotInterestedReason(String feedId) {
+    return state.notInterestedReasons[feedId];
   }
 
   Future<void> update(String feedId, {bool? isLiked, bool? isSaved}) async {
@@ -166,8 +256,11 @@ abstract class BaseFeedNotifier extends Notifier<BaseFeedState> {
     ));
     
     // Update cached data
-    final feedItemsString = updatedItems == null ? null : jsonEncode(updatedItems.map((item) => item.toJson()).toList());
-    await ref.read(preferencesRepositoryProvider).setString(endpoint, feedItemsString);
+    // final feedItemsString = updatedItems == null ? null : jsonEncode(updatedItems.map((item) => item.toJson()).toList());
+    // await ref.read(preferencesRepositoryProvider).setString(endpoint, feedItemsString);
+
+    // Feed cache data is now handled by SecureFeedCache, no need to save to SharedPreferences
+    // The cache will be updated/invalidated below if needed
     
     // Invalidate caches only when actual changes occurred
     if (cachesToInvalidate.isNotEmpty) {
@@ -180,12 +273,42 @@ abstract class BaseFeedNotifier extends Notifier<BaseFeedState> {
     }
   }
 
-  Future<bool> loadFromEndpoint(String endpoint, {Map<String, String>? queryParams, ApiOptions? options, bool isLoadMore = false, bool forceRefresh = false}) async {
+  /// Loads feed items from a specified API endpoint with caching and pagination support.
+  /// 
+  /// This method handles fetching feed data from the server, managing cache storage,
+  /// and supporting pagination for both initial loads and loading more items.
+  /// 
+  /// **Parameters:**
+  /// - [endpoint]: The API endpoint to fetch feed items from (e.g., 'feed', 'daily-digest')
+  /// - [queryParams]: Optional query parameters to include in the API request
+  /// - [options]: Optional API configuration options for the request
+  /// - [isLoadMore]: If true, appends new items to existing ones instead of replacing them
+  /// - [forceRefresh]: If true, bypasses cache and forces a fresh API call
+  /// 
+  /// **Returns:** `Future<bool>` indicating whether the load operation was successful
+  /// 
+  /// **Behavior:**
+  /// - For initial loads (`!isLoadMore && !forceRefresh`), attempts to load from cache first
+  /// - Updates loading states appropriately for both initial loads and pagination
+  /// - Handles pagination metadata (`hasMore`, `nextCursor`) from the API response
+  /// - Caches successful responses for initial loads (not for load-more operations)
+  /// - Special handling for 'feed' endpoint to track last ingestion date
+  /// 
+  /// **State Updates:**
+  /// - Sets `isLoading`/`isLoadingMore` during the operation
+  /// - Updates `hasMore` and `nextCursor` for pagination
+  /// - Sets `error` state if the operation fails
+  Future<bool> loadFromEndpoint(String endpoint, {
+    Map<String, String>? queryParams,
+    ApiOptions? options,
+    bool isLoadMore = false,
+    bool forceRefresh = false
+  }) async {
     final cache = ref.read(feedCacheProvider);
     
     // Try to load from cache first (unless force refresh or load more)
     if (!forceRefresh && !isLoadMore) {
-      final cachedItems = await cache.getCachedFeed(endpoint, queryParams: queryParams);
+      final cachedItems = await cache.getFeedItems(endpoint, queryParams: queryParams);
       if (cachedItems != null) {
         await setValue(cachedItems);
         // Set pagination state for cached data
@@ -229,7 +352,7 @@ abstract class BaseFeedNotifier extends Notifier<BaseFeedState> {
         
         // Cache the response (only for initial loads, not load more)
         if (!isLoadMore) {
-          await cache.setCachedFeed(endpoint, updatedItems, queryParams: queryParams);
+          await cache.setFeedItems(endpoint, updatedItems, queryParams: queryParams);
         }
         
         // Update pagination state

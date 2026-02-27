@@ -6,12 +6,21 @@ import 'package:muslimdigest/variables/feed.dart';
 final feedTypeProvider = NotifierProvider<FeedTypeNotifier, FeedType>(FeedTypeNotifier.new);
 
 class FeedTypeNotifier extends Notifier<FeedType> {
-  static const _key = 'feedType';
+  static const _key = 'feed_type';
+
+  FeedType get _defaultFeedType => ref.read(appRepositoryProvider).homeFeedType;
 
   @override
   FeedType build() {
     final value = ref.watch(preferencesRepositoryProvider).getString(_key);
-    return FeedType.fromString(value ?? ref.read(appRepositoryProvider).homeFeedType.name);
+    return FeedType.fromString(value ?? _defaultFeedType.name);
+  }
+
+  Future<void> reset() async {
+    state = _defaultFeedType;
+    await ref
+        .read(preferencesRepositoryProvider)
+        .remove(_key);
   }
 
   Future<void> setValue(FeedType value) async {

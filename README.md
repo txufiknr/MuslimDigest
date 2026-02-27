@@ -21,9 +21,9 @@
 | 📱 **Flutter** (Framework) | Cross-platform, fast development, beautiful UI |
 | 🎯 **Dart** (Language) | Type-safe, optimized for Flutter |
 | 🗺️ **Go Router** (Navigation) | Declarative routing, deep linking support |
-| 🎨 **Google Fonts** (Typography) | Beautiful, web-safe fonts |
 | 🌙 **Theme Provider** (Theming) | Runtime theme switching, persistence |
-| 💾 **Shared Preferences** (Storage) | Local data persistence |
+| 💾 **Shared Preferences** (Storage) | User preferences and settings persistence |
+| 🔐 **Flutter Secure Storage** (Cache) | Secure feed caching with dynamic keys |
 | 🌐 **HTTP** (API Client) | RESTful API communication |
 | 🔗 **URL Launcher** (External Links) | In-app browser and external links |
 | 🆔 **UUID** (User IDs) | Standard unique identifier generation |
@@ -45,7 +45,9 @@
 
 ### 🔒 Security & Privacy
 - **Environment Variables** - Secure API endpoint configuration
-- **Local Storage Encryption** - Secure user data storage
+- **Platform-Native Secure Storage** - Feed caching using iOS Keychain and Android Keystore
+- **Dynamic Cache Keys** - Flexible caching without storage restrictions
+- **Encrypted Local Storage** - User preferences and settings protection
 - **Privacy Controls** - User consent and data management
 - **Secure Communication** - HTTPS API communication
 
@@ -73,7 +75,13 @@
 - **HTTP Client** - Robust API communication
 - **Error Handling** - Graceful error management
 - **Environment Config** - Development and production endpoints
-- **Data Persistence** - Local caching and synchronization
+- **Secure Feed Caching** - Dynamic cache with expiration and metadata
+
+### 📝 Content Management
+- **Smart Feed Filtering** - "Not interested" and content reporting
+- **Dynamic Placeholders** - Context-aware UI for filtered content
+- **Undo Functionality** - Restore filtered content with one tap
+- **Feedback System** - Categorized content reporting with follow-up actions
 
 ## Available Scripts
 

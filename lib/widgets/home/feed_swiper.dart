@@ -1,4 +1,4 @@
-import 'dart:convert';
+import 'dart:developer';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_card_swiper/flutter_card_swiper.dart';
@@ -11,6 +11,7 @@ import 'package:muslimdigest/config/themes.dart';
 import 'package:muslimdigest/models/user.dart';
 import 'package:muslimdigest/providers/feed_type.dart';
 import 'package:muslimdigest/providers/read_count.dart';
+import 'package:muslimdigest/providers/read_count_states.dart';
 import 'package:muslimdigest/providers/topic.dart';
 import 'package:muslimdigest/providers/user/settings.dart';
 import 'package:muslimdigest/utils/app.dart';
@@ -18,9 +19,7 @@ import 'package:muslimdigest/utils/app_repository.dart';
 import 'package:muslimdigest/utils/extensions.dart';
 import 'package:muslimdigest/api/feeds.dart';
 import 'package:muslimdigest/utils/functions.dart';
-import 'package:muslimdigest/variables/app.dart';
 import 'package:muslimdigest/variables/feed.dart';
-import 'package:muslimdigest/variables/user.dart';
 import 'package:muslimdigest/widgets/components/button.dart';
 import 'package:muslimdigest/widgets/components/divider.dart';
 import 'package:muslimdigest/widgets/home/feed_card.dart';
@@ -33,11 +32,15 @@ class FeedSwiper extends ConsumerStatefulWidget {
   final VoidCallback onReload;
   final VoidCallback onSeeLatest;
   final VoidCallback onSeeHome;
+  final FeedType? feedType;
+  final int? initialIndex;
   
   const FeedSwiper({super.key, 
     required this.onReload,
     required this.onSeeLatest,
     required this.onSeeHome,
+    this.feedType,
+    this.initialIndex,
   });
 
   @override
@@ -46,12 +49,32 @@ class FeedSwiper extends ConsumerStatefulWidget {
 
 class FeedSwiperState extends ConsumerState<FeedSwiper> {
   final _controller = CardSwiperController();
-  // final _readCountStates = <String, int>{}; // TODO: change to prefs, reset on ingestLastDate update
-  Map<String, int> get _readCountStates => PrefData.readCountStates;
+  late var _isLoading = widget.initialIndex != null;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _initInitialPage();
+    });
+  }
+
+  Future<void> _initInitialPage() async {
+    if (widget.initialIndex == null) return;
+    if (_isDigestFeed) {
+      await ref.read(readCountProvider.notifier).setValue(widget.initialIndex);
+    } else {
+      await ref.read(readCountStatesProvider.notifier).update({
+        _readCountName: widget.initialIndex!,
+      });
+    }
+    setState(() {
+      _isLoading = false;
+    });
+  }
 
   // Feed type
-  FeedType get _feedType => ref.watch(feedTypeProvider);
-
+  FeedType get _feedType => widget.feedType ?? ref.watch(feedTypeProvider);
   bool get _isDigestFeed => _feedType == FeedType.digest;
   bool get _isLatestFeed => _feedType == FeedType.latest;
   bool get _isTopicFeed => _isLatestFeed && _currentTopic != null;
@@ -61,21 +84,22 @@ class FeedSwiperState extends ConsumerState<FeedSwiper> {
   bool get _isFeedLoading => _feedType.watch(ref).isLoading;
   int get _readCount => ref.watch(readCountProvider);
   FeedType get _homeFeedType => ref.read(appRepositoryProvider).homeFeedType;
-  String? get _currentTopic => ref.watch(topicProvider);
+  String? get _currentTopic => widget.feedType == null ? ref.watch(topicProvider) : null;
   int get _cardsCount => _isDigestFeed && _feedItems.length == DAILY_READ_TARGET
     ? _feedItems.length + 1
     : _feedItems.length;
 
   // Read state
+  Map<String, int> get _readCountStates => ref.watch(readCountStatesProvider);
   String get _readCountName => _isTopicFeed ? _currentTopic! : _feedType.name;
   int get _readCountState => _readCountStates[_readCountName] ?? 0;
   int get _currentItemIndex => _isDigestFeed ? _readCount : _readCountState;
   int get _initialItemIndex => _cardsCount == 0 ? 0 : _currentItemIndex.clamp(0, _cardsCount - 1);
-  bool get _canGoPrev => _currentItemIndex > 0;
-  bool get _canGoNext => _currentItemIndex < _cardsCount - 1;
-  bool get _canUndo => _canGoPrev;
-
   int get _currentPage => _currentItemIndex % CURSOR_PAGINATION_LIMIT;
+  
+  bool get _canGoPrev => _cardsCount > 1 && _currentItemIndex > 0;
+  bool get _canGoNext => _cardsCount > 1 && _currentItemIndex < _cardsCount - 1;
+  bool get _canUndo => _canGoPrev;
 
   // User settings
   UserSettings get _settings => ref.watch(settingsProvider);
@@ -136,11 +160,9 @@ class FeedSwiperState extends ConsumerState<FeedSwiper> {
         ref.read(readCountProvider.notifier).setValue(newCount),
       ]);
     } else {
-      final newReadCountStates = Map<String, int>.from(_readCountStates)..addAll({
+      await ref.read(readCountStatesProvider.notifier).update({
         _readCountName: _readCountState + 1,
       });
-      await prefs.setString('read_count_states', jsonEncode(newReadCountStates));
-      setState(() {});
 
       // Trigger lazy loading after swipe
       _triggerLazyLoad();
@@ -161,11 +183,9 @@ class FeedSwiperState extends ConsumerState<FeedSwiper> {
       if (readCount == 0) return;
       await ref.read(readCountProvider.notifier).setValue(readCount - 1);
     } else if (_readCountState > 0) {
-      final newReadCountStates = Map<String, int>.from(_readCountStates)..addAll({
+      await ref.read(readCountStatesProvider.notifier).update({
         _readCountName: _readCountState - 1,
       });
-      await prefs.setString('read_count_states', jsonEncode(newReadCountStates));
-      setState(() {});
     }
   }
 
@@ -190,7 +210,7 @@ class FeedSwiperState extends ConsumerState<FeedSwiper> {
     });
 
     // When feed is loading
-    if (_isFeedLoading) {
+    if (_isLoading || _isFeedLoading) {
       return Column(
         children: [
           TrendingFeedsCard().center().expand(),
@@ -223,8 +243,17 @@ class FeedSwiperState extends ConsumerState<FeedSwiper> {
       ).withPaddingAll(AppThemes.contentPadding);
     }
 
+    final _numberOfCardsDisplayed = _cardsCount == 1 ? 1 : 2;
+
+    log('_initialItemIndex = $_initialItemIndex');
+    log('_numberOfCardsDisplayed = $_numberOfCardsDisplayed');
+    log('_cardsCount = $_cardsCount');
+    // [log] _initialItemIndex = 8
+    // [log] _numberOfCardsDisplayed = 2
+    // [log] _cardsCount = 9
+
     return CardSwiper(
-      key: Key("CardSwiper_$_currentItemIndex"),
+      key: Key("CardSwiper_${_feedType}_{$_currentTopic}_$_currentItemIndex"),
       controller: _controller,
       padding: EdgeInsets.zero,
       showBackCardOnUndo: true,
@@ -236,7 +265,7 @@ class FeedSwiperState extends ConsumerState<FeedSwiper> {
         right: _swipeDirection == CardSwiperDirection.right ? _canGoNext : _canUndo
       ),
       initialIndex: _initialItemIndex,
-      numberOfCardsDisplayed: _cardsCount == 1 ? 1 : 2,
+      numberOfCardsDisplayed: _numberOfCardsDisplayed,
       cardsCount: _cardsCount,
       cardBuilder: (context, index, percentThresholdX, percentThresholdY) {
         return FeedCard(

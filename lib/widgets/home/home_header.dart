@@ -123,7 +123,7 @@ class _HomeHeaderState extends ConsumerState<HomeHeader> {
     final trendingCount = ref.watch(feedTrendingProvider).total;
     final isTrending = feedType == FeedType.trending;
     final homeFeedType = ref.watch(userProvider.notifier).homeFeedType;
-    final activeHomeFeedType = feedType.isHomeFeed ? feedType : homeFeedType;
+    final activeHomeFeedType = feedType.isHomeFeed && _currentTopic == null ? feedType : homeFeedType;
 
     return Container(
       height: TAB_HEIGHT,

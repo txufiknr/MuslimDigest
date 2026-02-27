@@ -28,7 +28,7 @@ class _FeedbackFormState extends State<FeedbackForm> {
     if (!mounted) return;
     if (result.successful) {
       showSnackBarSuccess(context, '$categoryLabel has been sent successfully');
-      context.pop(result);
+      context.pop({"category": _selectedCategory, "result": result});
     } else {
       showSnackBarError(context, result.error ?? 'Failed to send ${categoryLabel.toLowerCase()}');
     }

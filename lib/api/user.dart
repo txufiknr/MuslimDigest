@@ -7,7 +7,9 @@ import 'package:muslimdigest/models/user.dart';
 import 'package:muslimdigest/providers/feed/feed.dart';
 import 'package:muslimdigest/providers/feed/feed_liked.dart';
 import 'package:muslimdigest/providers/feed/feed_saved.dart';
+import 'package:muslimdigest/providers/feed_type.dart';
 import 'package:muslimdigest/providers/read_count.dart';
+import 'package:muslimdigest/providers/read_count_states.dart';
 import 'package:muslimdigest/providers/read_last_date.dart';
 import 'package:muslimdigest/providers/topic.dart';
 import 'package:muslimdigest/providers/user/preferences.dart';
@@ -100,7 +102,9 @@ Future<void> resetUserData(WidgetRef ref) async {
     // Activity data
     ref.read(topicProvider.notifier).clear(),
     ref.read(readCountProvider.notifier).clear(),
+    ref.read(readCountStatesProvider.notifier).clear(),
     ref.read(readLastDateProvider.notifier).clear(),
+    ref.read(feedTypeProvider.notifier).reset(),
     // Feed data
     ref.read(feedProvider.notifier).clear(),
     ref.read(feedLikedProvider.notifier).clear(),
