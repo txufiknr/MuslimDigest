@@ -271,8 +271,8 @@ class PersonalSettingsSection extends ConsumerWidget {
             icon: CupertinoIcons.person_fill,
             title: 'Edit Profile',
             onTap: () {
-              // context.push('/welcome');
-              context.push('/edit_profile');
+              context.push('/welcome');
+              // context.push('/edit_profile');
             },
           ),
         ],

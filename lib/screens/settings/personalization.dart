@@ -176,16 +176,18 @@ class _PersonalizationPageState extends ConsumerState<PersonalizationPage>
               ),
             ],
           ),
+
+          // TODO: manage hidden topics, sources, and feed items
            
           // Preview Section
-          SettingSection(
-            children: [
-              PreviewSection(
-                text: '$GREETINGS, $_firstName. Welcome to $APP_NAME - $APP_DESCRIPTION. This is how your article text will appear with the selected size. Swipe ${settings.swipeDirection.name} to navigate to the next article, and swipe to the opposite direction to undo.',
-                fontSize: settings.textSize.toDouble(),
-              ),
-            ],
-          ),
+          // SettingSection(
+          //   children: [
+          //     PreviewSection(
+          //       text: '$GREETINGS, $_firstName. Welcome to $APP_NAME - $APP_DESCRIPTION. This is how your article text will appear with the selected size. Swipe ${settings.swipeDirection.name} to navigate to the next article, and swipe to the opposite direction to undo.',
+          //       fontSize: settings.textSize.toDouble(),
+          //     ),
+          //   ],
+          // ),
         ].addItemInBetween(MyDivider().withPaddingVertical(AppThemes.contentPadding)),
       ),
     );

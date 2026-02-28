@@ -222,23 +222,38 @@ abstract class BaseFeedNotifier extends Notifier<BaseFeedState> {
 
     // Track which operations actually changed state to avoid redundant cache invalidation
     final List<String> cachesToInvalidate = [];
+    final List<Future<void>> cacheUpdates = [];
     
-    // Fire and forget API calls and track changes
+    // Handle like operation
     if (isLiked != null && isLiked != currentItem.isLiked) {
       newLikeCount = isLiked ? currentItem.likeCount + 1 : currentItem.likeCount - 1;
       newLikedCount = isLiked ? currentUser.likedCount + 1 : currentUser.likedCount - 1;
       fireAndForget(() => like(feedId, isLiked));
       
-      cachesToInvalidate.add('feed/liked');
+      // Schedule cache update
+      cacheUpdates.add(_updateFeedCache(
+        endpoint: 'feed/liked',
+        updatedItem: currentItem.copyWith(isLiked: isLiked),
+        isActive: isLiked,
+      ));
+      
       if (endpoint == 'feed') {
         cachesToInvalidate.add(endpoint);
       }
     }
+    
+    // Handle save operation
     if (isSaved != null && isSaved != currentItem.isSaved) {
       newSavedCount = isSaved ? currentUser.savedCount + 1 : currentUser.savedCount - 1;
       fireAndForget(() => save(feedId, isSaved));
       
-      cachesToInvalidate.add('feed/saved');
+      // Schedule cache update
+      cacheUpdates.add(_updateFeedCache(
+        endpoint: 'feed/saved',
+        updatedItem: currentItem.copyWith(isSaved: isSaved),
+        isActive: isSaved,
+      ));
+      
       if (endpoint == 'feed') {
         cachesToInvalidate.add(endpoint);
       }
@@ -271,14 +286,58 @@ abstract class BaseFeedNotifier extends Notifier<BaseFeedState> {
     // Feed cache data is now handled by SecureFeedCache, no need to save to SharedPreferences
     // The cache will be updated/invalidated below if needed
     
-    // Invalidate caches only when actual changes occurred
-    if (cachesToInvalidate.isNotEmpty) {
+    // Execute cache updates and invalidations
+    if (cacheUpdates.isNotEmpty || cachesToInvalidate.isNotEmpty) {
       final cache = ref.read(feedCacheProvider);
-      // Use a Set to avoid duplicate invalidations
-      final uniqueCaches = cachesToInvalidate.toSet();
-      for (final cacheKey in uniqueCaches) {
-        await cache.invalidateCache(cacheKey);
+      
+      // Execute all cache updates in parallel
+      if (cacheUpdates.isNotEmpty) {
+        await Future.wait(cacheUpdates);
       }
+      
+      // Invalidate remaining caches
+      if (cachesToInvalidate.isNotEmpty) {
+        final uniqueCaches = cachesToInvalidate.toSet();
+        for (final cacheKey in uniqueCaches) {
+          await cache.invalidateCache(cacheKey);
+        }
+      }
+    }
+  }
+
+  /// Generic method to update feed caches (liked/saved) by adding or removing items
+  Future<void> _updateFeedCache({
+    required String endpoint,
+    required FeedItem updatedItem,
+    required bool isActive,
+  }) async {
+    try {
+      final cache = ref.read(feedCacheProvider);
+      
+      // Get current items from cache
+      final currentItems = await cache.getFeedItems(endpoint) ?? <FeedItem>[];
+      
+      final List<FeedItem> updatedItems;
+      
+      if (isActive) {
+        // Add item to feed (avoid duplicates)
+        updatedItems = [
+          updatedItem,
+          ...currentItems.where((item) => item.id != updatedItem.id),
+        ];
+      } else {
+        // Remove the item from feed
+        updatedItems = currentItems
+            .where((item) => item.id != updatedItem.id)
+            .toList();
+      }
+      
+      // Update the cache with the modified list
+      await cache.setFeedItems(endpoint, updatedItems);
+      
+      log('[BaseFeedNotifier] Updated $endpoint cache: ${isActive ? 'added' : 'removed'} item ${updatedItem.id}');
+    } catch (e) {
+      log('[BaseFeedNotifier] Failed to update $endpoint cache: $e');
     }
   }
 

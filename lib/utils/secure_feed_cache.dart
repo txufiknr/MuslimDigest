@@ -46,6 +46,7 @@ class CacheEntry<T> {
 class SecureFeedCache {
   final FlutterSecureStorage _storage;
   static const Duration _defaultCacheDuration = Duration(hours: 1);
+  static const Duration _digestCacheDuration = Duration(hours: 36);
 
   SecureFeedCache(this._storage);
 
@@ -109,7 +110,10 @@ class SecureFeedCache {
   }) async {
     final cacheKey = _generateCacheKey(endpoint, queryParams: queryParams);
     final now = DateTime.now();
-    final expiresAt = now.add(expiration ?? _defaultCacheDuration);
+    
+    // Use 36-hour cache for digest feed (endpoint: 'feed'), otherwise use default or provided expiration
+    final cacheDuration = expiration ?? (endpoint == 'feed' ? _digestCacheDuration : _defaultCacheDuration);
+    final expiresAt = now.add(cacheDuration);
 
     // Convert FeedItems to List<dynamic> for JSON serialization
     final itemsData = items.map((item) => item.toJson()).toList();

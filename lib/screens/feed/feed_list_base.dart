@@ -76,18 +76,22 @@ class _FeedListBasePageState extends ConsumerState<FeedListBasePage> {
   }
 
   Future<void> _loadInitialFeeds() async {
-    // TODO: saved feed items is initially exists (shown 1 in list), but then immediatelly disappear (show "No saved feeds yet")
-    // can you check and fix the issue?
     final state = ref.read(widget.provider);
 
     debugPrint('[init] state.isLoading: ${state.isLoading}');
     debugPrint('[init] state.isEmpty: ${state.isEmpty}');
     debugPrint('[init] state.isNone: ${state.isNone}');
     
-    // Only load from API if we have no cached data
-    if (state.isEmpty) {
+    // For liked and saved feeds, always force refresh to ensure latest data
+    // For other feeds, only load if we have no cached data
+    final shouldForceRefresh = widget.feedType == FeedType.liked || widget.feedType == FeedType.saved;
+    
+    if (state.isEmpty || shouldForceRefresh) {
       final notifier = ref.read(widget.provider.notifier);
-      await notifier.loadFromEndpoint(widget.feedType.endpoint);
+      await notifier.loadFromEndpoint(
+        widget.feedType.endpoint,
+        forceRefresh: shouldForceRefresh,
+      );
     }
   }
 
@@ -147,61 +151,92 @@ class _FeedListBasePageState extends ConsumerState<FeedListBasePage> {
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: MyAppBar(title: widget.title),
       body: SafeArea(
-        child: state.isNone
-            ? _buildEmptyState(h)
-            : _buildFeedList(h, state),
+        child: _buildFeedList(h, state),
       ),
     );
   }
 
+  // Widget _buildLoadingState() {
+  //   return Center(
+  //     child: Column(
+  //       mainAxisAlignment: MainAxisAlignment.center,
+  //       children: [
+  //         CupertinoActivityIndicator().squared(24),
+  //         const SizedBox(height: 16),
+  //         Text(
+  //           'Loading ${widget.title.toLowerCase()}...',
+  //           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+  //             color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+  //           ),
+  //         ),
+  //       ],
+  //     ),
+  //   );
+  // }
+
   Widget _buildEmptyState(MyHelper h) {
-    return Center(
-      child: MyPlaceholder(
-        'No ${widget.title.toLowerCase()} yet',
-        footer: widget.placeholderTooltip,
-        padding: 48,
-        icon: Icon(
-          widget.placeholderIcon,
-          size: 64,
-          color: AppColors.primary.withValues(alpha: 0.5),
-        ),
+    return MyPlaceholder(
+      'No ${widget.title.toLowerCase()} yet',
+      footer: widget.placeholderTooltip,
+      padding: 48,
+      icon: Icon(
+        widget.placeholderIcon,
+        size: 64,
+        color: AppColors.primary.withValues(alpha: 0.5),
       ),
-    );
+    ).center();
   }
 
   Widget _buildFeedList(MyHelper h, BaseFeedState state) {
     final feeds = state.items ?? [];
-    
+
+    debugPrint('[build] feeds.length: ${feeds.length}');
+    debugPrint('[build] state.isLoading: ${state.isLoading}');
+    debugPrint('[build] state.isLoadingMore: ${state.isLoadingMore}');
+    debugPrint('[build] state.hasMore: ${state.hasMore}');
+
+    // Show loading indicator when initially loading
+    // if (state.isGetting) {
+    //   return _buildLoadingState();
+    // }
+
     return SmartRefresher(
       controller: _refreshController,
+      enablePullDown: true,
+      enablePullUp: false,
       onRefresh: _onRefresh,
-      // enablePullDown: true,
-      // enablePullUp: false,
-      // header: const ClassicHeader(
-      //   refreshText: 'Pull to refresh',
-      //   releaseText: 'Release to refresh',
-      //   completeText: 'Refresh complete',
-      //   refreshingText: 'Refreshing...',
-      //   idleText: 'Pull down to refresh',
+      // footer: CustomFooter(
+      //   loadStyle: LoadStyle.ShowAlways,
+      //   builder: (context, mode) {
+      //     if (mode == LoadStatus.loading) {
+      //       return CupertinoActivityIndicator().squared(20).center();
+      //     }
+      //     return const SizedBox.shrink();
+      //   },
       // ),
-      footer: CustomFooter(
-        loadStyle: LoadStyle.ShowAlways,
+      header: CustomHeader(
+        // loadStyle: LoadStyle.ShowAlways,
         builder: (context, mode) {
-          if (mode == LoadStatus.loading) {
-            return CupertinoActivityIndicator().squared(20).center();
+          // if (mode == LoadStatus.loading) {
+          if (mode == RefreshStatus.canRefresh || mode == RefreshStatus.refreshing) {
+            return CupertinoActivityIndicator(animating: mode == RefreshStatus.refreshing).squared(24).center();
           }
-          return const SizedBox.shrink();
+          return SizedBox.shrink();
         },
       ),
-      enablePullUp: true,
-      enablePullDown: false,
       child: ListView.builder(
         controller: _scrollController,
         padding: const EdgeInsets.symmetric(vertical: 16, horizontal: AppThemes.contentPadding),
-        itemCount: feeds.length + (state.hasMore ? 1 : 0),
+        itemCount: feeds.length + (feeds.isEmpty || state.hasMore ? 1 : 0),
         itemBuilder: (context, index) {
-          if (index == feeds.length) {
+          // Loading more indicator
+          if (state.isGetting || index == feeds.length) {
             return _buildLoadingIndicator();
+          }
+
+          // Empty state
+          if (feeds.isEmpty) {
+            return _buildEmptyState(h);
           }
           
           return _buildFeedItem(h, feeds[index]);
