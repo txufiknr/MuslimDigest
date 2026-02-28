@@ -23,7 +23,6 @@ class BaseFeedState {
   final String? nextCursor;
   final Set<String> notInterestedItems;
   final Map<String, FeedbackCategory> notInterestedReasons;
-  final Set<String> sourceAvoidedItems;
 
   bool get isEmpty => items?.isEmpty ?? true;
   bool get isGetting => isEmpty && isLoading;
@@ -40,7 +39,6 @@ class BaseFeedState {
     this.nextCursor,
     this.notInterestedItems = const {},
     this.notInterestedReasons = const {},
-    this.sourceAvoidedItems = const {},
   });
 
   BaseFeedState copyWith({
@@ -52,7 +50,6 @@ class BaseFeedState {
     String? nextCursor,
     Set<String>? notInterestedItems,
     Map<String, FeedbackCategory>? notInterestedReasons,
-    Set<String>? sourceAvoidedItems,
   }) {
     return BaseFeedState(
       items: items ?? this.items,
@@ -63,7 +60,6 @@ class BaseFeedState {
       nextCursor: nextCursor ?? this.nextCursor,
       notInterestedItems: notInterestedItems ?? this.notInterestedItems,
       notInterestedReasons: notInterestedReasons ?? this.notInterestedReasons,
-      sourceAvoidedItems: sourceAvoidedItems ?? this.sourceAvoidedItems,
     );
   }
 
@@ -74,10 +70,6 @@ class BaseFeedState {
 
   bool isNotInterested(String feedId) {
     return notInterestedItems.contains(feedId);
-  }
-
-  bool isSourceAvoided(String feedId) {
-    return sourceAvoidedItems.contains(feedId);
   }
 }
 
@@ -167,61 +159,14 @@ abstract class BaseFeedNotifier extends Notifier<BaseFeedState> {
     await cache.invalidateAllCacheForEndpoint(endpoint);
   }
 
-  /// Mark all feed items from the same source as not interested
-  Future<void> markAllFromSourceAsNotInterested(String sourceId, {FeedbackCategory? reason}) async {
-    if (state.items == null) return;
-    
-    // Find all feed items from the same source
-    final itemsFromSource = state.items!.where((item) => item.source.id == sourceId).toList();
-    if (itemsFromSource.isEmpty) return;
-    
-    // Mark all items from this source as not interested
-    final updatedNotInterestedItems = Set<String>.from(state.notInterestedItems);
-    final updatedNotInterestedReasons = Map<String, FeedbackCategory>.from(state.notInterestedReasons);
-    final updatedSourceAvoidedItems = Set<String>.from(state.sourceAvoidedItems);
-    
-    for (final item in itemsFromSource) {
-      updatedNotInterestedItems.add(item.id);
-      updatedSourceAvoidedItems.add(item.id);
-      if (reason != null) {
-        updatedNotInterestedReasons[item.id] = reason;
-      }
-    }
-    
-    state = state.copyWith(
-      notInterestedItems: updatedNotInterestedItems,
-      notInterestedReasons: updatedNotInterestedReasons,
-      sourceAvoidedItems: updatedSourceAvoidedItems,
-    );
-    
-    // Invalidate cache since we marked items as not interested
-    final cache = ref.read(feedCacheProvider);
-    await cache.invalidateAllCacheForEndpoint(endpoint);
-  }
-
-  Future<void> unmarkAsAvoidedSource(String sourceId) async {
-    if (state.items == null) return;
-    
-    // Find all feed items from the specified source
-    final itemsFromSource = state.items!.where((item) => item.source.id == sourceId).toList();
-    if (itemsFromSource.isEmpty) return;
-    
-    // Unmark all items from this source
-    for (final item in itemsFromSource) {
-      await unmarkAsNotInterested(item.id);
-    }
-  }
-
   /// Unmark a feed item as not interested (undo)
   Future<void> unmarkAsNotInterested(String feedId) async {
     final updatedNotInterestedItems = Set<String>.from(state.notInterestedItems)..remove(feedId);
     final updatedNotInterestedReasons = Map<String, FeedbackCategory>.from(state.notInterestedReasons)..remove(feedId);
-    final updatedSourceAvoidedItems = Set<String>.from(state.sourceAvoidedItems)..remove(feedId);
   
     state = state.copyWith(
       notInterestedItems: updatedNotInterestedItems,
       notInterestedReasons: updatedNotInterestedReasons,
-      sourceAvoidedItems: updatedSourceAvoidedItems,
     );
   
     // Invalidate cache since we unmarked an item as not interested

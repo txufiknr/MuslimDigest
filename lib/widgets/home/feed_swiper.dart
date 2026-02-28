@@ -1,4 +1,5 @@
 import 'dart:developer';
+import 'dart:math' show max;
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_card_swiper/flutter_card_swiper.dart';
@@ -93,7 +94,7 @@ class FeedSwiperState extends ConsumerState<FeedSwiper> {
   // Read state
   Map<String, int> get _readCountStates => ref.watch(readCountStatesProvider);
   String get _readCountName => _isTopicFeed ? _currentTopic! : _feedType.name;
-  int get _readCountState => _readCountStates[_readCountName] ?? 0;
+  int get _readCountState => max(0, _readCountStates[_readCountName] ?? 0);
   int get _currentItemIndex => _isDigestFeed ? _readCount : _readCountState;
   int get _initialItemIndex => _cardsCount == 0 ? 0 : _currentItemIndex.clamp(0, _cardsCount - 1);
   int get _currentPage => _currentItemIndex % CURSOR_PAGINATION_LIMIT;
@@ -128,28 +129,6 @@ class FeedSwiperState extends ConsumerState<FeedSwiper> {
       _isLoadingMore = false;
     }
   }
-
-  // @override
-  // void didUpdateWidget(covariant FeedSwiper oldWidget) {
-  //   if (oldWidget.feedType != widget.feedType) {
-  //     // Reset initialIndex to 0 when feed type changes
-  //     // Note: initialIndex is not directly accessible on CardSwiperController
-  //     // We'll handle this by rebuilding the swiper with new key
-  //     final feedTotal = widget.feedType.readItems(ref).length;
-  //     debugPrint("Resetting swiper to index 0");
-  //     debugPrint("current feedType: ${widget.feedType.label}");
-  //     debugPrint("current feedType length: $feedTotal");
-  //     if (feedTotal > 0) {
-  //       debugPrint("first feed: ${widget.feedType.readItems(ref).first.title}");
-  //     }
-  //     debugPrint("cardsCount: $_cardsCount");
-  //     debugPrint("initialIndex: $_initialItemIndex");
-  //     // setState(() {
-  //     //   _controller.moveTo(_initialItemIndex);
-  //     // });
-  //   }
-  //   super.didUpdateWidget(oldWidget);
-  // }
 
   @override
   void dispose() {

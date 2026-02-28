@@ -32,6 +32,7 @@ import 'package:muslimdigest/widgets/components/popup_menu.dart';
 import 'package:muslimdigest/widgets/components/placeholder.dart';
 import 'package:muslimdigest/widgets/home/feedback_form.dart';
 import 'package:muslimdigest/api/feeds.dart';
+import 'package:muslimdigest/providers/user/preferences.dart';
 import 'package:path_provider/path_provider.dart';
 import '../../models/feed.dart';
 import 'package:screenshot/screenshot.dart';
@@ -136,9 +137,14 @@ class _FeedCardState extends ConsumerState<FeedCard> with AutomaticKeepAliveClie
         ? widget.feedType.getNotifier(ref).getNotInterestedReason(widget.feedItem!.id)
         : null;
 
-    // Check if this feed item was marked as not interested due to source avoidance
-    final isSourceAvoided = isNotInterested && widget.feedItem != null &&
-        widget.feedType.watch(ref).isSourceAvoided(widget.feedItem!.id);
+    // Check if this feed item should be hidden due to avoided source
+    // Using preferencesProvider directly (SSOT)
+    final preferences = ref.watch(preferencesProvider);
+    final isSourceAvoided = widget.feedItem != null &&
+        preferences.avoidedSources.contains(widget.feedItem!.source.id);
+
+    // Show placeholder if either not interested OR source avoided
+    final shouldShowPlaceholder = isNotInterested || isSourceAvoided;
 
     return Container(
       width: double.infinity,
@@ -164,7 +170,7 @@ class _FeedCardState extends ConsumerState<FeedCard> with AutomaticKeepAliveClie
             ],
           ),
         ].addItemInBetween(SizedBox(height: 16,)),
-      ) : isNotInterested ? _NotInterestedPlaceholder(
+      ) : shouldShowPlaceholder ? _NotInterestedPlaceholder(
         feedType: widget.feedType,
         feedItem: widget.feedItem!,
         reason: reason,
@@ -538,9 +544,10 @@ class _FeedFooter extends ConsumerWidget {
       if (response.success) {
         showSnackBarSuccess(context, "Feed hidden. We'll show less content like this.");
 
-        // Remove the feed item from the current feed
-        final notifier = feedType.getNotifier(ref);
-        await notifier.markAsNotInterested(feedItem.id);
+        // Mark as not interested across all feed types
+        for (var t in FeedType.values) {
+          t.getNotifier(ref).markAsNotInterested(feedItem.id);
+        }
 
       } else {
         showSnackBarError(context, response.error ?? "Failed to mark as not interested");
@@ -570,10 +577,6 @@ class _FeedFooter extends ConsumerWidget {
     if (!context.mounted || !confirm) return;
     avoidSource(ref, feedItem.source.id);
     showSnackBarSuccess(context, "Won't recommend feeds from $sourceName");
-
-    // Remove all feed items from the same source
-    final notifier = feedType.getNotifier(ref);
-    await notifier.markAllFromSourceAsNotInterested(feedItem.source.id);
   }
 
   Future<void> _feedback(BuildContext context, WidgetRef ref) async {

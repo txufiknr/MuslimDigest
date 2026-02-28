@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:muslimdigest/config/themes.dart';
+import 'package:muslimdigest/utils/extensions.dart';
 
 const _kBulletChars = ['-', '*', '•'];
 
@@ -13,6 +15,16 @@ final _kBulletSplit = RegExp(r'\s*[-*•]\s+');
 // Matches Q&A pattern: "Q: ... A: ..."
 final _kQAPattern = RegExp(r'^\s*Q:\s*(.+?)\s*A:\s*(.+?)\s*$');
 
+// Matches hadith narration pattern: "Narrated [narrator]: [prophet statement], "[quote]" ([reference])."
+// Note: It's too strict, misses trailing period outside parens
+// final _kHadithPattern = RegExp(r'^\s*Narrated\s+([^:]+):\s*([^,]+),\s*"([^"]+)"\s*\(([^)]+)\)\s*$');
+
+// Suggested — handles optional reference, period inside or outside parens
+final _kHadithPattern = RegExp(
+  r'^\s*Narrated\s+([^:]+):\s*(.*?),\s*"([^"]+)"[.]?\s*(\([^)]+\)[.]?)?\s*$',
+  dotAll: true,
+);
+
 /// Parsed result of a raw text string.
 ///
 /// - [header] is the optional leading text before the first bullet (e.g. a
@@ -21,6 +33,10 @@ final _kQAPattern = RegExp(r'^\s*Q:\s*(.+?)\s*A:\s*(.+?)\s*$');
 ///   leading bullet character.  Empty when the text contains no bullets.
 /// - [question] is the question part when Q&A format is detected.
 /// - [answer] is the answer part when Q&A format is detected.
+/// - [narrator] is the narrator part when hadith format is detected.
+/// - [prophetStatement] is the prophet statement part when hadith format is detected.
+/// - [quote] is the quoted text part when hadith format is detected.
+/// - [reference] is the reference part when hadith format is detected.
 @immutable
 class _ParseResult {
   const _ParseResult({
@@ -28,15 +44,24 @@ class _ParseResult {
     this.lines = const [],
     this.question,
     this.answer,
+    this.narrator,
+    this.prophetStatement,
+    this.quote,
+    this.reference,
   });
 
   final String? header;
   final List<String> lines;
   final String? question;
   final String? answer;
+  final String? narrator;
+  final String? prophetStatement;
+  final String? quote;
+  final String? reference;
 
   bool get hasBullets => lines.isNotEmpty;
   bool get isQA => question != null && answer != null;
+  bool get isHadith => narrator != null && quote != null;
 }
 
 /// Strips the leading bullet character from [line] and returns the trimmed
@@ -61,26 +86,39 @@ String? _stripLeadingBullet(String line) {
 ///
 /// Three strategies are tried in order:
 ///
-/// 1. **Q&A detection** – when the text matches "Q: ... A: ..." pattern
+/// 1. **Hadith detection** – when the text matches "Narrated [narrator]: [prophet statement], "[quote]" ([reference])." pattern
 ///
-/// 2. **Newline-separated** – when the text already contains line breaks,
+/// 2. **Q&A detection** – when the text matches "Q: ... A: ..." pattern
+///
+/// 3. **Newline-separated** – when the text already contains line breaks,
 ///    split on `\n` and treat non-bullet lines before the first bullet as a
 ///    header; every bullet line is stripped of its marker.
 ///
-/// 3. **Inline bullets** – when bullets appear inline (e.g. the text returned
+/// 4. **Inline bullets** – when bullets appear inline (e.g. the text returned
 ///    by many AI APIs: `"- Item one. - Item two. - Item three."`), detect them
 ///    via [_kInlineBulletDetect] and split via [_kBulletSplit].
 ///    A non-empty first segment that precedes the first bullet is the header.
 ///    An empty first segment means the text started with a bullet (no header).
 ///
-/// 4. **Single bullet line** – a single line that starts with a bullet marker.
+/// 5. **Single bullet line** – a single line that starts with a bullet marker.
 ///
 /// When no bullets are found at all, [_ParseResult.lines] is empty.
 _ParseResult _parseText(String rawText) {
   final trimmed = rawText.trim();
   if (trimmed.isEmpty) return const _ParseResult();
 
-  // ── Strategy 1: Q&A detection ────────────────────────────────────────────
+  // ── Strategy 1: Hadith detection ────────────────────────────────────────────
+  final hadithMatch = _kHadithPattern.firstMatch(trimmed);
+  if (hadithMatch != null) {
+    return _ParseResult(
+      narrator: hadithMatch.group(1)?.trim(),
+      prophetStatement: hadithMatch.group(2)?.trim(),
+      quote: hadithMatch.group(3)?.trim(),
+      reference: hadithMatch.group(4)?.trim(),
+    );
+  }
+
+  // ── Strategy 2: Q&A detection ────────────────────────────────────────────
   final qaMatch = _kQAPattern.firstMatch(trimmed);
   if (qaMatch != null) {
     return _ParseResult(
@@ -223,9 +261,10 @@ Widget qaPair(String question, String answer, {
 }
 
 /// Formats [rawText] into either a plain [Text] widget, [qaPair] widget,
-/// or [bulletedList] widget based on content detection.
+/// [bulletedList] widget, or [hadithNarration] widget based on content detection.
 ///
 /// Handles:
+/// - Hadith narrations: "Narrated Abu Huraira: The Prophet said, "[quote]" (reference)."
 /// - Q&A format: "Q: What's the question? A: Here's the answer."
 /// - Bullet lists with all common formats
 /// - Plain text as fallback
@@ -234,6 +273,16 @@ Widget qaPair(String question, String answer, {
 /// misidentified as bullet separators.
 Widget formatText(String rawText, {TextStyle? style}) {
   final result = _parseText(rawText);
+
+  if (result.isHadith) {
+    return hadithNarration(
+      result.narrator!,
+      result.prophetStatement!,
+      result.quote!,
+      result.reference,
+      style: style,
+    );
+  }
 
   if (result.isQA) {
     return qaPair(
@@ -251,6 +300,44 @@ Widget formatText(String rawText, {TextStyle? style}) {
     result.lines,
     header: result.header,
     style: style,
+  );
+}
+
+/// Renders a hadith narration with narrator, prophet statement, quote, and reference.
+///
+/// The hadith is displayed as a column with three parts:
+/// 1. Narrator and prophet statement (normal style)
+/// 2. The quoted text (larger and italic style)
+/// 3. The reference (normal style)
+/// [spacing] controls the vertical gap between parts.
+Widget hadithNarration(
+  String narrator,
+  String prophetStatement,
+  String quote,
+  String? reference, {
+  TextStyle? style,
+  double spacing = 8,
+}) {
+  return Column(
+    mainAxisSize: MainAxisSize.min,
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: <Widget>[
+      Text(
+        'Narrated $narrator: $prophetStatement,',
+        style: style,
+      ),
+      Text(
+        '“$quote”',
+        style: style?.copyWith(
+          fontSize: (style.fontSize ?? 14) * 1.2,
+          fontStyle: FontStyle.italic,
+        ) ?? TextStyle(
+          fontSize: AppThemes.bodyLargeSize,
+          fontStyle: FontStyle.italic,
+        ),
+      ),
+      if (reference != null) Text(reference, style: style),
+    ].addItemInBetween(SizedBox(height: spacing)),
   );
 }
 

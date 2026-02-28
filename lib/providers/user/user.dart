@@ -1,3 +1,5 @@
+import 'dart:developer' show log;
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:muslimdigest/models/user.dart';
 import 'package:muslimdigest/providers/ingest_last_date.dart';
@@ -40,10 +42,15 @@ class UserNotifier extends Notifier<User> {
     try {
       final response = await ApiService.get('user');
       if (response.successful) {
-        await setValue(User.fromJson(response.data));
+        final user = User.fromJson(response.data);
+        await setValue(user);
+        log("🧑 Current user: ${user.toString()}");
+      } else {
+        log("🙅‍♂️ Current user: none");
       }
       return response.successful;
     } catch (e) {
+      log("🙅‍♂️ Current user: $e");
       return false;
     }
   }

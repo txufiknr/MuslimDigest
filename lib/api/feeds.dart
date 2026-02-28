@@ -80,11 +80,6 @@ Future<bool> restoreAvoidedSource(
     // Save user preferences update in backend
     fireAndForget(() => savePreferences(ref));
 
-    // Remove from local feed states
-    FeedType.values.map((t) {
-      t.getNotifier(ref).unmarkAsAvoidedSource(sourceId);
-    });
-    
     // Show success message
     if (context.mounted) {
       showSnackBarSuccess(context, 'Source restored: $sourceId');
