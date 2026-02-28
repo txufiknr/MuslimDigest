@@ -202,8 +202,10 @@ class _NotInterestedPlaceholder extends ConsumerWidget {
 
   Future<void> _undo(BuildContext context, WidgetRef ref) async {
     try {
-      // Call API to unmark as not interested (if there's an endpoint for it)
-      // For now, just remove from local state
+      // Call API to unmark as not interested
+      fireAndForget(() => unmarkNotInterested(feedItem.id));
+      
+      // Remove from local state
       final notifier = feedType.getNotifier(ref);
       await notifier.unmarkAsNotInterested(feedItem.id);
       

@@ -179,6 +179,12 @@ class FeedSwiperState extends ConsumerState<FeedSwiper> {
     if (_currentItemIndex > 5 && _currentItemIndex % 5 == 0) {
       requestReview();
     }
+
+    // Update user total read
+    // final currentUser = ref.read(userProvider);
+    // ref.read(userProvider.notifier).setValue(currentUser.copyWith(readCount: currentUser.readCount + 1));
+
+    // TODO: Update user read history feed cache
     
     // Track reading history to backend
     fireAndForget(() => markRead(lastClusterId));
@@ -194,6 +200,10 @@ class FeedSwiperState extends ConsumerState<FeedSwiper> {
         _readCountName: _readCountState - 1,
       });
     }
+
+    // Update user total read
+    // final currentUser = ref.read(userProvider);
+    // ref.read(userProvider.notifier).setValue(currentUser.copyWith(readCount: currentUser.readCount - 1));
   }
 
   @override
@@ -251,17 +261,11 @@ class FeedSwiperState extends ConsumerState<FeedSwiper> {
       ).withPaddingAll(AppThemes.contentPadding);
     }
 
-    final _numberOfCardsDisplayed = _cardsCount == 1 ? 1 : 2;
-
     log('_initialItemIndex = $_initialItemIndex');
-    log('_numberOfCardsDisplayed = $_numberOfCardsDisplayed');
     log('_cardsCount = $_cardsCount');
     log('_canGoNext = $_canGoNext');
     log('_canGoPrev = $_canGoPrev');
     log('Swipe direction: $_swipeDirection, Undo direction: $_undoDirection');
-    // [log] _initialItemIndex = 15
-    // [log] _numberOfCardsDisplayed = 2
-    // [log] _cardsCount = 240
 
     return CardSwiper(
       key: Key("CardSwiper_${_feedType}_{$_currentTopic}_$_currentItemIndex"),
@@ -276,7 +280,7 @@ class FeedSwiperState extends ConsumerState<FeedSwiper> {
         right: _swipeDirection == CardSwiperDirection.right ? _canGoNext : _canUndo
       ),
       initialIndex: _initialItemIndex,
-      numberOfCardsDisplayed: _numberOfCardsDisplayed,
+      numberOfCardsDisplayed: _cardsCount == 1 ? 1 : 2,
       cardsCount: _cardsCount + 1,
       cardBuilder: (context, index, percentThresholdX, percentThresholdY) {
         if (index == _cardsCount) return SizedBox.shrink();

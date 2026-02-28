@@ -23,6 +23,10 @@ Future<ApiResponse> markNotInterested(String clusterId) async {
   return ApiService.post('feed/not_interested', {'clusterId': clusterId});
 }
 
+Future<ApiResponse> unmarkNotInterested(String clusterId) async {
+  return ApiService.delete('feed/not_interested?clusterId=$clusterId');
+}
+
 Future<ApiResponse> submitFeedback(String clusterId, String category, String message) async {
   return ApiService.post('feed/feedback', {
     'clusterId': clusterId,

@@ -140,7 +140,7 @@ class SettingsHeader extends ConsumerWidget {
     final h = MyHelper(context);
     final user = ref.watch(userProvider);
     final firstName = user.firstName;
-    final readCount = user.readCount;
+    final totalReads = user.totalReads;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -171,7 +171,7 @@ class SettingsHeader extends ConsumerWidget {
                 ),
               ),
               TextSpan(
-                text: "$readCount",
+                text: "$totalReads",
                 style: h.currentTextTheme.bodyLarge?.copyWith(
                   color: Colors.white,
                   fontWeight: FontWeight.bold,
@@ -236,8 +236,8 @@ class PersonalSettingsSection extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final likedCount = ref.watch(userProvider).likedCount;
-    final savedCount = ref.watch(userProvider).savedCount;
+    final likedCount = ref.watch(userProvider).totalLiked;
+    final savedCount = ref.watch(userProvider).totalSaved;
     return SettingsContainer(
       child: Column(
         children: [
@@ -275,6 +275,14 @@ class PersonalSettingsSection extends ConsumerWidget {
               // context.push('/edit_profile');
             },
           ),
+          // SettingsDivider(),
+          // SettingsTile(
+          //   icon: CupertinoIcons.eye_slash,
+          //   title: 'Hidden Content',
+          //   onTap: () {
+          //     context.push('/hidden_content');
+          //   },
+          // ),
         ],
       ),
     );

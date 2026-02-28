@@ -217,8 +217,8 @@ abstract class BaseFeedNotifier extends Notifier<BaseFeedState> {
 
     // Calculate new like count for user
     final currentUser = ref.read(userProvider);
-    int? newLikedCount;
-    int? newSavedCount;
+    int? newTotalLiked;
+    int? newTotalSaved;
 
     // Track which operations actually changed state to avoid redundant cache invalidation
     final List<String> cachesToInvalidate = [];
@@ -227,7 +227,7 @@ abstract class BaseFeedNotifier extends Notifier<BaseFeedState> {
     // Handle like operation
     if (isLiked != null && isLiked != currentItem.isLiked) {
       newLikeCount = isLiked ? currentItem.likeCount + 1 : currentItem.likeCount - 1;
-      newLikedCount = isLiked ? currentUser.likedCount + 1 : currentUser.likedCount - 1;
+      newTotalLiked = isLiked ? currentUser.totalLiked + 1 : currentUser.totalLiked - 1;
       fireAndForget(() => like(feedId, isLiked));
       
       // Schedule cache update
@@ -244,7 +244,7 @@ abstract class BaseFeedNotifier extends Notifier<BaseFeedState> {
     
     // Handle save operation
     if (isSaved != null && isSaved != currentItem.isSaved) {
-      newSavedCount = isSaved ? currentUser.savedCount + 1 : currentUser.savedCount - 1;
+      newTotalSaved = isSaved ? currentUser.totalSaved + 1 : currentUser.totalSaved - 1;
       fireAndForget(() => save(feedId, isSaved));
       
       // Schedule cache update
@@ -275,8 +275,8 @@ abstract class BaseFeedNotifier extends Notifier<BaseFeedState> {
 
     // Update user state and cache
     ref.read(userProvider.notifier).setValue(currentUser.copyWith(
-      likedCount: max(0, newLikedCount ?? currentUser.likedCount),
-      savedCount: max(0, newSavedCount ?? currentUser.savedCount),
+      totalLiked: max(0, newTotalLiked ?? currentUser.totalLiked),
+      totalSaved: max(0, newTotalSaved ?? currentUser.totalSaved),
     ));
     
     // Update cached data

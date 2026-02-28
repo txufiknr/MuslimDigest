@@ -2,13 +2,14 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:muslimdigest/config/colors.dart';
-import 'package:muslimdigest/config/constants.dart';
 import 'package:muslimdigest/config/themes.dart';
 import 'package:muslimdigest/models/user.dart';
 import 'package:muslimdigest/providers/topics.dart';
 import 'package:muslimdigest/providers/user/preferences.dart';
 import 'package:muslimdigest/providers/user/settings.dart';
-import 'package:muslimdigest/providers/user/user.dart';
+import 'package:muslimdigest/providers/feed/feed.dart';
+import 'package:muslimdigest/providers/feed/feed_liked.dart';
+import 'package:muslimdigest/providers/feed/feed_saved.dart';
 import 'package:muslimdigest/utils/extensions.dart';
 import 'package:muslimdigest/widgets/animations/loader.dart';
 import 'package:muslimdigest/widgets/components/button.dart';
@@ -18,6 +19,7 @@ import 'package:muslimdigest/widgets/components/setting_section.dart';
 import 'package:muslimdigest/widgets/components/topic_chip_selector.dart';
 import 'package:muslimdigest/widgets/onboarding/topic_chip.dart';
 import 'package:muslimdigest/utils/helpers.dart';
+import 'package:go_router/go_router.dart';
 
 class PersonalizationPage extends ConsumerStatefulWidget {
   const PersonalizationPage({super.key});
@@ -26,11 +28,10 @@ class PersonalizationPage extends ConsumerStatefulWidget {
   ConsumerState<PersonalizationPage> createState() => _PersonalizationPageState();
 }
 
-class _PersonalizationPageState extends ConsumerState<PersonalizationPage>
-    with SingleTickerProviderStateMixin {
+class _PersonalizationPageState extends ConsumerState<PersonalizationPage> with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
-  String get _firstName => ref.read(userProvider).firstName;
+  // String get _firstName => ref.read(userProvider).firstName;
 
   @override
   void initState() {
@@ -177,8 +178,6 @@ class _PersonalizationPageState extends ConsumerState<PersonalizationPage>
             ],
           ),
 
-          // TODO: manage hidden topics, sources, and feed items
-           
           // Preview Section
           // SettingSection(
           //   children: [
@@ -188,7 +187,123 @@ class _PersonalizationPageState extends ConsumerState<PersonalizationPage>
           //     ),
           //   ],
           // ),
+          
+          // Hidden Content Management Section
+          SettingSection(
+            title: 'Hidden Content',
+            description: 'Manage your avoided sources and hidden feed items',
+            children: [
+              _HiddenContentButton(
+                h,
+                icon: CupertinoIcons.eye_slash,
+                title: 'Avoided Sources',
+                count: _getAvoidedSourcesCount(),
+                onTap: () => context.push('/hidden_content?tab=0'),
+              ),
+              _HiddenContentButton(
+                h,
+                icon: CupertinoIcons.hand_thumbsdown,
+                title: 'Hidden Feeds',
+                count: _getHiddenFeedsCount(),
+                onTap: () => context.push('/hidden_content?tab=1'),
+              ),
+            ],
+          ),
         ].addItemInBetween(MyDivider().withPaddingVertical(AppThemes.contentPadding)),
+      ),
+    );
+  }
+
+  /// Get the count of avoided sources from user preferences
+  int _getAvoidedSourcesCount() {
+    final preferences = ref.read(preferencesProvider);
+    return preferences.avoidedSources.length;
+  }
+
+  /// Get the count of hidden feeds from all feed providers
+  int _getHiddenFeedsCount() {
+    // Collect all not interested items from all feed providers
+    final feedStates = [
+      ref.read(feedProvider),
+      ref.read(feedLikedProvider),
+      ref.read(feedSavedProvider),
+    ];
+
+    int totalCount = 0;
+    for (final state in feedStates) {
+      totalCount += state.notInterestedItems.length;
+    }
+    return totalCount;
+  }
+
+  /// Build a hidden content management button with count
+  Widget _HiddenContentButton(MyHelper h, {
+    required IconData icon,
+    required String title,
+    required int count,
+    required VoidCallback onTap,
+  }) {
+    return Container(
+      width: double.infinity,
+      margin: EdgeInsets.only(bottom: 4),
+      decoration: BoxDecoration(
+        color: h.currentTheme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: h.currentTheme.colorScheme.outline,
+        ),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(10),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(
+                    icon,
+                    color: AppColors.primary,
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: h.currentTheme.textTheme.bodyLarge?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      '$count items',
+                      style: h.currentTheme.textTheme.bodySmall?.copyWith(
+                        color: h.currentTheme.colorScheme.onSurface.withValues(alpha: 0.6),
+                      ),
+                    ),
+                  ],
+                ).expand(),
+                Icon(
+                  CupertinoIcons.chevron_right,
+                  color: h.currentTheme.colorScheme.onSurface.withValues(alpha: 0.4),
+                  size: 16,
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

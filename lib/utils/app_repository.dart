@@ -3,8 +3,8 @@ import 'dart:developer' show log;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:muslimdigest/models/user.dart';
 import 'package:muslimdigest/providers/feed/feed.dart';
-import 'package:muslimdigest/providers/feed/feed_liked.dart';
-import 'package:muslimdigest/providers/feed/feed_saved.dart';
+// import 'package:muslimdigest/providers/feed/feed_liked.dart';
+// import 'package:muslimdigest/providers/feed/feed_saved.dart';
 import 'package:muslimdigest/providers/feed/feed_trending.dart';
 import 'package:muslimdigest/providers/feed_type.dart';
 import 'package:muslimdigest/providers/ingest_last_date.dart';
@@ -159,8 +159,8 @@ class AppRepository {
     }
     final results = await Future.wait<bool>([
       _ref.read(userProvider.notifier).load(),
-      _ref.read(feedLikedProvider.notifier).load(),
-      _ref.read(feedSavedProvider.notifier).load(),
+      // _ref.read(feedLikedProvider.notifier).load(),
+      // _ref.read(feedSavedProvider.notifier).load(),
     ]);
     final isSuccess = results.every((result) => result);
     return isSuccess;

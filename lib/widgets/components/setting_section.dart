@@ -38,8 +38,9 @@ class SettingSection extends StatelessWidget {
             color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
           ),
         ),
-        
+
         SizedBox.shrink(),
+        
         ...children,
       ].addItemInBetween(SizedBox(height: 8,)),
     );

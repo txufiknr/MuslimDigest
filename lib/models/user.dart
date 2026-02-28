@@ -8,9 +8,9 @@ class User {
   final String? name;
   final Gender? gender;
   final String? ageGroup;
-  final int likedCount;
-  final int savedCount;
-  final int readCount;
+  final int totalLiked;
+  final int totalSaved;
+  final int totalReads;
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
@@ -19,9 +19,9 @@ class User {
     this.name,
     this.gender,
     this.ageGroup,
-    this.likedCount = 0,
-    this.savedCount = 0,
-    this.readCount = 0,
+    this.totalLiked = 0,
+    this.totalSaved = 0,
+    this.totalReads = 0,
     this.createdAt,
     this.updatedAt,
   });
@@ -42,9 +42,9 @@ class User {
       name: json['name'],
       gender: json['gender'] == null ? null : Gender.fromString(json['gender']),
       ageGroup: json['ageGroup'],
-      likedCount: json['likedCount'] ?? 0,
-      savedCount: json['savedCount'] ?? 0,
-      readCount: json['readCount'] ?? 0,
+      totalLiked: json['totalLiked'] ?? 0,
+      totalSaved: json['totalSaved'] ?? 0,
+      totalReads: json['totalReads'] ?? 0,
       createdAt: json['createdAt'] != null ? DateTime.parse(json['createdAt']) : null,
       updatedAt: json['updatedAt'] != null ? DateTime.parse(json['updatedAt']) : null,
     );
@@ -56,9 +56,9 @@ class User {
       'name': name,
       'gender': gender?.name,
       'ageGroup': ageGroup,
-      'likedCount': likedCount,
-      'savedCount': savedCount,
-      'readCount': readCount,
+      'totalLiked': totalLiked,
+      'totalSaved': totalSaved,
+      'totalReads': totalReads,
       'createdAt': createdAt?.toIso8601String(),
       'updatedAt': updatedAt?.toIso8601String(),
     };
@@ -68,18 +68,18 @@ class User {
     String? name,
     Gender? gender,
     String? ageGroup,
-    int? likedCount,
-    int? savedCount,
-    int? readCount,
+    int? totalLiked,
+    int? totalSaved,
+    int? totalReads,
   }) {
     return User(
       userId: userId,
       name: name ?? this.name,
       gender: gender ?? this.gender,
       ageGroup: ageGroup ?? this.ageGroup,
-      likedCount: likedCount ?? this.likedCount,
-      savedCount: savedCount ?? this.savedCount,
-      readCount: readCount ?? this.readCount,
+      totalLiked: totalLiked ?? this.totalLiked,
+      totalSaved: totalSaved ?? this.totalSaved,
+      totalReads: totalReads ?? this.totalReads,
       createdAt: createdAt,
       updatedAt: updatedAt,
     );
@@ -93,9 +93,9 @@ User(
   name: $name,
   gender: $gender,
   ageGroup: $ageGroup,
-  likedCount: $likedCount,
-  savedCount: $savedCount,
-  readCount: $readCount,
+  totalLiked: $totalLiked,
+  totalSaved: $totalSaved,
+  totalReads: $totalReads,
   createdAt: $createdAt,
   updatedAt: $updatedAt
 )''';

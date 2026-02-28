@@ -57,7 +57,7 @@ class ApiOptions {
 
 /// Service class for handling HTTP API communications
 /// 
-/// This class provides static methods for making HTTP requests (GET, POST, PUT)
+/// This class provides static methods for making HTTP requests (GET, POST, PUT, DELETE)
 /// to the backend API. It handles request/response formatting, error handling,
 /// and environment-specific URL configuration.
 class ApiService {
@@ -269,6 +269,61 @@ class ApiService {
     } catch (e) {
       // Handle network-level errors (connection timeout, DNS failure, etc.)
       log('🌐 GET /$path response status code: $e ❌');
+      return ApiResponse(
+        success: false,
+        error: 'Network error: $e',
+        statusCode: 0,
+      );
+    }
+  }
+
+  /// Makes an HTTP DELETE request to the specified API endpoint
+  /// 
+  /// Used for deleting resources on the server (e.g., removing user data,
+  /// deleting preferences, etc.). Automatically handles headers and error
+  /// responses. No request body is sent with DELETE requests.
+  /// 
+  /// [path] - The API endpoint path (relative to base URL)
+  /// 
+  /// Returns [ApiResponse] with success status, data, or error information
+  static Future<ApiResponse> delete(String path) async {
+    try {
+      log('🌐 DELETE /$path');
+
+      // Build headers with common information
+      final headers = await _buildHeaders();
+
+      // Construct the full URL and send DELETE request (no body needed)
+      final response = await http.delete(
+        Uri.parse('$baseUrl/$path'),
+        headers: headers,
+      ).timeout(timeout);
+
+      final result = jsonDecode(response.body) as Map<String, dynamic>;
+
+      // Check for successful HTTP status (200 OK or 204 No Content for DELETE operations)
+      final isSuccess = response.statusCode == 200 || response.statusCode == 204;
+      log('🌐 DELETE /$path response status code: ${response.statusCode} ${isSuccess ? '✅' : '⚠️'}');
+      if (isSuccess) {
+        // Parse the successful JSON response and return success result
+        return ApiResponse(
+          success: result['success'] ?? true,
+          data: result['data'],
+          statusCode: response.statusCode,
+          result: result,
+        );
+      } else {
+        // Handle HTTP error responses with status code information
+        return ApiResponse(
+          success: false,
+          error: result['error'] ?? 'Failed to delete $path: ${response.statusCode}',
+          statusCode: response.statusCode,
+          result: result,
+        );
+      }
+    } catch (e) {
+      // Handle network-level errors (connection timeout, DNS failure, etc.)
+      log('🌐 DELETE /$path response status code: $e ❌');
       return ApiResponse(
         success: false,
         error: 'Network error: $e',

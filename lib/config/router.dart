@@ -5,6 +5,7 @@ import 'package:muslimdigest/screens/feed/liked_feeds.dart';
 import 'package:muslimdigest/screens/settings/personalization.dart';
 import 'package:muslimdigest/screens/feed/saved_feeds.dart';
 import 'package:muslimdigest/screens/feed/single_feed.dart';
+import 'package:muslimdigest/screens/settings/hidden_content.dart';
 import '../screens/onboarding/splash.dart';
 import '../screens/home.dart';
 import '../screens/onboarding/onboarding.dart';
@@ -69,6 +70,14 @@ class AppRouter {
         path: '/saved_feeds',
         name: 'saved_feeds',
         builder: (context, state) => const SavedFeedsPage(),
+      ),
+      GoRoute(
+        path: '/hidden_content',
+        name: 'hidden_content',
+        builder: (context, state) {
+          final initialTab = int.tryParse(state.uri.queryParameters['tab'] ?? '');
+          return HiddenContentPage(initialTab: initialTab);
+        },
       ),
       GoRoute(
         path: '/feed/:feedId',
