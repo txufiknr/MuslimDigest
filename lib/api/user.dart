@@ -119,3 +119,9 @@ Future<void> resetUserData(WidgetRef ref) async {
     ref.read(feedLatestProvider.notifier).clear(),
   ]);
 }
+
+Future<bool> savePreferences(WidgetRef ref) async {
+  final currentPreferences = ref.read(preferencesProvider);
+  final response = await ApiService.post('preferences', currentPreferences.toJson());
+  return response.success;
+}

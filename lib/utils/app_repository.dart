@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:developer' show log;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -70,6 +71,15 @@ class AppRepository {
       return false;
     }
   }
+
+  Future<void> resetReadCount(FeedType feedType, String? topic) async {
+    if (feedType == FeedType.digest) {
+      await initReadCount(force: true);
+    } else {
+      final newStates = _ref.read(readCountStatesProvider)..remove(topic ?? feedType.name);
+      await _ref.read(readCountStatesProvider.notifier).setValue(newStates);
+    }
+  }
   
   /// Determine home feed type
   // FeedType get homeFeedType => shouldFetchDailyDigest || !isDailyDigestDone ? FeedType.digest : FeedType.latest;
@@ -89,6 +99,9 @@ class AppRepository {
       log("[loadFeed] ⚠️ No internet connection, skipping feed load");
       return false;
     }
+
+    // Reset swiper page index to zero
+    if (force) unawaited(resetReadCount(feedType, topic));
 
     return feedType.loadWithRef(_ref, topic: topic);
   }

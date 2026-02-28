@@ -109,7 +109,7 @@ class _HomePageState extends ConsumerState<HomePage> with RouteAware {
     super.dispose();
   }
 
-  Future<void> _openFeed([FeedType? feedType]) async {
+  Future<void> _openFeed({FeedType? feedType, bool force = false}) async {
     final currentFeedType = feedType ?? r.homeFeedType;
     await Future.wait([
       ref.read(topicProvider.notifier).clear(),
@@ -118,17 +118,17 @@ class _HomePageState extends ConsumerState<HomePage> with RouteAware {
     if (currentFeedType == FeedType.digest) {
       r.loadUserFeed();
     } else {
-      _loadFeed();
+      _loadFeed(force: force);
     }
   }
 
-  Future<void> _openFeedLatest() => _openFeed(FeedType.latest);
-  Future<void> _openFeedTrending() => _openFeed(FeedType.trending);
+  Future<void> _openFeedLatest({bool force = false}) => _openFeed(feedType: FeedType.latest, force: force);
+  Future<void> _openFeedTrending({bool force = false}) => _openFeed(feedType: FeedType.trending, force: force);
 
-  Future<void> _loadFeed([FeedType? feedType, String? topic]) async {
+  Future<void> _loadFeed({FeedType? feedType, String? topic, bool force = false}) async {
     feedType ??= ref.read(feedTypeProvider);
-    final success = await r.loadFeed(feedType: feedType, topic: topic);
-    if (mounted && !success) return _showLoadFeedFailed(() => _loadFeed(feedType, topic));
+    final success = await r.loadFeed(feedType: feedType, topic: topic, force: force);
+    if (mounted && !success) return _showLoadFeedFailed(() => _loadFeed(feedType: feedType, topic: topic, force: force));
   }
 
   Future<void> _showLoadFeedFailed(Future<void> Function() onRetry) async {
@@ -159,7 +159,7 @@ class _HomePageState extends ConsumerState<HomePage> with RouteAware {
       _topicChangeDebounce.run(() {
         if (!mounted) return;
         ref.read(feedTypeProvider.notifier).setValue(FeedType.latest);
-        _loadFeed(FeedType.latest, next);
+        _loadFeed(feedType: FeedType.latest, topic: next);
       });
     });
 
@@ -192,7 +192,7 @@ class _HomePageState extends ConsumerState<HomePage> with RouteAware {
               // Main feed swiper
               FeedSwiper(
                 onReload: _loadFeed,
-                onSeeLatest: _openFeedLatest,
+                onSeeLatest: () => _openFeedLatest(force: true),
                 onSeeHome: _openFeed,
               ).expand(),
               // Loader or reading streak progressbar

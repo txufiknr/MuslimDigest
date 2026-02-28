@@ -208,22 +208,29 @@ class _NotInterestedPlaceholder extends ConsumerWidget {
   });
 
   Future<void> _undo(BuildContext context, WidgetRef ref) async {
-    try {
-      // Call API to unmark as not interested
-      fireAndForget(() => unmarkNotInterested(feedItem.id));
-      
-      // Remove from local state
-      final notifier = feedType.getNotifier(ref);
-      await notifier.unmarkAsNotInterested(feedItem.id);
-      
-      if (context.mounted) {
-        showSnackBarSuccess(context, "Feed restored");
-      }
-    } catch (e) {
-      if (context.mounted) {
-        showSnackBarError(context, "Failed to restore feed");
-      }
+    if (isSourceAvoided) {
+      await restoreAvoidedSource(context, ref, feedItem.source.id);
+      return;
     }
+
+    // Call API to unmark as not interested
+    await unmarkNotInterested(context, ref, feedItem.id);
+
+    // try {
+    //   fireAndForget(() => unmarkNotInterested(context, ref, feedItem.id));
+      
+    //   // Remove from local state
+    //   final notifier = feedType.getNotifier(ref);
+    //   await notifier.unmarkAsNotInterested(feedItem.id);
+      
+    //   if (context.mounted) {
+    //     showSnackBarSuccess(context, "Feed restored");
+    //   }
+    // } catch (e) {
+    //   if (context.mounted) {
+    //     showSnackBarError(context, "Failed to restore feed");
+    //   }
+    // }
   }
 
   @override
@@ -546,6 +553,10 @@ class _FeedFooter extends ConsumerWidget {
   }
 
   Future<void> _avoidSource(BuildContext context, WidgetRef ref) async {
+    // Do nothing if source already avoided
+    if (isSourceAvoided(ref, feedItem.source.id)) return;
+
+    // Display confirmation dialog
     final sourceName = feedItem.source.name ?? 'this source';
     final sourceIcon = feedItem.source.siteIcon;
     final confirm = await showBottomModalConfirm(
@@ -607,7 +618,9 @@ class _FeedSummarizer extends StatelessWidget {
     final providerLabel = provider.toCapitalized();
     return MyBadge(
       text: provider == 'none' ? 'Original text' : 'Summarizer: $providerLabel',
-      description: 'AI-generated summary by $providerLabel',
+      description: provider == 'none'
+          ? 'This content is from the original source'
+          : 'AI-generated summary by $providerLabel',
     );
   }
 }
@@ -639,20 +652,17 @@ class _FeedFooterSource extends StatelessWidget {
                 color: h.currentTheme.colorScheme.surfaceContainerHighest,
                 borderRadius: BorderRadius.circular(4),
               ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(4),
-                child: CachedImageWidget(
-                  imageUrl: feedItem.source.siteIcon,
-                  width: 24,
-                  height: 24,
-                  fit: BoxFit.contain,
-                  errorWidget: (context, url, error) => Icon(
-                    CupertinoIcons.globe,
-                    size: 16,
-                    color: h.currentTheme.colorScheme.surfaceContainerHigh,
-                  ),
+              child: CachedImageWidget(
+                imageUrl: feedItem.source.siteIcon,
+                width: 24,
+                height: 24,
+                fit: BoxFit.contain,
+                errorWidget: (context, url, error) => Icon(
+                  CupertinoIcons.globe,
+                  size: 16,
+                  color: h.currentTheme.colorScheme.surfaceContainerHigh,
                 ),
-              ),
+              ).clipRadius(4),
             ),
             const SizedBox(width: 8),
             

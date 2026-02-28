@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:muslimdigest/api/feeds.dart';
 import 'package:muslimdigest/config/colors.dart';
 import 'package:muslimdigest/providers/feed/feed.dart';
 import 'package:muslimdigest/providers/feed/feed_liked.dart';
@@ -72,27 +73,6 @@ class _HiddenContentPageState extends ConsumerState<HiddenContentPage> with Sing
 
     return Column(
       children: [
-        // Header with description
-        // Container(
-        //   padding: const EdgeInsets.all(16),
-        //   child: Column(
-        //     crossAxisAlignment: CrossAxisAlignment.start,
-        //     children: [
-        //       Text(
-        //         'Avoided Sources',
-        //         style: h.currentTextTheme.titleLarge,
-        //       ),
-        //       const SizedBox(height: 8),
-        //       Text(
-        //         'Sources you\'ve chosen to avoid will not appear in your feed.',
-        //         style: h.currentTextTheme.bodyMedium?.copyWith(
-        //           color: h.currentTheme.colorScheme.onSurface.withValues(alpha: 0.7),
-        //         ),
-        //       ),
-        //     ],
-        //   ),
-        // ),
-        // const Divider(),
         // Sources list
         Expanded(
           child: avoidedSources.isEmpty
@@ -151,27 +131,6 @@ class _HiddenContentPageState extends ConsumerState<HiddenContentPage> with Sing
 
     return Column(
       children: [
-        // Header with description
-        // Container(
-        //   padding: const EdgeInsets.all(16),
-        //   child: Column(
-        //     crossAxisAlignment: CrossAxisAlignment.start,
-        //     children: [
-        //       Text(
-        //         'Hidden Feeds',
-        //         style: h.currentTextTheme.titleLarge,
-        //       ),
-        //       const SizedBox(height: 8),
-        //       Text(
-        //         'Feeds you\'ve marked as not interested will not appear in your feed.',
-        //         style: h.currentTextTheme.bodyMedium?.copyWith(
-        //           color: h.currentTheme.colorScheme.onSurface.withValues(alpha: 0.7),
-        //         ),
-        //       ),
-        //     ],
-        //   ),
-        // ),
-        // const Divider(),
         // Hidden feeds list
         Expanded(
           child: allNotInterestedItems.isEmpty
@@ -217,71 +176,12 @@ class _HiddenContentPageState extends ConsumerState<HiddenContentPage> with Sing
     );
   }
 
-  Future<void> _restoreSource(String source) async {
-    try {
-      final preferences = ref.read(preferencesProvider);
-      final updatedAvoidedSources = List<String>.from(preferences.avoidedSources)
-        ..remove(source);
-      
-      await ref.read(preferencesProvider.notifier).setValue(
-        preferences.copyWith(avoidedSources: updatedAvoidedSources),
-      );
-      
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Source restored: $source'),
-            backgroundColor: AppColors.success,
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to restore source: $e'),
-            backgroundColor: AppColors.error,
-          ),
-        );
-      }
-    }
+  Future<void> _restoreSource(String sourceId) async {
+    await restoreAvoidedSource(context, ref, sourceId);
   }
 
   Future<void> _restoreFeed(String feedId) async {
-    try {
-      // Find which feed notifier contains this feed and restore it
-      final feedStates = [
-        ref.read(feedProvider),
-        ref.read(feedLikedProvider),
-        ref.read(feedSavedProvider),
-      ];
-
-      for (final state in feedStates) {
-        if (state.notInterestedItems.contains(feedId)) {
-          final notifier = ref.read(feedProvider.notifier);
-          await notifier.unmarkAsNotInterested(feedId);
-          break;
-        }
-      }
-      
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Feed restored'),
-            backgroundColor: AppColors.success,
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to restore feed: $e'),
-            backgroundColor: AppColors.error,
-          ),
-        );
-      }
-    }
+    await unmarkNotInterested(context, ref, feedId);
   }
 }
 
@@ -309,6 +209,7 @@ class _AvoidedSourceTile extends StatelessWidget {
       ),
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        // TODO: site icon
         leading: Container(
           width: 40,
           height: 40,

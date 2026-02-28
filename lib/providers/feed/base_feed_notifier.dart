@@ -72,12 +72,12 @@ class BaseFeedState {
     return items?.firstWhereOrNull((item) => item.id == feedId);
   }
 
-  bool isNotInterested(String id) {
-    return notInterestedItems.contains(id);
+  bool isNotInterested(String feedId) {
+    return notInterestedItems.contains(feedId);
   }
 
-  bool isSourceAvoided(String id) {
-    return sourceAvoidedItems.contains(id);
+  bool isSourceAvoided(String feedId) {
+    return sourceAvoidedItems.contains(feedId);
   }
 }
 
@@ -197,6 +197,19 @@ abstract class BaseFeedNotifier extends Notifier<BaseFeedState> {
     // Invalidate cache since we marked items as not interested
     final cache = ref.read(feedCacheProvider);
     await cache.invalidateAllCacheForEndpoint(endpoint);
+  }
+
+  Future<void> unmarkAsAvoidedSource(String sourceId) async {
+    if (state.items == null) return;
+    
+    // Find all feed items from the specified source
+    final itemsFromSource = state.items!.where((item) => item.source.id == sourceId).toList();
+    if (itemsFromSource.isEmpty) return;
+    
+    // Unmark all items from this source
+    for (final item in itemsFromSource) {
+      await unmarkAsNotInterested(item.id);
+    }
   }
 
   /// Unmark a feed item as not interested (undo)
