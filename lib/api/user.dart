@@ -7,6 +7,9 @@ import 'package:muslimdigest/models/user.dart';
 import 'package:muslimdigest/providers/feed/feed.dart';
 import 'package:muslimdigest/providers/feed/feed_liked.dart';
 import 'package:muslimdigest/providers/feed/feed_saved.dart';
+import 'package:muslimdigest/providers/feed/feed_trending.dart';
+import 'package:muslimdigest/providers/feed/feed_latest.dart';
+import 'package:muslimdigest/providers/feed/feed_cache.dart';
 import 'package:muslimdigest/providers/feed_type.dart';
 import 'package:muslimdigest/providers/read_count.dart';
 import 'package:muslimdigest/providers/read_count_states.dart';
@@ -93,7 +96,10 @@ Future<void> logStreak(WidgetRef ref) async {
 /// Resets all user data
 Future<void> resetUserData(WidgetRef ref) async {
   fireAndForget(() => ApiService.post('user/reset'));
-  await Future.wait([
+  
+  await Future.wait<void>([
+    // Clear all feed caches first to ensure cache invalidation
+    ref.read(feedCacheProvider).clearAllCache(),
     // User data
     ref.read(userProvider.notifier).clear(),
     ref.read(streaksProvider.notifier).clear(),
@@ -109,5 +115,7 @@ Future<void> resetUserData(WidgetRef ref) async {
     ref.read(feedProvider.notifier).clear(),
     ref.read(feedLikedProvider.notifier).clear(),
     ref.read(feedSavedProvider.notifier).clear(),
+    ref.read(feedTrendingProvider.notifier).clear(),
+    ref.read(feedLatestProvider.notifier).clear(),
   ]);
 }

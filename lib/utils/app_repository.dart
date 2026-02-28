@@ -72,7 +72,8 @@ class AppRepository {
   }
   
   /// Determine home feed type
-  FeedType get homeFeedType => shouldFetchDailyDigest || !isDailyDigestDone ? FeedType.digest : FeedType.latest;
+  // FeedType get homeFeedType => shouldFetchDailyDigest || !isDailyDigestDone ? FeedType.digest : FeedType.latest;
+  FeedType get homeFeedType => !isStreakToday && (shouldFetchDailyDigest || !isDailyDigestDone) ? FeedType.digest : FeedType.latest;
 
   Future<bool> loadFeed({FeedType? feedType, String? topic, bool force = false}) async {
     feedType ??= homeFeedType;

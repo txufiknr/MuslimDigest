@@ -136,6 +136,10 @@ class _FeedCardState extends ConsumerState<FeedCard> with AutomaticKeepAliveClie
         ? widget.feedType.getNotifier(ref).getNotInterestedReason(widget.feedItem!.id)
         : null;
 
+    // Check if this feed item was marked as not interested due to source avoidance
+    final isSourceAvoided = isNotInterested && widget.feedItem != null &&
+        widget.feedType.watch(ref).isSourceAvoided(widget.feedItem!.id);
+
     return Container(
       width: double.infinity,
       decoration: h.cardDecoration,
@@ -164,6 +168,7 @@ class _FeedCardState extends ConsumerState<FeedCard> with AutomaticKeepAliveClie
         feedType: widget.feedType,
         feedItem: widget.feedItem!,
         reason: reason,
+        isSourceAvoided: isSourceAvoided,
       ).center() : Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -193,11 +198,13 @@ class _NotInterestedPlaceholder extends ConsumerWidget {
   final FeedType feedType;
   final FeedItem feedItem;
   final FeedbackCategory? reason;
+  final bool isSourceAvoided;
 
   const _NotInterestedPlaceholder({
     required this.feedType,
     required this.feedItem,
     this.reason,
+    this.isSourceAvoided = false,
   });
 
   Future<void> _undo(BuildContext context, WidgetRef ref) async {
@@ -224,7 +231,9 @@ class _NotInterestedPlaceholder extends ConsumerWidget {
     final isReportedContent = reason != null && reason!.shouldHideFeed;
     final title = isReportedContent 
       ? 'Content reported: ${reason!.label}'
-      : 'Feed marked as not interested';
+      : isSourceAvoided 
+        ? 'Source marked as not interested'
+        : 'Feed marked as not interested';
     final footer = isReportedContent
       ? 'Thank you for helping improve our content quality.'
       : 'We\'ll show less content like this in the future.';
