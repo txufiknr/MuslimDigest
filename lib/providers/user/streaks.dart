@@ -26,5 +26,6 @@ class UserStreaksNotifier extends Notifier<UserStreaks> {
 
   Future<void> clear() async {
     await ref.read(preferencesRepositoryProvider).remove(_key);
+    state = PrefData.streaks;
   }
 }

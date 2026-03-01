@@ -21,7 +21,8 @@ class FeedItem {
   final bool isLiked;
   final bool isSaved;
   final int likeCount;
-  // TODO: add alsoRead
+  final List<Cluster> alsoRead;
+  final DateTime? createdAt;
 
   FeedItem({
     required this.id,
@@ -38,6 +39,7 @@ class FeedItem {
     this.videoTitle,
     this.riskLevel,
     this.publishedAt,
+    this.createdAt,
     this.sources = const [],
     required this.cluster,
     this.badges = const [],
@@ -46,6 +48,7 @@ class FeedItem {
     this.isLiked = false,
     this.isSaved = false,
     this.likeCount = 0,
+    this.alsoRead = const [],
   });
 
   bool get hasVideo => videoUrl != null;
@@ -78,9 +81,11 @@ class FeedItem {
       videoTitle: json['videoTitle'],
       riskLevel: json['riskLevel'],
       publishedAt: json['publishedAt'] == null ? null : DateTime.parse(json['publishedAt']),
+      createdAt: json['createdAt'] == null ? null : DateTime.parse(json['createdAt']),
       sources: List<String>.from(json['sources'] ?? []),
       cluster: Cluster.fromJson(json['cluster']),
       badges: List<String>.from(json['badges'] ?? []),
+      alsoRead: List<Cluster>.from(json['alsoRead']?.map(Cluster.fromJson) ?? []),
       source: Source.fromJson(json['source']),
       likeCount: json['likeCount'] ?? 0,
       isBreaking: json['isBreaking'] ?? false,
@@ -105,9 +110,11 @@ class FeedItem {
       'videoTitle': videoTitle,
       'riskLevel': riskLevel,
       'publishedAt': publishedAt?.toIso8601String(),
+      'createdAt': createdAt?.toIso8601String(),
       'sources': sources,
       'cluster': cluster.toJson(),
       'badges': badges,
+      'alsoRead': alsoRead.map((x) => x.toJson()).toList(),
       'source': source.toJson(),
       'isBreaking': isBreaking,
       'isLiked': isLiked,
@@ -131,9 +138,11 @@ class FeedItem {
     String? videoTitle,
     String? riskLevel,
     DateTime? publishedAt,
+    DateTime? createdAt,
     List<String>? sources,
     Cluster? cluster,
     List<String>? badges,
+    List<Cluster>? alsoRead,
     Source? source,
     bool? isBreaking,
     bool? isLiked,
@@ -155,9 +164,11 @@ class FeedItem {
       videoTitle: videoTitle ?? this.videoTitle,
       riskLevel: riskLevel ?? this.riskLevel,
       publishedAt: publishedAt ?? this.publishedAt,
+      createdAt: createdAt ?? this.createdAt,
       sources: sources ?? this.sources,
       cluster: cluster ?? this.cluster,
       badges: badges ?? this.badges,
+      alsoRead: alsoRead ?? this.alsoRead,
       source: source ?? this.source,
       isBreaking: isBreaking ?? this.isBreaking,
       isLiked: isLiked ?? this.isLiked,
@@ -182,9 +193,11 @@ FeedItem(
   videoUrl: $videoUrl,
   riskLevel: $riskLevel,
   publishedAt: $publishedAt,
+  createdAt: $createdAt,
   sources: $sources,
   cluster: $cluster,
   badges: $badges,
+  alsoRead: $alsoRead,
   source: $source,
   isBreaking: $isBreaking,
   isLiked: $isLiked,
@@ -202,12 +215,18 @@ FeedItem(
     runtimeType == other.runtimeType &&
     other.id == id &&
     other.title == title &&
-    other.cluster == cluster
+    other.cluster == cluster &&
+    other.isBreaking == isBreaking &&
+    other.isLiked == isLiked &&
+    other.isSaved == isSaved &&
+    other.likeCount == likeCount &&
+    other.createdAt == createdAt
   );
 }
 
 class Cluster {
   final String id;
+  final String? displayTitle;
   final int articleCount;
   final Map<String, int> topicDistribution;
   final double trendingScore;
@@ -220,6 +239,7 @@ class Cluster {
 
   Cluster({
     required this.id,
+    this.displayTitle,
     this.articleCount = 1,
     this.topicDistribution = const {},
     this.trendingScore = 0.0,
@@ -249,6 +269,7 @@ class Cluster {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
+      'displayTitle': displayTitle,
       'articleCount': articleCount,
       'topicDistribution': topicDistribution,
       'trendingScore': trendingScore,
@@ -266,6 +287,7 @@ class Cluster {
     return '''
 Cluster(
   id: $id,
+  displayTitle: $displayTitle,
   articleCount: $articleCount,
   topicDistribution: $topicDistribution,
   trendingScore: $trendingScore,
@@ -285,7 +307,8 @@ Cluster(
   bool operator ==(Object other) => identical(this, other) || (
     other is Cluster &&
     runtimeType == other.runtimeType &&
-    other.id == id
+    other.id == id &&
+    other.displayTitle == displayTitle
   );
 }
 

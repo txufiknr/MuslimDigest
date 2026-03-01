@@ -23,5 +23,6 @@ class UserPreferencesNotifier extends Notifier<UserPreferences> {
 
   Future<void> clear() async {
     await ref.read(preferencesRepositoryProvider).remove(_key);
+    state = PrefData.preferences; // Reset to default values
   }
 }

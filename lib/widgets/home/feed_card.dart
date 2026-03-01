@@ -3,6 +3,7 @@ import 'dart:developer';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lottie/lottie.dart';
 import 'package:muslimdigest/config/colors.dart';
 import 'package:muslimdigest/config/constants.dart';
@@ -145,7 +146,7 @@ class _FeedCardState extends ConsumerState<FeedCard> with AutomaticKeepAliveClie
     // Check if this feed item should be hidden due to avoided source
     final preferences = ref.watch(preferencesProvider);
     final isSourceAvoided = widget.feedItem != null &&
-        preferences.avoidedSources.contains(widget.feedItem!.source.id);
+        preferences.avoidedSources.contains(widget.feedItem!.source);
 
     return Container(
       width: double.infinity,
@@ -403,7 +404,14 @@ class _FeedContent extends ConsumerWidget {
             ),
           ],
 
-          // TODO: also read chips
+          // Also read chips
+          if (feedItem.alsoRead.isNotEmpty) Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            children: feedItem.alsoRead.where((c) => c.displayTitle != null).map((cluster) {
+              return _AlsoReadChip(cluster);
+            }).toList(),
+          ).withPadding(top: 16),
         ],
       ),
     );
@@ -541,7 +549,7 @@ class _FeedFooter extends ConsumerWidget {
       cancelButtonText: "I've changed my mind",
     ) ?? false;
     if (!context.mounted || !confirm) return;
-    avoidSource(ref, feedItem.source.id);
+    avoidSource(ref, feedItem.source);
     showSnackBarSuccess(context, "Won't recommend feeds from $sourceName");
   }
 
@@ -820,5 +828,39 @@ class _FeedBadgeChip extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+/// Also read chip widget for displaying related clusters
+class _AlsoReadChip extends StatelessWidget {
+  final Cluster cluster;
+
+  const _AlsoReadChip(this.cluster);
+
+  @override
+  Widget build(BuildContext context) {
+    final h = MyHelper(context);
+    
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: 8,
+        vertical: 4,
+      ),
+      decoration: BoxDecoration(
+        color: h.currentTheme.colorScheme.secondary.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(AppThemes.buttonRadius),
+        border: Border.all(
+          color: h.currentTheme.colorScheme.secondary.withValues(alpha: 0.3),
+        ),
+      ),
+      child: Text(
+        cluster.displayTitle!,
+        style: TextStyle(
+          fontSize: 12,
+          color: h.currentTheme.colorScheme.secondary,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+    ).onTap(() => context.go('/feed/${cluster.id}'));
   }
 }

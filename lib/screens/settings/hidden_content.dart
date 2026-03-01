@@ -3,12 +3,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:muslimdigest/api/feeds.dart';
 import 'package:muslimdigest/config/colors.dart';
+import 'package:muslimdigest/models/feed.dart';
 import 'package:muslimdigest/providers/feed/feed.dart';
 import 'package:muslimdigest/providers/feed/feed_liked.dart';
 import 'package:muslimdigest/providers/feed/feed_saved.dart';
 import 'package:muslimdigest/providers/user/preferences.dart';
 import 'package:muslimdigest/utils/helpers.dart';
 import 'package:muslimdigest/widgets/components/app_bar.dart';
+import 'package:muslimdigest/widgets/components/cached_image.dart' show CachedImageWidget;
 import 'package:muslimdigest/widgets/components/icon_button.dart';
 import 'package:muslimdigest/widgets/components/placeholder.dart';
 import 'package:muslimdigest/variables/feed.dart';
@@ -52,7 +54,8 @@ class _HiddenContentPageState extends ConsumerState<HiddenContentPage> with Sing
           labelColor: AppColors.primary,
           unselectedLabelColor: h.currentTheme.colorScheme.onSurface.withValues(alpha: 0.6),
           tabs: const [
-            Tab(text: 'Avoided Sources'),
+            // TODO: add number badge
+            Tab(text: 'Avoided Sources'), // ref.read(preferencesProvider).avoidedSources.length
             Tab(text: 'Hidden Feeds'),
           ],
         ),
@@ -98,7 +101,7 @@ class _HiddenContentPageState extends ConsumerState<HiddenContentPage> with Sing
     );
   }
 
-  Widget _buildSourcesList(MyHelper h, List<String> sources) {
+  Widget _buildSourcesList(MyHelper h, List<Source> sources) {
     return ListView.builder(
       padding: const EdgeInsets.symmetric(vertical: 8),
       itemCount: sources.length,
@@ -176,8 +179,8 @@ class _HiddenContentPageState extends ConsumerState<HiddenContentPage> with Sing
     );
   }
 
-  Future<void> _restoreSource(String sourceId) async {
-    await restoreAvoidedSource(context, ref, sourceId);
+  Future<void> _restoreSource(Source source) async {
+    await restoreAvoidedSource(context, ref, source.id);
   }
 
   Future<void> _restoreFeed(String feedId) async {
@@ -186,7 +189,7 @@ class _HiddenContentPageState extends ConsumerState<HiddenContentPage> with Sing
 }
 
 class _AvoidedSourceTile extends StatelessWidget {
-  final String source;
+  final Source source;
   final VoidCallback onRestore;
 
   const _AvoidedSourceTile({
@@ -197,6 +200,11 @@ class _AvoidedSourceTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final h = MyHelper(context);
+    final defaultImage = Icon(
+      CupertinoIcons.eye_slash,
+      color: AppColors.error,
+      size: 20,
+    );
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
@@ -209,7 +217,6 @@ class _AvoidedSourceTile extends StatelessWidget {
       ),
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        // TODO: site icon
         leading: Container(
           width: 40,
           height: 40,
@@ -217,14 +224,16 @@ class _AvoidedSourceTile extends StatelessWidget {
             color: AppColors.error.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(8),
           ),
-          child: Icon(
-            CupertinoIcons.eye_slash,
-            color: AppColors.error,
-            size: 20,
-          ),
+          child: source.siteIcon != null
+              ? CachedImageWidget(
+                  imageUrl: source.siteIcon!,
+                  fit: BoxFit.contain,
+                  errorChild: defaultImage,
+                )
+              : defaultImage,
         ),
         title: Text(
-          source,
+          source.siteName ?? source.id,
           style: h.currentTextTheme.bodyLarge,
         ),
         subtitle: Text(

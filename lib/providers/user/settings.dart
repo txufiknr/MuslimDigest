@@ -24,6 +24,7 @@ class UserSettingsNotifier extends Notifier<UserSettings> {
 
   Future<void> clear() async {
     await ref.read(preferencesRepositoryProvider).remove(_key);
+    state = PrefData.settings; // Reset to default values
   }
 
   Future<void> updateTextSize(int textSize) async {

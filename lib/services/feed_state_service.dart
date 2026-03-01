@@ -58,7 +58,7 @@ class FeedStateService {
     String sourceId,
   ) {
     final preferences = ref.watch(preferencesProvider);
-    final isSourceAvoided = preferences.avoidedSources.contains(sourceId);
+    final isSourceAvoided = preferences.avoidedSources.any((s) => s.id == sourceId);
     
     // Check any feed type for not interested status
     final isNotInterested = FeedType.values.any((feedType) {

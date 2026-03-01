@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:muslimdigest/api/user.dart';
+import 'package:muslimdigest/models/feed.dart';
 import 'package:muslimdigest/providers/user/preferences.dart';
 import 'package:muslimdigest/services/api.dart';
 import 'package:muslimdigest/services/feed_state_service.dart';
@@ -48,9 +49,9 @@ Future<ApiResponse> submitFeedback(String clusterId, String category, String mes
   });
 }
 
-Future<void> avoidSource(WidgetRef ref, String sourceId) async {
+Future<void> avoidSource(WidgetRef ref, Source source) async {
   final preferences = ref.read(preferencesProvider);
-  final updatedAvoidedSources = Set<String>.from(preferences.avoidedSources)..add(sourceId);
+  final updatedAvoidedSources = Set<Source>.from(preferences.avoidedSources)..add(source);
   await ref.read(preferencesProvider.notifier).setValue(preferences.copyWith(
     avoidedSources: updatedAvoidedSources,
   ));
@@ -72,7 +73,8 @@ Future<bool> restoreAvoidedSource(
   try {
     // Update local user preferences
     final preferences = ref.read(preferencesProvider);
-    final updatedAvoidedSources = Set<String>.from(preferences.avoidedSources)..remove(sourceId);
+    final updatedAvoidedSources = Set<Source>.from(preferences.avoidedSources)
+      ..removeWhere((source) => source.id == sourceId);
     
     final newPreferences = preferences.copyWith(avoidedSources: updatedAvoidedSources);
     await ref.read(preferencesProvider.notifier).setValue(newPreferences);
@@ -146,11 +148,11 @@ Future<bool> restoreAvoidedSource(
 /// Check if a source is currently avoided
 /// 
 /// [ref] - WidgetRef for accessing providers
-/// [source] - The source name to check
+/// [source] - The source ID to check
 /// 
 /// Returns true if the source is avoided, false otherwise
 bool isSourceAvoided(WidgetRef ref, String source) {
-  return getAvoidedSources(ref).contains(source);
+  return getAvoidedSources(ref).any((s) => s.id == source);
 }
 
 /// Get all avoided sources
@@ -158,7 +160,7 @@ bool isSourceAvoided(WidgetRef ref, String source) {
 /// [ref] - WidgetRef for accessing providers
 /// 
 /// Returns a list of all avoided sources
-List<String> getAvoidedSources(WidgetRef ref) {
+List<Source> getAvoidedSources(WidgetRef ref) {
   final preferences = ref.read(preferencesProvider);
   return preferences.avoidedSources.toList();
 }

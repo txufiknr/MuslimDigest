@@ -30,6 +30,7 @@ class UserNotifier extends Notifier<User> {
 
   Future<void> clear() async {
     await ref.read(preferencesRepositoryProvider).remove(_key);
+    state = PrefData.user; // Reset to default values
   }
 
   DateTime? get ingestLastDate => ref.read(ingestLastDateProvider);

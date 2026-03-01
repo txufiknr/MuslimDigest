@@ -7,7 +7,6 @@ import 'package:muslimdigest/models/user.dart';
 import 'package:muslimdigest/providers/feed/feed.dart';
 import 'package:muslimdigest/providers/feed/feed_liked.dart';
 import 'package:muslimdigest/providers/feed/feed_saved.dart';
-import 'package:muslimdigest/providers/feed/feed_trending.dart';
 import 'package:muslimdigest/providers/feed/feed_latest.dart';
 import 'package:muslimdigest/providers/feed/feed_cache.dart';
 import 'package:muslimdigest/providers/feed_type.dart';
@@ -115,7 +114,7 @@ Future<void> resetUserData(WidgetRef ref) async {
     ref.read(feedProvider.notifier).clear(),
     ref.read(feedLikedProvider.notifier).clear(),
     ref.read(feedSavedProvider.notifier).clear(),
-    ref.read(feedTrendingProvider.notifier).clear(),
+    // ref.read(feedTrendingProvider.notifier).clear(),
     ref.read(feedLatestProvider.notifier).clear(),
   ]);
 }

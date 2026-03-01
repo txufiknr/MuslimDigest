@@ -1,4 +1,5 @@
 import 'package:muslimdigest/config/settings.dart';
+import 'package:muslimdigest/models/feed.dart';
 import 'package:muslimdigest/utils/users.dart';
 import 'package:muslimdigest/variables/feed.dart';
 import 'package:muslimdigest/variables/user.dart';
@@ -184,9 +185,9 @@ class UserPreferences {
   final String userId;
   final Set<String> topics;
   final Set<String> madhahib;
-  final Set<String> sources;
+  final Set<Source> sources;
   final Set<String> avoidedTopics;
-  final Set<String> avoidedSources;
+  final Set<Source> avoidedSources;
   final DateTime? createdAt;
   final DateTime? updatedAt;
   
@@ -206,9 +207,9 @@ class UserPreferences {
       userId: json['userId'],
       topics: Set<String>.from(json['topics'] ?? []),
       madhahib: Set<String>.from(json['madhahib'] ?? []),
-      sources: Set<String>.from(json['sources'] ?? []),
+      sources: (json['sources'] as List<Map<String, dynamic>>?)?.map(Source.fromJson).toSet() ?? const {},
       avoidedTopics: Set<String>.from(json['avoidedTopics'] ?? []),
-      avoidedSources: Set<String>.from(json['avoidedSources'] ?? []),
+      avoidedSources: (json['avoidedSources'] as List<Map<String, dynamic>>?)?.map(Source.fromJson).toSet() ?? const {},
       createdAt: json['createdAt'] != null ? DateTime.parse(json['createdAt']) : null,
       updatedAt: json['updatedAt'] != null ? DateTime.parse(json['updatedAt']) : null,
     );
@@ -219,9 +220,9 @@ class UserPreferences {
       'userId': userId,
       'topics': topics.toList(),
       'madhahib': madhahib.toList(),
-      'sources': sources.toList(),
+      'sources': sources.map((s) => s.toJson()).toList(),
       'avoidedTopics': avoidedTopics.toList(),
-      'avoidedSources': avoidedSources.toList(),
+      'avoidedSources': avoidedSources.map((s) => s.toJson()).toList(),
       'createdAt': createdAt?.toIso8601String(),
       'updatedAt': updatedAt?.toIso8601String(),
     };
@@ -231,9 +232,9 @@ class UserPreferences {
     String? userId,
     Set<String>? topics,
     Set<String>? madhahib,
-    Set<String>? sources,
+    Set<Source>? sources,
     Set<String>? avoidedTopics,
-    Set<String>? avoidedSources,
+    Set<Source>? avoidedSources,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {

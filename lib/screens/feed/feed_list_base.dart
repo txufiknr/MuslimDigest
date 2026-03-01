@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:muslimdigest/api/feeds.dart';
+import 'package:muslimdigest/widgets/components/logo.dart';
 import 'package:pull_to_refresh/pull_to_refresh.dart';
 import 'package:muslimdigest/config/colors.dart';
 import 'package:muslimdigest/config/themes.dart';
@@ -46,6 +47,7 @@ abstract class FeedListBasePage extends ConsumerStatefulWidget {
 class _FeedListBasePageState extends ConsumerState<FeedListBasePage> {
   final ScrollController _scrollController = ScrollController();
   final RefreshController _refreshController = RefreshController(initialRefresh: false);
+  bool _isBackgroundRefreshing = false;
 
   @override
   void initState() {
@@ -83,19 +85,32 @@ class _FeedListBasePageState extends ConsumerState<FeedListBasePage> {
     debugPrint('[init] state.isEmpty: ${state.isEmpty}');
     debugPrint('[init] state.isNone: ${state.isNone}');
     
-    // For liked, saved, and history feeds, always force refresh to ensure latest data
+    // Smart cache strategy: Show cached data first, then refresh in background
+    // For liked, saved, and history feeds, show cached data immediately and refresh in background
     // For other feeds, only load if we have no cached data
-    final shouldForceRefresh = widget.feedType == FeedType.liked || 
-                              widget.feedType == FeedType.saved || 
-                              widget.feedType == FeedType.history;
+    final isPersonalFeed = widget.feedType == FeedType.liked || 
+                         widget.feedType == FeedType.saved || 
+                         widget.feedType == FeedType.history;
     
-    if (state.isEmpty || shouldForceRefresh) {
+    if (state.isEmpty) {
+      // No cached data - must load from backend
       final notifier = ref.read(widget.provider.notifier);
-      await notifier.loadFromEndpoint(
-        widget.feedType.endpoint,
-        forceRefresh: shouldForceRefresh,
-      );
+      await notifier.loadFromEndpoint(widget.feedType.endpoint);
+    } else if (isPersonalFeed) {
+      // Have cached data - show it immediately and refresh in background
+      setState(() => _isBackgroundRefreshing = true);
+      Future.microtask(() async {
+        try {
+          final notifier = ref.read(widget.provider.notifier);
+          await notifier.loadFromEndpoint(widget.feedType.endpoint, forceRefresh: true);
+        } finally {
+          if (mounted) {
+            setState(() => _isBackgroundRefreshing = false);
+          }
+        }
+      });
     }
+    // For other feeds, if we have cached data, just show it (no refresh needed)
   }
 
   Future<void> _loadMoreFeeds() async {
@@ -161,7 +176,18 @@ class _FeedListBasePageState extends ConsumerState<FeedListBasePage> {
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: MyAppBar(title: widget.title),
+      appBar: MyAppBar(
+        title: widget.title,
+        actions: _isBackgroundRefreshing ? [
+          Padding(
+            padding: const EdgeInsets.only(right: 16),
+            child: CupertinoActivityIndicator(
+              animating: true,
+              radius: 10,
+            ),
+          ),
+        ] : null,
+      ),
       body: SafeArea(
         child: _buildFeedList(h, state),
       ),
@@ -217,13 +243,16 @@ class _FeedListBasePageState extends ConsumerState<FeedListBasePage> {
             itemCount: feeds.length + (feeds.isEmpty || state.hasMore ? 1 : 0),
             itemBuilder: (context, index) {
               // Empty state
-              if (feeds.isEmpty && !state.isGetting) {
+              if (feeds.isEmpty) {
+                if (state.isGetting) {
+                  return _buildLoadingIndicator().sized(height: maxHeight);
+                }
                 return _buildEmptyState(h).sized(height: maxHeight);
               }
         
               // Loading more indicator
-              if (state.isGetting || index == feeds.length) {
-                return _buildLoadingIndicator().sized(height: maxHeight);
+              if (index == feeds.length) {
+                return CupertinoActivityIndicator().squared(24).center();
               }
               
               return _buildFeedItem(h, feeds[index]);
@@ -250,6 +279,8 @@ class _FeedListBasePageState extends ConsumerState<FeedListBasePage> {
             child: CachedImageWidget(
               imageUrl: feed.imageUrl,
               fit: BoxFit.cover,
+              errorColor: h.currentTheme.colorScheme.secondary,
+              errorChild: Logo(),
             ),
           ).clipRadius(12),
           
@@ -283,6 +314,8 @@ class _FeedListBasePageState extends ConsumerState<FeedListBasePage> {
                     ),
                   ),
                 ),
+
+              // TODO: add createdAt datetime
             ],
           ).expand(),
           
