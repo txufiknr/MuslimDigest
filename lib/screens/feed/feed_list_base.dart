@@ -103,11 +103,6 @@ class _FeedListBasePageState extends ConsumerState<FeedListBasePage> {
   Future<void> _onRefresh() async {
     try {
       final notifier = ref.read(widget.provider.notifier);
-      
-      // Reset pagination cursor by clearing nextCursor
-      await notifier.resetPagination();
-      
-      // Load from endpoint with forceRefresh
       await notifier.loadFromEndpoint(
         widget.feedType.endpoint,
         forceRefresh: true,
@@ -156,24 +151,6 @@ class _FeedListBasePageState extends ConsumerState<FeedListBasePage> {
     );
   }
 
-  // Widget _buildLoadingState() {
-  //   return Center(
-  //     child: Column(
-  //       mainAxisAlignment: MainAxisAlignment.center,
-  //       children: [
-  //         CupertinoActivityIndicator().squared(24),
-  //         const SizedBox(height: 16),
-  //         Text(
-  //           'Loading ${widget.title.toLowerCase()}...',
-  //           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-  //             color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
-  //           ),
-  //         ),
-  //       ],
-  //     ),
-  //   );
-  // }
-
   Widget _buildEmptyState(MyHelper h) {
     return MyPlaceholder(
       'No ${widget.title.toLowerCase()} yet',
@@ -209,19 +186,8 @@ class _FeedListBasePageState extends ConsumerState<FeedListBasePage> {
           enablePullDown: true,
           enablePullUp: false,
           onRefresh: _onRefresh,
-          // footer: CustomFooter(
-          //   loadStyle: LoadStyle.ShowAlways,
-          //   builder: (context, mode) {
-          //     if (mode == LoadStatus.loading) {
-          //       return CupertinoActivityIndicator().squared(20).center();
-          //     }
-          //     return const SizedBox.shrink();
-          //   },
-          // ),
           header: CustomHeader(
-            // loadStyle: LoadStyle.ShowAlways,
             builder: (context, mode) {
-              // if (mode == LoadStatus.loading) {
               if (mode == RefreshStatus.canRefresh || mode == RefreshStatus.refreshing) {
                 return CupertinoActivityIndicator(animating: mode == RefreshStatus.refreshing).squared(24).center();
               }

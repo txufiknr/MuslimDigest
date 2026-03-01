@@ -111,7 +111,10 @@ User(
     other.userId == userId &&
     other.name == name &&
     other.gender == gender &&
-    other.ageGroup == ageGroup
+    other.ageGroup == ageGroup &&
+    other.totalLiked == totalLiked &&
+    other.totalSaved == totalSaved &&
+    other.totalReads == totalReads
   );
 }
 

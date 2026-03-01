@@ -8,6 +8,7 @@ import 'package:muslimdigest/providers/ingest_last_date.dart';
 import 'package:muslimdigest/providers/user/user.dart';
 import 'package:muslimdigest/services/api.dart';
 import 'package:muslimdigest/providers/feed/feed_cache.dart';
+import 'package:muslimdigest/services/feed_state_service.dart';
 import 'package:muslimdigest/variables/feed.dart';
 import 'package:muslimdigest/utils/repository.dart';
 import 'package:muslimdigest/utils/functions.dart';
@@ -105,7 +106,7 @@ abstract class BaseFeedNotifier extends Notifier<BaseFeedState> {
   }
   
   /// Reset pagination state by clearing nextCursor and resetting hasMore
-  Future<void> resetPagination() async {
+  void resetPagination() {
     state = state.copyWith(
       nextCursor: null,
       hasMore: true,
@@ -201,6 +202,14 @@ abstract class BaseFeedNotifier extends Notifier<BaseFeedState> {
       newTotalLiked = isLiked ? currentUser.totalLiked + 1 : currentUser.totalLiked - 1;
       fireAndForget(() => like(feedId, isLiked));
       
+      // Update like status across all feed types
+      await FeedStateService.updateLikeStatusEverywhereWithRef(
+        ref, 
+        feedId, 
+        isLiked, 
+        likeCount: newLikeCount,
+      );
+      
       // Schedule cache update
       cacheUpdates.add(_updateFeedCache(
         endpoint: 'feed/liked',
@@ -218,6 +227,9 @@ abstract class BaseFeedNotifier extends Notifier<BaseFeedState> {
       newTotalSaved = isSaved ? currentUser.totalSaved + 1 : currentUser.totalSaved - 1;
       fireAndForget(() => save(feedId, isSaved));
       
+      // Update save status across all feed types
+      await FeedStateService.updateSaveStatusEverywhereWithRef(ref, feedId, isSaved);
+      
       // Schedule cache update
       cacheUpdates.add(_updateFeedCache(
         endpoint: 'feed/saved',
@@ -230,7 +242,8 @@ abstract class BaseFeedNotifier extends Notifier<BaseFeedState> {
       }
     }
 
-    // Update feed item state
+    // Update feed item state in current feed type (already updated by FeedStateService)
+    // But we still need to update the current state for immediate UI updates
     final updatedItems = state.items?.map((item) {
       if (item.id == feedId) {
         return item.copyWith(
@@ -344,6 +357,8 @@ abstract class BaseFeedNotifier extends Notifier<BaseFeedState> {
     bool forceRefresh = false
   }) async {
     final cache = ref.read(feedCacheProvider);
+
+    if (forceRefresh) resetPagination();
     
     // Try to load from cache first (unless force refresh or load more)
     if (!forceRefresh && !isLoadMore) {
@@ -389,7 +404,7 @@ abstract class BaseFeedNotifier extends Notifier<BaseFeedState> {
         if (isLoadMore && state.items != null) {
           // Check if we're getting duplicate items (same cursor)
           if (nextCursor == state.nextCursor) {
-            log('[BaseFeedNotifier] WARNING: Same cursor detected, skipping duplicate items');
+            log('[BaseFeedNotifier] Same cursor detected, skipping duplicate items');
             return false;
           }
           

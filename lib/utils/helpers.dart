@@ -21,7 +21,6 @@ class MyHelper {
   TextTheme get currentTextTheme => currentTheme.textTheme;
   TextStyle? get inputStyle => currentTextTheme.bodyMedium;
   TextStyle? get inputStyleLarge => currentTextTheme.bodyLarge;
-  // TODO: are these used?
   TextStyle? get hintStyle => inputStyle?.copyWith(color: currentTheme.hintColor);
   TextStyle? get hintStyleLarge => inputStyleLarge?.copyWith(color: currentTheme.hintColor);
 

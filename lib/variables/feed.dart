@@ -83,6 +83,16 @@ enum FeedType {
       case digest: return ref.read(feedProvider.notifier);
     }
   }
+
+  BaseFeedNotifier getNotifierWithRef(Ref ref) {
+    switch (this) {
+      case trending: return ref.read(feedTrendingProvider.notifier);
+      case latest: return ref.read(feedLatestProvider.notifier);
+      case liked: return ref.read(feedLikedProvider.notifier);
+      case saved: return ref.read(feedSavedProvider.notifier);
+      case digest: return ref.read(feedProvider.notifier);
+    }
+  }
   
   List<FeedItem> readItems(WidgetRef ref) {
     return read(ref).items ?? [];
@@ -133,6 +143,17 @@ enum FeedType {
 
   /// Read the provider state
   BaseFeedState read(WidgetRef ref) {
+    switch (this) {
+      case digest: return ref.read(feedProvider);
+      case latest: return ref.read(feedLatestProvider);
+      case trending: return ref.read(feedTrendingProvider);
+      case liked: return ref.read(feedLikedProvider);
+      case saved: return ref.read(feedSavedProvider);
+    }
+  }
+
+  /// Read the provider state (Ref version)
+  BaseFeedState readWithRef(Ref ref) {
     switch (this) {
       case digest: return ref.read(feedProvider);
       case latest: return ref.read(feedLatestProvider);

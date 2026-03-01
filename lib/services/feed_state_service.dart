@@ -1,8 +1,11 @@
+import 'dart:math' show max;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:muslimdigest/providers/feed/base_feed_notifier.dart';
 import 'package:muslimdigest/providers/user/preferences.dart';
 import 'package:muslimdigest/utils/dialogs.dart';
+import 'package:muslimdigest/utils/extensions.dart';
 import 'package:muslimdigest/variables/feed.dart';
 
 /// Utility functions for feed state management
@@ -14,6 +17,16 @@ class FeedStateService {
   ) async {
     for (final feedType in FeedType.values) {
       await operation(feedType.getNotifier(ref));
+    }
+  }
+
+  /// Execute an operation on all feed type notifiers (Ref version)
+  static Future<void> executeOnAllFeedTypesWithRef(
+    Ref ref,
+    Future<void> Function(BaseFeedNotifier notifier) operation,
+  ) async {
+    for (final feedType in FeedType.values) {
+      await operation(feedType.getNotifierWithRef(ref));
     }
   }
 
@@ -62,6 +75,110 @@ class FeedStateService {
       if (reason != null) return reason;
     }
     return null;
+  }
+
+  /// Update like status across all feed types
+  static Future<void> updateLikeStatusEverywhere(
+    WidgetRef ref,
+    String feedId,
+    bool isLiked, {
+    int? likeCount,
+  }) async {
+    for (final feedType in FeedType.values) {
+      final notifier = feedType.getNotifier(ref);
+      final currentState = feedType.read(ref);
+      final currentItem = currentState.items?.firstWhereOrNull((item) => item.id == feedId);
+      if (currentItem != null && currentItem.isLiked != isLiked) {
+        // Update the item in this feed type
+        final updatedItems = currentState.items?.map((item) {
+          if (item.id == feedId) {
+            return item.copyWith(
+              isLiked: isLiked,
+              likeCount: likeCount ?? (isLiked ? item.likeCount + 1 : max(0, item.likeCount - 1)),
+            );
+          }
+          return item;
+        }).toList();
+        
+        await notifier.setValue(updatedItems);
+      }
+    }
+  }
+
+  /// Update like status across all feed types (Ref version)
+  static Future<void> updateLikeStatusEverywhereWithRef(
+    Ref ref,
+    String feedId,
+    bool isLiked, {
+    int? likeCount,
+  }) async {
+    for (final feedType in FeedType.values) {
+      final notifier = feedType.getNotifierWithRef(ref);
+      final currentState = feedType.readWithRef(ref);
+      final currentItem = currentState.items?.firstWhereOrNull((item) => item.id == feedId);
+      if (currentItem != null && currentItem.isLiked != isLiked) {
+        // Update the item in this feed type
+        final updatedItems = currentState.items?.map((item) {
+          if (item.id == feedId) {
+            return item.copyWith(
+              isLiked: isLiked,
+              likeCount: likeCount ?? (isLiked ? item.likeCount + 1 : max(0, item.likeCount - 1)),
+            );
+          }
+          return item;
+        }).toList();
+        
+        await notifier.setValue(updatedItems);
+      }
+    }
+  }
+
+  /// Update save status across all feed types
+  static Future<void> updateSaveStatusEverywhere(
+    WidgetRef ref,
+    String feedId,
+    bool isSaved,
+  ) async {
+    for (final feedType in FeedType.values) {
+      final notifier = feedType.getNotifier(ref);
+      final currentState = feedType.read(ref);
+      final currentItem = currentState.items?.firstWhereOrNull((item) => item.id == feedId);
+      if (currentItem != null && currentItem.isSaved != isSaved) {
+        // Update the item in this feed type
+        final updatedItems = currentState.items?.map((item) {
+          if (item.id == feedId) {
+            return item.copyWith(isSaved: isSaved);
+          }
+          return item;
+        }).toList();
+        
+        await notifier.setValue(updatedItems);
+      }
+    }
+  }
+
+  /// Update save status across all feed types (Ref version)
+  static Future<void> updateSaveStatusEverywhereWithRef(
+    Ref ref,
+    String feedId,
+    bool isSaved,
+  ) async {
+    for (final feedType in FeedType.values) {
+      final notifier = feedType.getNotifierWithRef(ref);
+      final currentState = feedType.readWithRef(ref);
+      final currentItem = currentState.items?.firstWhereOrNull((item) => item.id == feedId);
+      if (currentItem != null && currentItem.isSaved != isSaved) {
+        // Update the item in this feed type
+        final updatedItems = currentState.items?.map((item) {
+          if (item.id == feedId) {
+            return item.copyWith(isSaved: isSaved);
+          }
+          return item;
+        }).toList();
+        
+        await notifier.setValue(updatedItems);
+      }
+    }
   }
 
   /// Safe API execution with consistent error handling

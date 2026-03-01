@@ -136,7 +136,7 @@ class FeedSwiperState extends ConsumerState<FeedSwiper> {
     super.dispose();
   }
 
-  Future<void> _incrementReadCount(String lastClusterId) async {
+  Future<void> _incrementReadCount(Cluster lastCluster) async {
     if (_isDigestFeed) {
       final readCount = ref.read(readCountProvider);
       final newCount = (readCount + 1).clamp(0, DAILY_READ_TARGET);
@@ -162,10 +162,10 @@ class FeedSwiperState extends ConsumerState<FeedSwiper> {
     // final currentUser = ref.read(userProvider);
     // ref.read(userProvider.notifier).setValue(currentUser.copyWith(readCount: currentUser.readCount + 1));
 
-    // TODO: Update user read history feed cache
+    // TODO: Update feed/history state
     
     // Track reading history to backend
-    fireAndForget(() => markRead(lastClusterId));
+    fireAndForget(() => markRead(lastCluster.id));
   }
 
   Future<void> _decreaseReadCount() async {
@@ -246,7 +246,7 @@ class FeedSwiperState extends ConsumerState<FeedSwiper> {
     log('Swipe direction: $_swipeDirection, Undo direction: $_undoDirection');
 
     return CardSwiper(
-      key: Key("CardSwiper_${_feedType}_{$_currentTopic}_$_currentItemIndex"),
+      key: Key("CardSwiper_${_feedType}_{$_currentTopic}_$_initialItemIndex"),
       controller: _controller,
       padding: EdgeInsets.zero,
       showBackCardOnUndo: true,
@@ -286,7 +286,7 @@ class FeedSwiperState extends ConsumerState<FeedSwiper> {
         // log('[feed] Swipe direction: $direction, previousItem: ${previousItem.title}');
         // log('[feed] Swiped item: ${previousItem.title}');
 
-        _incrementReadCount(previousItem.cluster.id);
+        _incrementReadCount(previousItem.cluster);
 
         return true;
       },
