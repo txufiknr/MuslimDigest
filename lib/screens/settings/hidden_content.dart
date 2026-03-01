@@ -4,10 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:muslimdigest/api/feeds.dart';
 import 'package:muslimdigest/config/colors.dart';
 import 'package:muslimdigest/models/feed.dart';
-import 'package:muslimdigest/providers/feed/feed.dart';
-import 'package:muslimdigest/providers/feed/feed_liked.dart';
-import 'package:muslimdigest/providers/feed/feed_saved.dart';
 import 'package:muslimdigest/providers/user/preferences.dart';
+import 'package:muslimdigest/services/feed_state_service.dart';
 import 'package:muslimdigest/utils/helpers.dart';
 import 'package:muslimdigest/widgets/components/app_bar.dart';
 import 'package:muslimdigest/widgets/components/cached_image.dart' show CachedImageWidget;
@@ -56,7 +54,7 @@ class _HiddenContentPageState extends ConsumerState<HiddenContentPage> with Sing
           tabs: const [
             // TODO: add number badge
             Tab(text: 'Avoided Sources'), // ref.read(preferencesProvider).avoidedSources.length
-            Tab(text: 'Hidden Feeds'),
+            Tab(text: 'Hidden Feeds'), // ref.read(userProvider).totalNotInterested
           ],
         ),
       ),
@@ -116,21 +114,8 @@ class _HiddenContentPageState extends ConsumerState<HiddenContentPage> with Sing
   }
 
   Widget _buildHiddenFeedsTab(MyHelper h) {
-    // Get all feed notifiers to collect hidden items
-    final feedStates = [
-      ref.read(feedProvider),
-      ref.read(feedLikedProvider),
-      ref.read(feedSavedProvider),
-    ];
-
-    final allNotInterestedItems = <String>{};
-    final allNotInterestedReasons = <String, FeedbackCategory>{};
-
-    // Collect all not interested items from all feed states
-    for (final state in feedStates) {
-      allNotInterestedItems.addAll(state.notInterestedItems);
-      allNotInterestedReasons.addAll(state.notInterestedReasons);
-    }
+    // Get all not interested feeds from all feed types using FeedStateService
+    final allNotInterestedItems = FeedStateService.getAllNotInterestedFeeds(ref);
 
     return Column(
       children: [
@@ -138,7 +123,7 @@ class _HiddenContentPageState extends ConsumerState<HiddenContentPage> with Sing
         Expanded(
           child: allNotInterestedItems.isEmpty
               ? _buildEmptyFeedsState(h)
-              : _buildHiddenFeedsList(h, allNotInterestedItems, allNotInterestedReasons),
+              : _buildHiddenFeedsList(h, allNotInterestedItems),
         ),
       ],
     );
@@ -161,15 +146,15 @@ class _HiddenContentPageState extends ConsumerState<HiddenContentPage> with Sing
 
   Widget _buildHiddenFeedsList(
     MyHelper h,
-    Set<String> hiddenFeedIds,
-    Map<String, FeedbackCategory> reasons,
+    Map<String, FeedbackCategory?> hiddenFeedIds,
   ) {
     return ListView.builder(
       padding: const EdgeInsets.symmetric(vertical: 8),
       itemCount: hiddenFeedIds.length,
       itemBuilder: (context, index) {
-        final feedId = hiddenFeedIds.elementAt(index);
-        final reason = reasons[feedId];
+        final entry = hiddenFeedIds.entries.elementAt(index);
+        final feedId = entry.key;
+        final reason = entry.value;
         return _HiddenFeedTile(
           feedId: feedId,
           reason: reason,

@@ -21,6 +21,13 @@ class UserNotifier extends Notifier<User> {
     return json == null ? PrefData.user : User.fromJson(json);
   }
 
+  Future<void> incrementNotInterested() async {
+    final updatedUser = state.copyWith(
+      totalNotInterested: state.totalNotInterested + 1,
+    );
+    await setValue(updatedUser);
+  }
+
   Future<void> setValue(User value) async {
     state = value;
     await ref

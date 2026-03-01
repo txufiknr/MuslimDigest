@@ -12,6 +12,7 @@ class User {
   final int totalLiked;
   final int totalSaved;
   final int totalReads;
+  final int totalNotInterested;
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
@@ -23,6 +24,7 @@ class User {
     this.totalLiked = 0,
     this.totalSaved = 0,
     this.totalReads = 0,
+    this.totalNotInterested = 0,
     this.createdAt,
     this.updatedAt,
   });
@@ -46,6 +48,7 @@ class User {
       totalLiked: json['totalLiked'] ?? 0,
       totalSaved: json['totalSaved'] ?? 0,
       totalReads: json['totalReads'] ?? 0,
+      totalNotInterested: json['totalNotInterested'] ?? 0,
       createdAt: json['createdAt'] != null ? DateTime.parse(json['createdAt']) : null,
       updatedAt: json['updatedAt'] != null ? DateTime.parse(json['updatedAt']) : null,
     );
@@ -60,6 +63,7 @@ class User {
       'totalLiked': totalLiked,
       'totalSaved': totalSaved,
       'totalReads': totalReads,
+      'totalNotInterested': totalNotInterested,
       'createdAt': createdAt?.toIso8601String(),
       'updatedAt': updatedAt?.toIso8601String(),
     };
@@ -72,6 +76,7 @@ class User {
     int? totalLiked,
     int? totalSaved,
     int? totalReads,
+    int? totalNotInterested,
   }) {
     return User(
       userId: userId,
@@ -81,6 +86,7 @@ class User {
       totalLiked: totalLiked ?? this.totalLiked,
       totalSaved: totalSaved ?? this.totalSaved,
       totalReads: totalReads ?? this.totalReads,
+      totalNotInterested: totalNotInterested ?? this.totalNotInterested,
       createdAt: createdAt,
       updatedAt: updatedAt,
     );
@@ -97,6 +103,7 @@ User(
   totalLiked: $totalLiked,
   totalSaved: $totalSaved,
   totalReads: $totalReads,
+  totalNotInterested: $totalNotInterested,
   createdAt: $createdAt,
   updatedAt: $updatedAt
 )''';
@@ -115,7 +122,8 @@ User(
     other.ageGroup == ageGroup &&
     other.totalLiked == totalLiked &&
     other.totalSaved == totalSaved &&
-    other.totalReads == totalReads
+    other.totalReads == totalReads &&
+    other.totalNotInterested == totalNotInterested
   );
 }
 

@@ -12,6 +12,7 @@ import 'package:muslimdigest/config/themes.dart';
 import 'package:muslimdigest/providers/feed/base_feed_notifier.dart';
 import 'package:muslimdigest/providers/user/settings.dart';
 import 'package:muslimdigest/providers/user/streaks.dart';
+import 'package:muslimdigest/providers/user/user.dart';
 import 'package:muslimdigest/utils/dialogs.dart';
 import 'package:muslimdigest/utils/extensions.dart';
 import 'package:muslimdigest/utils/format.dart';
@@ -520,8 +521,12 @@ class _FeedFooter extends ConsumerWidget {
       if (response.success) {
         showSnackBarSuccess(context, "Feed hidden. We'll show less content like this.");
 
-        // Mark as not interested across all feed types using FeedStateService
-        await FeedStateService.markNotInterestedEverywhere(ref, feedItem.id);
+        await Future.wait([
+          // Increment user's not interested count
+          ref.read(userProvider.notifier).incrementNotInterested(),
+          // Mark as not interested across all feed types
+          FeedStateService.markNotInterestedEverywhere(ref, feedItem.id),
+        ]);
 
       } else {
         showSnackBarError(context, response.error ?? "Failed to mark as not interested");

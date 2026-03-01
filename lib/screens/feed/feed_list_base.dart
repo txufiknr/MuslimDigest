@@ -1,3 +1,5 @@
+import 'dart:math' show max;
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -9,8 +11,11 @@ import 'package:muslimdigest/config/colors.dart';
 import 'package:muslimdigest/config/themes.dart';
 import 'package:muslimdigest/models/feed.dart';
 import 'package:muslimdigest/providers/feed/base_feed_notifier.dart';
+import 'package:muslimdigest/providers/user/user.dart';
 import 'package:muslimdigest/services/api.dart';
+import 'package:muslimdigest/services/feed_state_service.dart';
 import 'package:muslimdigest/utils/extensions.dart';
+import 'package:muslimdigest/utils/functions.dart';
 import 'package:muslimdigest/utils/helpers.dart';
 import 'package:muslimdigest/variables/feed.dart';
 import 'package:muslimdigest/widgets/animations/loader.dart';
@@ -81,10 +86,6 @@ class _FeedListBasePageState extends ConsumerState<FeedListBasePage> {
   Future<void> _loadInitialFeeds() async {
     final state = ref.read(widget.provider);
 
-    debugPrint('[init] state.isLoading: ${state.isLoading}');
-    debugPrint('[init] state.isEmpty: ${state.isEmpty}');
-    debugPrint('[init] state.isNone: ${state.isNone}');
-    
     // Smart cache strategy: Show cached data first, then refresh in background
     // For liked, saved, and history feeds, show cached data immediately and refresh in background
     // For other feeds, only load if we have no cached data
@@ -133,35 +134,62 @@ class _FeedListBasePageState extends ConsumerState<FeedListBasePage> {
   }
 
   Future<void> _onActionPressed(FeedItem feed) async {
-    try {
-      if (widget.feedType == FeedType.history) {
-        // Remove from history
-        final deleted = await deleteHistory(feed.id);
-
-        if (deleted) {
-          // Remove from provider state
-          final notifier = ref.read(widget.provider.notifier);
-          final currentState = ref.read(widget.provider);
-          final currentItems = currentState.items ?? [];
-          final updatedItems = currentItems.where((item) => item.id != feed.id).toList();
-          await notifier.setValue(updatedItems);
-        }
-      } else {
-        // Unlike/Unsave the feed (for liked and saved feeds)
-        final actionEndpoint = widget.feedType.endpoint.contains('liked') ? 'feed/like' : 'feed/save';
-        final response = await ApiService.post(actionEndpoint, { 'clusterId': feed.id, 'value': false });
-        
-        if (response.successful) {
-          // Remove from provider state
-          final notifier = ref.read(widget.provider.notifier);
-          final currentState = ref.read(widget.provider);
-          final currentItems = currentState.items ?? [];
-          final updatedItems = currentItems.where((item) => item.id != feed.id).toList();
-          await notifier.setValue(updatedItems);
-        }
+    if (widget.feedType == FeedType.history) {
+      // Remove from history
+      final deleted = await deleteHistory(feed.id);
+      if (deleted) {
+        final notifier = ref.read(widget.provider.notifier);
+        final currentState = ref.read(widget.provider);
+        final currentItems = currentState.items ?? [];
+        final updatedItems = currentItems.where((item) => item.id != feed.id).toList();
+        await notifier.setValue(updatedItems);
       }
-    } catch (e) {
-      // Handle error
+    } else {
+      // Unlike/Unsave the feed (for liked and saved feeds) - UI-first approach
+      final isLikedFeed = widget.feedType.endpoint.contains('liked');
+      
+      // Update UI immediately (optimistic update)
+      if (isLikedFeed) {
+        // Update user liked count immediately
+        final currentUser = ref.read(userProvider);
+        final newLikedCount = max(0, currentUser.totalLiked - 1);
+        await ref.read(userProvider.notifier).setValue(
+          currentUser.copyWith(totalLiked: newLikedCount)
+        );
+        
+        // Update like status across all feed types immediately
+        await FeedStateService.updateLikeStatusEverywhere(
+          ref, 
+          feed.id, 
+          false, 
+          likeCount: max(0, feed.likeCount - 1),
+        );
+      } else {
+        // Update save status across all feed types immediately
+        await FeedStateService.updateSaveStatusEverywhere(
+          ref, 
+          feed.id, 
+          false,
+        );
+        
+        // Update user saved count immediately
+        final currentUser = ref.read(userProvider);
+        final newSavedCount = max(0, currentUser.totalSaved - 1);
+        await ref.read(userProvider.notifier).setValue(
+          currentUser.copyWith(totalSaved: newSavedCount)
+        );
+      }
+      
+      // Remove from current provider state immediately
+      final notifier = ref.read(widget.provider.notifier);
+      final currentState = ref.read(widget.provider);
+      final currentItems = currentState.items ?? [];
+      final updatedItems = currentItems.where((item) => item.id != feed.id).toList();
+      await notifier.setValue(updatedItems);
+      
+      // Fire and forget API call
+      final actionEndpoint = isLikedFeed ? 'feed/like' : 'feed/save';
+      fireAndForget(() => ApiService.post(actionEndpoint, { 'clusterId': feed.id, 'value': false }));
     }
   }
 
@@ -169,10 +197,6 @@ class _FeedListBasePageState extends ConsumerState<FeedListBasePage> {
   Widget build(BuildContext context) {
     final h = MyHelper(context);
     final state = ref.watch(widget.provider);
-
-    debugPrint('[build] state.isLoading: ${state.isLoading}');
-    debugPrint('[build] state.isEmpty: ${state.isEmpty}');
-    debugPrint('[build] state.isNone: ${state.isNone}');
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -209,12 +233,6 @@ class _FeedListBasePageState extends ConsumerState<FeedListBasePage> {
 
   Widget _buildFeedList(MyHelper h, BaseFeedState state) {
     final feeds = state.items ?? [];
-
-    debugPrint('[build] feeds.length: ${feeds.length}');
-    debugPrint('[build] state.isLoading: ${state.isLoading}');
-    debugPrint('[build] state.isLoadingMore: ${state.isLoadingMore}');
-    debugPrint('[build] state.hasMore: ${state.hasMore}');
-    debugPrint('[build] state.isGetting: ${state.isGetting}');
 
     // Show loading indicator when initially loading
     // if (state.isGetting) {

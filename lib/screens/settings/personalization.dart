@@ -7,9 +7,7 @@ import 'package:muslimdigest/models/user.dart';
 import 'package:muslimdigest/providers/topics.dart';
 import 'package:muslimdigest/providers/user/preferences.dart';
 import 'package:muslimdigest/providers/user/settings.dart';
-import 'package:muslimdigest/providers/feed/feed.dart';
-import 'package:muslimdigest/providers/feed/feed_liked.dart';
-import 'package:muslimdigest/providers/feed/feed_saved.dart';
+import 'package:muslimdigest/providers/user/user.dart';
 import 'package:muslimdigest/utils/extensions.dart';
 import 'package:muslimdigest/widgets/animations/loader.dart';
 import 'package:muslimdigest/widgets/components/button.dart';
@@ -222,18 +220,19 @@ class _PersonalizationPageState extends ConsumerState<PersonalizationPage> with 
 
   /// Get the count of hidden feeds from all feed providers
   int _getHiddenFeedsCount() {
+    return ref.read(userProvider).totalNotInterested;
     // Collect all not interested items from all feed providers
-    final feedStates = [
-      ref.read(feedProvider),
-      ref.read(feedLikedProvider),
-      ref.read(feedSavedProvider),
-    ];
+    // final feedStates = [
+    //   ref.read(feedProvider),
+    //   ref.read(feedLikedProvider),
+    //   ref.read(feedSavedProvider),
+    // ];
 
-    int totalCount = 0;
-    for (final state in feedStates) {
-      totalCount += state.notInterestedItems.length;
-    }
-    return totalCount;
+    // int totalCount = 0;
+    // for (final state in feedStates) {
+    //   totalCount += state.notInterestedItems.length;
+    // }
+    // return totalCount;
   }
 
   /// Build a hidden content management button with count

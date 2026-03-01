@@ -10,22 +10,22 @@ import 'package:muslimdigest/utils/functions.dart';
 
 Future<bool> markRead(String clusterId) async {
   final response = await ApiService.post('feed/history', {'clusterId': clusterId});
-  return response.successful;
+  return response.success;
 }
 
 Future<bool> like(String clusterId, bool value) async {
   final response = await ApiService.post('feed/like', {'clusterId': clusterId, 'value': value});
-  return response.successful;
+  return response.success;
 }
 
 Future<bool> save(String clusterId, bool value) async {
   final response = await ApiService.post('feed/save', {'clusterId': clusterId, 'value': value});
-  return response.successful;
+  return response.success;
 }
 
 Future<bool> deleteHistory(String clusterId) async {
   final response = await ApiService.delete('feed/history?clusterId=$clusterId');
-  return response.successful;
+  return response.success;
 }
 
 Future<ApiResponse> markNotInterested(String clusterId) async {

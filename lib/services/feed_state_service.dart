@@ -77,6 +77,27 @@ class FeedStateService {
     return null;
   }
 
+  /// Get all not interested feeds from all feed types
+  static Map<String, FeedbackCategory?> getAllNotInterestedFeeds(WidgetRef ref) {
+    final allNotInterestedItems = <String, FeedbackCategory?>{};
+    
+    for (final feedType in FeedType.values) {
+      final BaseFeedNotifier notifier = feedType.getNotifier(ref);
+      final state = feedType.read(ref);
+      
+      if (state.items != null) {
+        for (final item in state.items!) {
+          if (state.isNotInterested(item.id)) {
+            final reason = notifier.getNotInterestedReason(item.id);
+            allNotInterestedItems[item.id] = reason;
+          }
+        }
+      }
+    }
+    
+    return allNotInterestedItems;
+  }
+
   /// Update like status across all feed types
   static Future<void> updateLikeStatusEverywhere(
     WidgetRef ref,
