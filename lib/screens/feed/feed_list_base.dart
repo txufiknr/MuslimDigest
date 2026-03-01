@@ -217,7 +217,7 @@ class _FeedListBasePageState extends ConsumerState<FeedListBasePage> {
             itemCount: feeds.length + (feeds.isEmpty || state.hasMore ? 1 : 0),
             itemBuilder: (context, index) {
               // Empty state
-              if (feeds.isEmpty) {
+              if (feeds.isEmpty && !state.isGetting) {
                 return _buildEmptyState(h).sized(height: maxHeight);
               }
         

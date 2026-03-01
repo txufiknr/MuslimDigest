@@ -83,8 +83,12 @@ class FeedStateService {
     String feedId,
     bool isLiked, {
     int? likeCount,
+    FeedType? skipFeedType,
   }) async {
     for (final feedType in FeedType.values) {
+      // Skip the specified feed type to avoid circular dependency
+      if (skipFeedType != null && feedType == skipFeedType) continue;
+      
       final notifier = feedType.getNotifier(ref);
       final currentState = feedType.read(ref);
       final currentItem = currentState.items?.firstWhereOrNull((item) => item.id == feedId);
@@ -111,8 +115,12 @@ class FeedStateService {
     String feedId,
     bool isLiked, {
     int? likeCount,
+    FeedType? skipFeedType,
   }) async {
     for (final feedType in FeedType.values) {
+      // Skip the specified feed type to avoid circular dependency
+      if (skipFeedType != null && feedType == skipFeedType) continue;
+      
       final notifier = feedType.getNotifierWithRef(ref);
       final currentState = feedType.readWithRef(ref);
       final currentItem = currentState.items?.firstWhereOrNull((item) => item.id == feedId);
@@ -137,9 +145,13 @@ class FeedStateService {
   static Future<void> updateSaveStatusEverywhere(
     WidgetRef ref,
     String feedId,
-    bool isSaved,
-  ) async {
+    bool isSaved, {
+    FeedType? skipFeedType,
+  }) async {
     for (final feedType in FeedType.values) {
+      // Skip the specified feed type to avoid circular dependency
+      if (skipFeedType != null && feedType == skipFeedType) continue;
+      
       final notifier = feedType.getNotifier(ref);
       final currentState = feedType.read(ref);
       final currentItem = currentState.items?.firstWhereOrNull((item) => item.id == feedId);
@@ -161,9 +173,13 @@ class FeedStateService {
   static Future<void> updateSaveStatusEverywhereWithRef(
     Ref ref,
     String feedId,
-    bool isSaved,
-  ) async {
+    bool isSaved, {
+    FeedType? skipFeedType,
+  }) async {
     for (final feedType in FeedType.values) {
+      // Skip the specified feed type to avoid circular dependency
+      if (skipFeedType != null && feedType == skipFeedType) continue;
+      
       final notifier = feedType.getNotifierWithRef(ref);
       final currentState = feedType.readWithRef(ref);
       final currentItem = currentState.items?.firstWhereOrNull((item) => item.id == feedId);

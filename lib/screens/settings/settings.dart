@@ -273,7 +273,7 @@ class PersonalSettingsSection extends ConsumerWidget {
             },
           ),
           SettingsTile(
-            icon: CupertinoIcons.clock,
+            icon: CupertinoIcons.clock_fill,
             title: 'History',
             onTap: () {
               context.push('/history');

@@ -271,7 +271,7 @@ class FeedSwiperState extends ConsumerState<FeedSwiper> {
     log('_cardsCount = $_cardsCount');
     log('_canGoNext = $_canGoNext');
     log('_canGoPrev = $_canGoPrev');
-    log('Swipe direction: $_swipeDirection, Undo direction: $_undoDirection');
+    // log('Swipe direction: $_swipeDirection, Undo direction: $_undoDirection');
 
     return CardSwiper(
       key: Key("CardSwiper_${_feedType}_{$_currentTopic}_$_initialItemIndex"),

@@ -713,6 +713,14 @@ class _FeedBadgeChip extends StatelessWidget {
     'engagement:trending': 'High engagement and trending topics',
   };
 
+  IconData? get _badgeIcon {
+    switch (badge) {
+      case 'engagement:trending': return CupertinoIcons.graph_square_fill;
+      case 'content_risk:high': return CupertinoIcons.exclamationmark_triangle_fill;
+      default: return null;
+    }
+  }
+
   String get _badgeText {
     // Check exact mappings first
     final mappedText = _badgeMappings[badge];
@@ -795,13 +803,20 @@ class _FeedBadgeChip extends StatelessWidget {
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: h.useColor(_badgeColor, 200)!),
         ),
-        child: Text(
-          _badgeText,
-          style: TextStyle(
-            fontSize: 12,
-            color: h.useColor(_badgeColor, 700),
-            fontWeight: FontWeight.w400,
-          ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            if (_badgeIcon != null) Icon(_badgeIcon, size: 14, color: h.useColor(_badgeColor, 800),).withPadding(right: 4),
+            Text(
+              _badgeText,
+              style: TextStyle(
+                fontSize: 12,
+                color: h.useColor(_badgeColor, 700),
+                fontWeight: FontWeight.w400,
+              ),
+            ),
+          ],
         ),
       ),
     );

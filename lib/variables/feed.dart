@@ -45,8 +45,15 @@ enum FeedType {
   history;
 
   static FeedType fromString(String name) {
-    return FeedType.values.firstWhere(
+    return values.firstWhere(
       (type) => type.name == name,
+      orElse: () => digest,
+    );
+  }
+
+  static FeedType fromEndpoint(String endpoint) {
+    return values.firstWhere(
+      (type) => type.endpoint == endpoint,
       orElse: () => digest,
     );
   }

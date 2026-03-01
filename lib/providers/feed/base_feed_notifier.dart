@@ -202,12 +202,14 @@ abstract class BaseFeedNotifier extends Notifier<BaseFeedState> {
       newTotalLiked = isLiked ? currentUser.totalLiked + 1 : currentUser.totalLiked - 1;
       fireAndForget(() => like(feedId, isLiked));
       
-      // Update like status across all feed types
+      // Update like status across all feed types (skip current to avoid circular dependency)
+      final currentFeedType = FeedType.fromEndpoint(endpoint);
       await FeedStateService.updateLikeStatusEverywhereWithRef(
         ref, 
         feedId, 
         isLiked, 
         likeCount: newLikeCount,
+        skipFeedType: currentFeedType,
       );
       
       // Schedule cache update
@@ -227,8 +229,14 @@ abstract class BaseFeedNotifier extends Notifier<BaseFeedState> {
       newTotalSaved = isSaved ? currentUser.totalSaved + 1 : currentUser.totalSaved - 1;
       fireAndForget(() => save(feedId, isSaved));
       
-      // Update save status across all feed types
-      await FeedStateService.updateSaveStatusEverywhereWithRef(ref, feedId, isSaved);
+      // Update save status across all feed types (skip current to avoid circular dependency)
+      final currentFeedType = FeedType.fromEndpoint(endpoint);
+      await FeedStateService.updateSaveStatusEverywhereWithRef(
+        ref, 
+        feedId, 
+        isSaved,
+        skipFeedType: currentFeedType,
+      );
       
       // Schedule cache update
       cacheUpdates.add(_updateFeedCache(
