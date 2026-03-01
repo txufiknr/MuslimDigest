@@ -366,3 +366,105 @@ String formatNumber(num number, {int decimalDigits = 0}) {
     (Match m) => '${m[1]},',
   );
 }
+
+/// Formats a DateTime with flexible display options for date, month, and year components.
+///
+/// [dateTime] - The DateTime to format
+/// [showDate] - Whether to show the day (default: true)
+/// [showMonth] - Whether to show the month (default: true)
+/// [showYear] - Whether to show the year (default: true)
+/// [monthFormat] - Format for month: 'short' (Jan), 'long' (January), or 'numeric' (1) (default: 'short')
+/// [dateSeparator] - Separator between date components (default: ' ')
+/// [includeTime] - Whether to include time (default: false)
+/// [timeFormat] - Time format: '12h' (3:45 PM) or '24h' (15:45) (default: '12h')
+///
+/// Examples:
+/// - formatDateTime(DateTime(2026, 3, 1)) -> "Mar 1, 2026"
+/// - formatDateTime(DateTime(2026, 3, 1), showYear: false) -> "Mar 1"
+/// - formatDateTime(DateTime(2026, 3, 1), showMonth: false) -> "1, 2026"
+/// - formatDateTime(DateTime(2026, 3, 1), monthFormat: 'long') -> "March 1, 2026"
+/// - formatDateTime(DateTime(2026, 3, 1), includeTime: true) -> "Mar 1, 2026 • 3:45 PM"
+String formatDateTime(
+  DateTime dateTime, {
+  bool showDate = true,
+  bool showMonth = true,
+  bool showYear = true,
+  String monthFormat = 'short',
+  String dateSeparator = ' ',
+  bool includeTime = false,
+  String timeFormat = '12h',
+}) {
+  final List<String> parts = [];
+  
+  // Format month
+  if (showMonth) {
+    String monthStr;
+    switch (monthFormat.toLowerCase()) {
+      case 'long':
+        monthStr = _getMonthNameLong(dateTime.month);
+        break;
+      case 'numeric':
+        monthStr = dateTime.month.toString();
+        break;
+      case 'short':
+      default:
+        monthStr = _getMonthNameShort(dateTime.month);
+        break;
+    }
+    parts.add(monthStr);
+  }
+  
+  // Format date
+  if (showDate) {
+    parts.add(dateTime.day.toString());
+  }
+  
+  // Format year
+  if (showYear) {
+    parts.add(dateTime.year.toString());
+  }
+  
+  String dateStr = parts.join(dateSeparator);
+  
+  // Add time if requested
+  if (includeTime) {
+    final timeStr = _formatTime(dateTime, timeFormat);
+    dateStr = '$dateStr • $timeStr';
+  }
+  
+  return dateStr;
+}
+
+/// Returns short month name (Jan, Feb, etc.)
+String _getMonthNameShort(int month) {
+  const months = [
+    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+  ];
+  return months[month - 1];
+}
+
+/// Returns long month name (January, February, etc.)
+String _getMonthNameLong(int month) {
+  const months = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'
+  ];
+  return months[month - 1];
+}
+
+/// Formats time in 12h or 24h format
+String _formatTime(DateTime dateTime, String format) {
+  final hour = dateTime.hour;
+  final minute = dateTime.minute;
+  
+  switch (format.toLowerCase()) {
+    case '24h':
+      return '${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')}';
+    case '12h':
+    default:
+      final displayHour = hour == 0 ? 12 : (hour > 12 ? hour - 12 : hour);
+      final period = hour < 12 ? 'AM' : 'PM';
+      return '$displayHour:${minute.toString().padLeft(2, '0')} $period';
+  }
+}

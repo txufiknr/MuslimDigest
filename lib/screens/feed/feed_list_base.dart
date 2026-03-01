@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:muslimdigest/api/feeds.dart';
+import 'package:muslimdigest/utils/format.dart';
 import 'package:muslimdigest/widgets/components/logo.dart';
 import 'package:pull_to_refresh/pull_to_refresh.dart';
 import 'package:muslimdigest/config/colors.dart';
@@ -135,15 +136,15 @@ class _FeedListBasePageState extends ConsumerState<FeedListBasePage> {
 
   Future<void> _onActionPressed(FeedItem feed) async {
     if (widget.feedType == FeedType.history) {
-      // Remove from history
-      final deleted = await deleteHistory(feed.id);
-      if (deleted) {
-        final notifier = ref.read(widget.provider.notifier);
-        final currentState = ref.read(widget.provider);
-        final currentItems = currentState.items ?? [];
-        final updatedItems = currentItems.where((item) => item.id != feed.id).toList();
-        await notifier.setValue(updatedItems);
-      }
+      // Remove from current provider state immediately
+      final notifier = ref.read(widget.provider.notifier);
+      final currentState = ref.read(widget.provider);
+      final currentItems = currentState.items ?? [];
+      final updatedItems = currentItems.where((item) => item.id != feed.id).toList();
+      await notifier.setValue(updatedItems);
+      
+      // Fire and forget API call
+      fireAndForget(() => deleteHistory(feed.id));
     } else {
       // Unlike/Unsave the feed (for liked and saved feeds) - UI-first approach
       final isLikedFeed = widget.feedType.endpoint.contains('liked');
@@ -318,22 +319,33 @@ class _FeedListBasePageState extends ConsumerState<FeedListBasePage> {
               const SizedBox(height: 8),
               
               if (feed.topic != null)
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: AppColors.primary.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    feed.topic!.toCapitalized(),
-                    style: h.currentTextTheme.bodySmall?.copyWith(
-                      color: AppColors.primary,
-                      fontWeight: FontWeight.w500,
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        feed.topic!.toCapitalized(),
+                        style: h.currentTextTheme.bodySmall?.copyWith(
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
                     ),
-                  ),
+                    Spacer(),
+                    if (feed.createdAt != null) Text(
+                      formatDateTime(feed.createdAt!),
+                      textAlign: TextAlign.right,
+                      style: h.currentTextTheme.bodySmall?.copyWith(
+                        color: h.currentTheme.colorScheme.tertiary,
+                      ),
+                    ),
+                  ],
                 ),
-
-              // TODO: add createdAt datetime
             ],
           ).expand(),
           
