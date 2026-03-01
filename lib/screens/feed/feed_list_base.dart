@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:muslimdigest/api/feeds.dart';
 import 'package:pull_to_refresh/pull_to_refresh.dart';
 import 'package:muslimdigest/config/colors.dart';
 import 'package:muslimdigest/config/themes.dart';
@@ -82,9 +83,11 @@ class _FeedListBasePageState extends ConsumerState<FeedListBasePage> {
     debugPrint('[init] state.isEmpty: ${state.isEmpty}');
     debugPrint('[init] state.isNone: ${state.isNone}');
     
-    // For liked and saved feeds, always force refresh to ensure latest data
+    // For liked, saved, and history feeds, always force refresh to ensure latest data
     // For other feeds, only load if we have no cached data
-    final shouldForceRefresh = widget.feedType == FeedType.liked || widget.feedType == FeedType.saved;
+    final shouldForceRefresh = widget.feedType == FeedType.liked || 
+                              widget.feedType == FeedType.saved || 
+                              widget.feedType == FeedType.history;
     
     if (state.isEmpty || shouldForceRefresh) {
       final notifier = ref.read(widget.provider.notifier);
@@ -116,17 +119,31 @@ class _FeedListBasePageState extends ConsumerState<FeedListBasePage> {
 
   Future<void> _onActionPressed(FeedItem feed) async {
     try {
-      // Unlike/Unsave the feed
-      final actionEndpoint = widget.feedType.endpoint.contains('liked') ? 'feed/like' : 'feed/save';
-      final response = await ApiService.post(actionEndpoint, { 'clusterId': feed.id, 'value': false });
-      
-      if (response.successful) {
-        // Remove from provider state
-        final notifier = ref.read(widget.provider.notifier);
-        final currentState = ref.read(widget.provider);
-        final currentItems = currentState.items ?? [];
-        final updatedItems = currentItems.where((item) => item.id != feed.id).toList();
-        await notifier.setValue(updatedItems);
+      if (widget.feedType == FeedType.history) {
+        // Remove from history
+        final deleted = await deleteHistory(feed.id);
+
+        if (deleted) {
+          // Remove from provider state
+          final notifier = ref.read(widget.provider.notifier);
+          final currentState = ref.read(widget.provider);
+          final currentItems = currentState.items ?? [];
+          final updatedItems = currentItems.where((item) => item.id != feed.id).toList();
+          await notifier.setValue(updatedItems);
+        }
+      } else {
+        // Unlike/Unsave the feed (for liked and saved feeds)
+        final actionEndpoint = widget.feedType.endpoint.contains('liked') ? 'feed/like' : 'feed/save';
+        final response = await ApiService.post(actionEndpoint, { 'clusterId': feed.id, 'value': false });
+        
+        if (response.successful) {
+          // Remove from provider state
+          final notifier = ref.read(widget.provider.notifier);
+          final currentState = ref.read(widget.provider);
+          final currentItems = currentState.items ?? [];
+          final updatedItems = currentItems.where((item) => item.id != feed.id).toList();
+          await notifier.setValue(updatedItems);
+        }
       }
     } catch (e) {
       // Handle error

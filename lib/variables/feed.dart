@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:muslimdigest/models/feed.dart';
 import 'package:muslimdigest/providers/feed/base_feed_notifier.dart';
 import 'package:muslimdigest/providers/feed/feed.dart';
+import 'package:muslimdigest/providers/feed/feed_history.dart';
 import 'package:muslimdigest/providers/feed/feed_liked.dart';
 import 'package:muslimdigest/providers/feed/feed_latest.dart';
 import 'package:muslimdigest/providers/feed/feed_saved.dart';
@@ -40,7 +41,8 @@ enum FeedType {
   trending,
   latest,
   saved,
-  liked;
+  liked,
+  history;
 
   static FeedType fromString(String name) {
     return FeedType.values.firstWhere(
@@ -70,6 +72,7 @@ enum FeedType {
     switch (this) {
       case latest: return CupertinoIcons.antenna_radiowaves_left_right;
       case trending: return CupertinoIcons.bubble_left_bubble_right;
+      case history: return CupertinoIcons.clock;
       default: return CupertinoIcons.square_on_square;
     }
   }
@@ -80,6 +83,7 @@ enum FeedType {
       case latest: return ref.read(feedLatestProvider.notifier);
       case liked: return ref.read(feedLikedProvider.notifier);
       case saved: return ref.read(feedSavedProvider.notifier);
+      case history: return ref.read(feedHistoryProvider.notifier);
       case digest: return ref.read(feedProvider.notifier);
     }
   }
@@ -90,6 +94,7 @@ enum FeedType {
       case latest: return ref.read(feedLatestProvider.notifier);
       case liked: return ref.read(feedLikedProvider.notifier);
       case saved: return ref.read(feedSavedProvider.notifier);
+      case history: return ref.read(feedHistoryProvider.notifier);
       case digest: return ref.read(feedProvider.notifier);
     }
   }
@@ -117,6 +122,7 @@ enum FeedType {
       case trending: return ref.read(feedTrendingProvider.notifier).load(limit: limit);
       case liked: return ref.read(feedLikedProvider.notifier).load(limit: limit);
       case saved: return ref.read(feedSavedProvider.notifier).load(limit: limit);
+      case history: return ref.read(feedHistoryProvider.notifier).load(limit: limit);
     }
   }
 
@@ -127,6 +133,7 @@ enum FeedType {
       case trending: return ref.read(feedTrendingProvider.notifier).load(limit: limit);
       case liked: return ref.read(feedLikedProvider.notifier).load(limit: limit);
       case saved: return ref.read(feedSavedProvider.notifier).load(limit: limit);
+      case history: return ref.read(feedHistoryProvider.notifier).load(limit: limit);
     }
   }
 
@@ -138,6 +145,7 @@ enum FeedType {
       case trending: return ref.watch(feedTrendingProvider);
       case liked: return ref.watch(feedLikedProvider);
       case saved: return ref.watch(feedSavedProvider);
+      case history: return ref.watch(feedHistoryProvider);
     }
   }
 
@@ -149,6 +157,7 @@ enum FeedType {
       case trending: return ref.read(feedTrendingProvider);
       case liked: return ref.read(feedLikedProvider);
       case saved: return ref.read(feedSavedProvider);
+      case history: return ref.read(feedHistoryProvider);
     }
   }
 
@@ -160,6 +169,7 @@ enum FeedType {
       case trending: return ref.read(feedTrendingProvider);
       case liked: return ref.read(feedLikedProvider);
       case saved: return ref.read(feedSavedProvider);
+      case history: return ref.read(feedHistoryProvider);
     }
   }
 }

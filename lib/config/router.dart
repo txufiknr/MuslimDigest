@@ -1,4 +1,5 @@
 import 'package:go_router/go_router.dart';
+import 'package:muslimdigest/screens/feed/feed_history_page.dart';
 import 'package:muslimdigest/screens/feed/multi_feed.dart';
 import 'package:muslimdigest/screens/settings/edit_profile.dart';
 import 'package:muslimdigest/screens/feed/liked_feeds.dart';
@@ -70,6 +71,11 @@ class AppRouter {
         path: '/saved_feeds',
         name: 'saved_feeds',
         builder: (context, state) => const SavedFeedsPage(),
+      ),
+      GoRoute(
+        path: '/history',
+        name: 'history',
+        builder: (context, state) => const FeedHistoryPage(),
       ),
       GoRoute(
         path: '/hidden_content',

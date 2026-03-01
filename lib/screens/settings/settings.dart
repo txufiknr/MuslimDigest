@@ -240,7 +240,7 @@ class PersonalSettingsSection extends ConsumerWidget {
     final savedCount = ref.watch(userProvider).totalSaved;
     return SettingsContainer(
       child: Column(
-        children: [
+        children: <Widget>[
           SettingsTile(
             icon: CupertinoIcons.bookmark_fill,
             title: 'Saved Feeds',
@@ -249,7 +249,6 @@ class PersonalSettingsSection extends ConsumerWidget {
               context.push('/saved_feeds');
             },
           ),
-          SettingsDivider(),
           SettingsTile(
             icon: CupertinoIcons.heart_fill,
             title: 'Liked Feeds',
@@ -258,7 +257,6 @@ class PersonalSettingsSection extends ConsumerWidget {
               context.push('/liked_feeds');
             },
           ),
-          SettingsDivider(),
           SettingsTile(
             icon: CupertinoIcons.rectangle_3_offgrid_fill,
             title: 'Personalize Feed',
@@ -266,7 +264,6 @@ class PersonalSettingsSection extends ConsumerWidget {
               context.push('/personalization');
             },
           ),
-          SettingsDivider(),
           SettingsTile(
             icon: CupertinoIcons.person_fill,
             title: 'Edit Profile',
@@ -275,15 +272,14 @@ class PersonalSettingsSection extends ConsumerWidget {
               // context.push('/edit_profile');
             },
           ),
-          // SettingsDivider(),
-          // SettingsTile(
-          //   icon: CupertinoIcons.eye_slash,
-          //   title: 'Hidden Content',
-          //   onTap: () {
-          //     context.push('/hidden_content');
-          //   },
-          // ),
-        ],
+          SettingsTile(
+            icon: CupertinoIcons.clock,
+            title: 'History',
+            onTap: () {
+              context.push('/history');
+            },
+          ),
+        ].addItemInBetween(SettingsDivider()),
       ),
     );
   }
@@ -305,14 +301,13 @@ class AppSettingsSection extends StatelessWidget {
 
     return SettingsContainer(
       child: Column(
-        children: [
+        children: <Widget>[
           SettingsTile(
             icon: CupertinoIcons.bell_fill,
             title: 'Notifications',
             value: PrefData.notificationType.name.toCapitalized(),
             onTap: onNotificationSettings,
           ),
-          SettingsDivider(),
           SettingsTile(
             icon: CupertinoIcons.moon_fill,
             title: 'Dark Mode',
@@ -323,19 +318,17 @@ class AppSettingsSection extends StatelessWidget {
               },
             ),
           ),
-          SettingsDivider(),
           SettingsTile(
             icon: CupertinoIcons.chat_bubble_fill,
             title: 'Feedback',
             onTap: openStoreListing,
           ),
-          SettingsDivider(),
           SettingsTile(
             icon: CupertinoIcons.arrow_clockwise,
             title: 'Reset Data',
             onTap: onResetData,
           ),
-        ],
+        ].addItemInBetween(SettingsDivider()),
       ),
     );
   }

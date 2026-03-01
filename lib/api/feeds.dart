@@ -22,6 +22,11 @@ Future<bool> save(String clusterId, bool value) async {
   return response.successful;
 }
 
+Future<bool> deleteHistory(String clusterId) async {
+  final response = await ApiService.delete('feed/history?clusterId=$clusterId');
+  return response.successful;
+}
+
 Future<ApiResponse> markNotInterested(String clusterId) async {
   return ApiService.post('feed/not_interested', {'clusterId': clusterId});
 }

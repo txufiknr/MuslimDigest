@@ -15,6 +15,7 @@ import 'package:muslimdigest/providers/read_count.dart';
 import 'package:muslimdigest/providers/read_count_states.dart';
 import 'package:muslimdigest/providers/topic.dart';
 import 'package:muslimdigest/providers/user/settings.dart';
+import 'package:muslimdigest/providers/feed/feed_history.dart';
 import 'package:muslimdigest/utils/app.dart';
 import 'package:muslimdigest/utils/app_repository.dart';
 import 'package:muslimdigest/utils/extensions.dart';
@@ -136,7 +137,7 @@ class FeedSwiperState extends ConsumerState<FeedSwiper> {
     super.dispose();
   }
 
-  Future<void> _incrementReadCount(Cluster lastCluster) async {
+  Future<void> _incrementReadCount(FeedItem feedItem) async {
     if (_isDigestFeed) {
       final readCount = ref.read(readCountProvider);
       final newCount = (readCount + 1).clamp(0, DAILY_READ_TARGET);
@@ -162,10 +163,37 @@ class FeedSwiperState extends ConsumerState<FeedSwiper> {
     // final currentUser = ref.read(userProvider);
     // ref.read(userProvider.notifier).setValue(currentUser.copyWith(readCount: currentUser.readCount + 1));
 
-    // TODO: Update feed/history state
+    // Update feed/history state by adding the read feed to history
+    await _updateHistoryState(feedItem);
     
     // Track reading history to backend
-    fireAndForget(() => markRead(lastCluster.id));
+    fireAndForget(() => markRead(feedItem.cluster.id));
+  }
+
+  Future<void> _updateHistoryState(FeedItem feedItem) async {
+    try {
+      // Get the history feed notifier
+      final historyNotifier = ref.read(feedHistoryProvider.notifier);
+      final currentHistoryState = ref.read(feedHistoryProvider);
+      final currentHistoryItems = currentHistoryState.items ?? [];
+      
+      // Check if the item is already in history and move it to top if it exists
+      final existingIndex = currentHistoryItems.where((item) => item.id == feedItem.id);
+      
+      if (existingIndex.isNotEmpty) {
+        // Remove existing item and prepend it to the beginning
+        await historyNotifier.setValue([
+          feedItem,
+          ...currentHistoryItems.where((item) => item.id != feedItem.id),
+        ]);
+      } else {
+        // Add the feed item to the beginning of history
+        await historyNotifier.setValue([feedItem, ...currentHistoryItems]);
+      }
+    } catch (e) {
+      // Log error but don't block the main functionality
+      debugPrint('Error updating history state: $e');
+    }
   }
 
   Future<void> _decreaseReadCount() async {
@@ -286,7 +314,7 @@ class FeedSwiperState extends ConsumerState<FeedSwiper> {
         // log('[feed] Swipe direction: $direction, previousItem: ${previousItem.title}');
         // log('[feed] Swiped item: ${previousItem.title}');
 
-        _incrementReadCount(previousItem.cluster);
+        _incrementReadCount(previousItem);
 
         return true;
       },
