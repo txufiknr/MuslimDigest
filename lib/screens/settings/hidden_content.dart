@@ -77,7 +77,7 @@ class _HiddenContentPageState extends ConsumerState<HiddenContentPage> with Sing
         Expanded(
           child: avoidedSources.isEmpty
               ? _buildEmptySourcesState(h)
-              : _buildSourcesList(h, avoidedSources),
+              : _buildSourcesList(h, avoidedSources.toList()),
         ),
       ],
     );

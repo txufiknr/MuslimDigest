@@ -42,6 +42,7 @@ class UserNotifier extends Notifier<User> {
     try {
       final response = await ApiService.get('user');
       if (response.successful) {
+        log("🧑 Current user result: ${response.result}");
         final user = User.fromJson(response.data);
         await setValue(user);
         log("🧑 Current user: ${user.toString()}");

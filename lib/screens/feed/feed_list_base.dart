@@ -194,54 +194,60 @@ class _FeedListBasePageState extends ConsumerState<FeedListBasePage> {
     debugPrint('[build] state.isLoading: ${state.isLoading}');
     debugPrint('[build] state.isLoadingMore: ${state.isLoadingMore}');
     debugPrint('[build] state.hasMore: ${state.hasMore}');
+    debugPrint('[build] state.isGetting: ${state.isGetting}');
 
     // Show loading indicator when initially loading
     // if (state.isGetting) {
     //   return _buildLoadingState();
     // }
 
-    return SmartRefresher(
-      controller: _refreshController,
-      enablePullDown: true,
-      enablePullUp: false,
-      onRefresh: _onRefresh,
-      // footer: CustomFooter(
-      //   loadStyle: LoadStyle.ShowAlways,
-      //   builder: (context, mode) {
-      //     if (mode == LoadStatus.loading) {
-      //       return CupertinoActivityIndicator().squared(20).center();
-      //     }
-      //     return const SizedBox.shrink();
-      //   },
-      // ),
-      header: CustomHeader(
-        // loadStyle: LoadStyle.ShowAlways,
-        builder: (context, mode) {
-          // if (mode == LoadStatus.loading) {
-          if (mode == RefreshStatus.canRefresh || mode == RefreshStatus.refreshing) {
-            return CupertinoActivityIndicator(animating: mode == RefreshStatus.refreshing).squared(24).center();
-          }
-          return SizedBox.shrink();
-        },
-      ),
-      child: ListView.builder(
-        controller: _scrollController,
-        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: AppThemes.contentPadding),
-        itemCount: feeds.length + (feeds.isEmpty || state.hasMore ? 1 : 0),
-        itemBuilder: (context, index) {
-          // Loading more indicator
-          if (state.isGetting || index == feeds.length) {
-            return _buildLoadingIndicator();
-          }
-
-          // Empty state
-          if (feeds.isEmpty) {
-            return _buildEmptyState(h);
-          }
-          
-          return _buildFeedItem(h, feeds[index]);
-        },
-      ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final maxHeight = constraints.maxHeight;
+        return SmartRefresher(
+          controller: _refreshController,
+          enablePullDown: true,
+          enablePullUp: false,
+          onRefresh: _onRefresh,
+          // footer: CustomFooter(
+          //   loadStyle: LoadStyle.ShowAlways,
+          //   builder: (context, mode) {
+          //     if (mode == LoadStatus.loading) {
+          //       return CupertinoActivityIndicator().squared(20).center();
+          //     }
+          //     return const SizedBox.shrink();
+          //   },
+          // ),
+          header: CustomHeader(
+            // loadStyle: LoadStyle.ShowAlways,
+            builder: (context, mode) {
+              // if (mode == LoadStatus.loading) {
+              if (mode == RefreshStatus.canRefresh || mode == RefreshStatus.refreshing) {
+                return CupertinoActivityIndicator(animating: mode == RefreshStatus.refreshing).squared(24).center();
+              }
+              return SizedBox.shrink();
+            },
+          ),
+          child: ListView.builder(
+            controller: _scrollController,
+            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: AppThemes.contentPadding),
+            itemCount: feeds.length + (feeds.isEmpty || state.hasMore ? 1 : 0),
+            itemBuilder: (context, index) {
+              // Empty state
+              if (feeds.isEmpty) {
+                return _buildEmptyState(h).sized(height: maxHeight);
+              }
+        
+              // Loading more indicator
+              if (state.isGetting || index == feeds.length) {
+                return _buildLoadingIndicator().sized(height: maxHeight);
+              }
+              
+              return _buildFeedItem(h, feeds[index]);
+            },
+          ),
+        );
+      }
     );
   }
 

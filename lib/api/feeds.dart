@@ -3,9 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:muslimdigest/api/user.dart';
 import 'package:muslimdigest/providers/user/preferences.dart';
 import 'package:muslimdigest/services/api.dart';
+import 'package:muslimdigest/services/feed_state_service.dart';
 import 'package:muslimdigest/utils/dialogs.dart';
 import 'package:muslimdigest/utils/functions.dart';
-import 'package:muslimdigest/variables/feed.dart';
 
 Future<bool> markRead(String clusterId) async {
   final response = await ApiService.post('feed/history', {'clusterId': clusterId});
@@ -29,13 +29,8 @@ Future<ApiResponse> markNotInterested(String clusterId) async {
 Future<ApiResponse> unmarkNotInterested(BuildContext context, WidgetRef ref, String clusterId) async {
   final response = await ApiService.delete('feed/not_interested?clusterId=$clusterId');
   if (response.success && context.mounted) {
-    // Update user preferences local state
-    // _restoreFeed(context, ref, clusterId);
-
-    // Remove from local feed states
-    FeedType.values.map((t) {
-      t.getNotifier(ref).unmarkAsNotInterested(clusterId);
-    });
+    // Remove from local feed states using FeedStateService
+    await FeedStateService.unmarkNotInterestedEverywhere(ref, clusterId);
   }
   return response;
 }
@@ -50,8 +45,9 @@ Future<ApiResponse> submitFeedback(String clusterId, String category, String mes
 
 Future<void> avoidSource(WidgetRef ref, String sourceId) async {
   final preferences = ref.read(preferencesProvider);
+  final updatedAvoidedSources = Set<String>.from(preferences.avoidedSources)..add(sourceId);
   await ref.read(preferencesProvider.notifier).setValue(preferences.copyWith(
-    avoidedSources: [...preferences.avoidedSources, sourceId],
+    avoidedSources: updatedAvoidedSources,
   ));
   fireAndForget(saveAllData);
 }
@@ -71,8 +67,7 @@ Future<bool> restoreAvoidedSource(
   try {
     // Update local user preferences
     final preferences = ref.read(preferencesProvider);
-    final updatedAvoidedSources = List<String>.from(preferences.avoidedSources)
-      ..remove(sourceId);
+    final updatedAvoidedSources = Set<String>.from(preferences.avoidedSources)..remove(sourceId);
     
     final newPreferences = preferences.copyWith(avoidedSources: updatedAvoidedSources);
     await ref.read(preferencesProvider.notifier).setValue(newPreferences);
@@ -160,7 +155,7 @@ bool isSourceAvoided(WidgetRef ref, String source) {
 /// Returns a list of all avoided sources
 List<String> getAvoidedSources(WidgetRef ref) {
   final preferences = ref.read(preferencesProvider);
-  return preferences.avoidedSources;
+  return preferences.avoidedSources.toList();
 }
 
 /// Clear all avoided sources

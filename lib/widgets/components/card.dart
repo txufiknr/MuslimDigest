@@ -80,3 +80,33 @@ class StreaksCard extends ConsumerWidget {
     );
   }
 }
+
+class HookCard extends StatelessWidget {
+  final String text;
+  final double? fontSize;
+  final TextStyle? textStyle;
+  const HookCard(this.text, {this.textStyle, this.fontSize, super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final h = MyHelper(context);
+    return Container(
+      margin: EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: h.useColor(Colors.teal, 50),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: h.useColor(Colors.teal, 100)!, width: 1),
+      ),
+      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: Text(
+        text,
+        style: textStyle ?? h.currentTextTheme.bodyMedium?.copyWith(
+          fontWeight: FontWeight.w500,
+          fontStyle: FontStyle.italic,
+          color: h.useColor(Colors.teal, 800),
+          fontSize: fontSize,
+        ),
+      ),
+    );
+  }
+}

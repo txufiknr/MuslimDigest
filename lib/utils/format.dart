@@ -19,9 +19,9 @@ final _kQAPattern = RegExp(r'^\s*Q:\s*(.+?)\s*A:\s*(.+?)\s*$');
 // Note: It's too strict, misses trailing period outside parens
 // final _kHadithPattern = RegExp(r'^\s*Narrated\s+([^:]+):\s*([^,]+),\s*"([^"]+)"\s*\(([^)]+)\)\s*$');
 
-// Suggested — handles optional reference, period inside or outside parens
+// Matches hadith narration pattern: "Narrated [narrator]: [prophet statement], "[quote]" ([reference])."
 final _kHadithPattern = RegExp(
-  r'^\s*Narrated\s+([^:]+):\s*(.*?),\s*"([^"]+)"[.]?\s*(\([^)]+\)[.]?)?\s*$',
+  r'^\s*Narrated\s+([^:]+):\s*(.*?),\s*"([^"]*)"[.]?\s*(\([^)]+\)[.]?)?\s*$',
   dotAll: true,
 );
 
@@ -101,14 +101,23 @@ String? _stripLeadingBullet(String line) {
 ///    An empty first segment means the text started with a bullet (no header).
 ///
 /// 5. **Single bullet line** – a single line that starts with a bullet marker.
-///
 /// When no bullets are found at all, [_ParseResult.lines] is empty.
 _ParseResult _parseText(String rawText) {
   final trimmed = rawText.trim();
   if (trimmed.isEmpty) return const _ParseResult();
 
+  // Preprocess text to replace smart quotes with standard quotes
+  final normalizedText = trimmed
+      .replaceAll('\u201C', '"')  // Left double quotation mark
+      .replaceAll('\u201D', '"')  // Right double quotation mark
+      .replaceAll('\u2018', "'")  // Left single quotation mark
+      .replaceAll('\u2019', "'")  // Right single quotation mark
+      .replaceAll('\u2026', '...') // Horizontal ellipsis
+      .replaceAll('\u2013', '-')  // En dash
+      .replaceAll('\u2014', '--'); // Em dash
+
   // ── Strategy 1: Hadith detection ────────────────────────────────────────────
-  final hadithMatch = _kHadithPattern.firstMatch(trimmed);
+  final hadithMatch = _kHadithPattern.firstMatch(normalizedText);
   if (hadithMatch != null) {
     return _ParseResult(
       narrator: hadithMatch.group(1)?.trim(),
@@ -119,7 +128,7 @@ _ParseResult _parseText(String rawText) {
   }
 
   // ── Strategy 2: Q&A detection ────────────────────────────────────────────
-  final qaMatch = _kQAPattern.firstMatch(trimmed);
+  final qaMatch = _kQAPattern.firstMatch(normalizedText);
   if (qaMatch != null) {
     return _ParseResult(
       question: qaMatch.group(1)?.trim(),
@@ -127,8 +136,8 @@ _ParseResult _parseText(String rawText) {
     );
   }
 
-  // ── Strategy 2: newline-separated ─────────────────────────────────────────
-  final newlineSegments = trimmed
+  // ── Strategy 3: newline-separated ─────────────────────────────────────────
+  final newlineSegments = normalizedText
       .split('\n')
       .map((l) => l.trim())
       .where((l) => l.isNotEmpty)
@@ -154,9 +163,9 @@ _ParseResult _parseText(String rawText) {
     }
   }
 
-  // ── Strategy 3: inline bullets ─────────────────────────────────────────────
-  if (_kInlineBulletDetect.hasMatch(trimmed)) {
-    final rawParts = trimmed.split(_kBulletSplit);
+  // ── Strategy 4: inline bullets ─────────────────────────────────────────────
+  if (_kInlineBulletDetect.hasMatch(normalizedText)) {
+    final rawParts = normalizedText.split(_kBulletSplit);
 
     // When rawParts[0] is empty the original text started with a bullet marker,
     // so there is no header.  Otherwise rawParts[0] is text before the first
@@ -182,8 +191,8 @@ _ParseResult _parseText(String rawText) {
     }
   }
 
-  // ── Strategy 4: single bullet line ─────────────────────────────────────────
-  final stripped = _stripLeadingBullet(trimmed);
+  // ── Strategy 5: single bullet line ─────────────────────────────────────────
+  final stripped = _stripLeadingBullet(normalizedText);
   if (stripped != null) {
     return _ParseResult(header: null, lines: [stripped]);
   }
@@ -316,7 +325,7 @@ Widget hadithNarration(
   String quote,
   String? reference, {
   TextStyle? style,
-  double spacing = 8,
+  double spacing = 16,
 }) {
   return Column(
     mainAxisSize: MainAxisSize.min,
@@ -326,16 +335,17 @@ Widget hadithNarration(
         'Narrated $narrator: $prophetStatement,',
         style: style,
       ),
-      Text(
-        '“$quote”',
-        style: style?.copyWith(
-          fontSize: (style.fontSize ?? 14) * 1.2,
-          fontStyle: FontStyle.italic,
-        ) ?? TextStyle(
-          fontSize: AppThemes.bodyLargeSize,
-          fontStyle: FontStyle.italic,
-        ),
-      ),
+      Text('“$quote”', style: style?.copyWith(
+        fontSize: AppThemes.headlineSmallSize,
+        fontWeight: FontWeight.w500,
+        fontStyle: FontStyle.italic,
+        color: Colors.teal[800],
+      ) ?? TextStyle(
+        fontSize: AppThemes.headlineSmallSize,
+        fontWeight: FontWeight.w500,
+        fontStyle: FontStyle.italic,
+        color: Colors.teal[800],
+      )),
       if (reference != null) Text(reference, style: style),
     ].addItemInBetween(SizedBox(height: spacing)),
   );

@@ -81,7 +81,7 @@ class _WelcomePageState extends ConsumerState<WelcomePage> {
     switch (_currentStep) {
       case 0: u.setValue(currentUser.copyWith(gender: null)); break;
       case 1: u.setValue(currentUser.copyWith(ageGroup: '')); break;
-      case 2: p.setValue(currentPreferences.copyWith(topics: [])); break;
+      case 2: p.setValue(currentPreferences.copyWith(topics: {})); break;
       case 3: u.setValue(currentUser.copyWith(name: '')); break;
     }
 

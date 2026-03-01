@@ -48,7 +48,7 @@ class HomeHeader extends ConsumerStatefulWidget {
 class _HomeHeaderState extends ConsumerState<HomeHeader> {
   final ScrollController _scrollController = ScrollController();
 
-  List<String> get _topics => ref.watch(preferencesProvider).topics;
+  Set<String> get _topics => ref.watch(preferencesProvider).topics;
   UserStreaks get _streaks => ref.watch(streaksProvider);
   String? get _currentTopic => ref.watch(topicProvider);
   List<GlobalKey> get _topicKeys => ref.watch(topicKeysProvider);
@@ -77,7 +77,7 @@ class _HomeHeaderState extends ConsumerState<HomeHeader> {
     }
 
     // 2. Scroll to currect active topic tab (centered)
-    final topics = ref.read(preferencesProvider).topics;
+    final topics = ref.read(preferencesProvider).topics.toList();
     final topicIndex = topics.indexOf(topic);
     if (topicIndex != -1 && 
         topicIndex < _topicKeys.length && 
@@ -186,12 +186,15 @@ class _HomeHeaderState extends ConsumerState<HomeHeader> {
               // Topic feeds
               ...List.generate(
                 _topics.length,
-                (index) => _TopicTab(
-                  key: _topicKeys[index],
-                  title: _topics[index],
-                  isSelected: _topics[index] == _currentTopic,
-                  onTap: () => _onTopicChanged(ref, _topics[index]),
-                ),
+                (index) {
+                  final topicsList = _topics.toList();
+                  return _TopicTab(
+                    key: _topicKeys[index],
+                    title: topicsList[index],
+                    isSelected: topicsList[index] == _currentTopic,
+                    onTap: () => _onTopicChanged(ref, topicsList[index]),
+                  );
+                },
               ),
 
               // Add topic button

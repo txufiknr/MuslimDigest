@@ -179,21 +179,21 @@ UserStreaks(
 
 class UserPreferences {
   final String userId;
-  final List<String> topics;
-  final List<String> madhahib;
-  final List<String> sources;
-  final List<String> avoidedTopics;
-  final List<String> avoidedSources;
+  final Set<String> topics;
+  final Set<String> madhahib;
+  final Set<String> sources;
+  final Set<String> avoidedTopics;
+  final Set<String> avoidedSources;
   final DateTime? createdAt;
   final DateTime? updatedAt;
   
   UserPreferences({
     required this.userId,
-    this.topics = const [],
-    this.madhahib = const [],
-    this.sources = const [],
-    this.avoidedTopics = const [],
-    this.avoidedSources = const [],
+    this.topics = const {},
+    this.madhahib = const {},
+    this.sources = const {},
+    this.avoidedTopics = const {},
+    this.avoidedSources = const {},
     this.createdAt,
     this.updatedAt,
   });
@@ -201,11 +201,11 @@ class UserPreferences {
   factory UserPreferences.fromJson(Map<String, dynamic> json) {
     return UserPreferences(
       userId: json['userId'],
-      topics: List<String>.from(json['topics']),
-      madhahib: List<String>.from(json['madhahib']),
-      sources: List<String>.from(json['sources']),
-      avoidedTopics: List<String>.from(json['avoidedTopics']),
-      avoidedSources: List<String>.from(json['avoidedSources']),
+      topics: Set<String>.from(json['topics'] ?? []),
+      madhahib: Set<String>.from(json['madhahib'] ?? []),
+      sources: Set<String>.from(json['sources'] ?? []),
+      avoidedTopics: Set<String>.from(json['avoidedTopics'] ?? []),
+      avoidedSources: Set<String>.from(json['avoidedSources'] ?? []),
       createdAt: json['createdAt'] != null ? DateTime.parse(json['createdAt']) : null,
       updatedAt: json['updatedAt'] != null ? DateTime.parse(json['updatedAt']) : null,
     );
@@ -214,11 +214,11 @@ class UserPreferences {
   Map<String, dynamic> toJson() {
     return {
       'userId': userId,
-      'topics': topics,
-      'madhahib': madhahib,
-      'sources': sources,
-      'avoidedTopics': avoidedTopics,
-      'avoidedSources': avoidedSources,
+      'topics': topics.toList(),
+      'madhahib': madhahib.toList(),
+      'sources': sources.toList(),
+      'avoidedTopics': avoidedTopics.toList(),
+      'avoidedSources': avoidedSources.toList(),
       'createdAt': createdAt?.toIso8601String(),
       'updatedAt': updatedAt?.toIso8601String(),
     };
@@ -226,11 +226,11 @@ class UserPreferences {
 
   UserPreferences copyWith({
     String? userId,
-    List<String>? topics,
-    List<String>? madhahib,
-    List<String>? sources,
-    List<String>? avoidedTopics,
-    List<String>? avoidedSources,
+    Set<String>? topics,
+    Set<String>? madhahib,
+    Set<String>? sources,
+    Set<String>? avoidedTopics,
+    Set<String>? avoidedSources,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {

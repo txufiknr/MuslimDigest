@@ -50,8 +50,8 @@ class TopicChipSelector extends ConsumerWidget {
     TopicState newState,
   ) async {
     final preferences = ref.read(preferencesProvider);
-    final newPreferredTopics = List<String>.from(preferences.topics);
-    final newAvoidedTopics = List<String>.from(preferences.avoidedTopics);
+    final newPreferredTopics = Set<String>.from(preferences.topics);
+    final newAvoidedTopics = Set<String>.from(preferences.avoidedTopics);
     
     // Remove topic from both lists first
     newPreferredTopics.remove(topic);

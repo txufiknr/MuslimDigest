@@ -33,6 +33,7 @@ import 'package:muslimdigest/widgets/components/placeholder.dart';
 import 'package:muslimdigest/widgets/home/feedback_form.dart';
 import 'package:muslimdigest/api/feeds.dart';
 import 'package:muslimdigest/providers/user/preferences.dart';
+import 'package:muslimdigest/services/feed_state_service.dart';
 import 'package:path_provider/path_provider.dart';
 import '../../models/feed.dart';
 import 'package:screenshot/screenshot.dart';
@@ -128,23 +129,23 @@ class _FeedCardState extends ConsumerState<FeedCard> with AutomaticKeepAliveClie
     final currentStreak = streaks.currentStreak;
     final isStreakCard = widget.feedItem == null;
 
-    // Check if this feed item is marked as not interested
-    final isNotInterested = widget.feedItem != null && 
-        widget.feedType.watch(ref).isNotInterested(widget.feedItem!.id);
+    // Use FeedStateService for SSOT logic to determine if feed should be hidden
+    final shouldShowPlaceholder = widget.feedItem != null && 
+        FeedStateService.shouldHideFeed(
+          ref, 
+          widget.feedItem!.id, 
+          widget.feedItem!.source.id,
+        );
 
     // Get the reason if it's marked as not interested
-    final reason = isNotInterested 
-        ? widget.feedType.getNotifier(ref).getNotInterestedReason(widget.feedItem!.id)
+    final reason = shouldShowPlaceholder 
+        ? FeedStateService.getNotInterestedReason(ref, widget.feedItem!.id)
         : null;
 
     // Check if this feed item should be hidden due to avoided source
-    // Using preferencesProvider directly (SSOT)
     final preferences = ref.watch(preferencesProvider);
     final isSourceAvoided = widget.feedItem != null &&
         preferences.avoidedSources.contains(widget.feedItem!.source.id);
-
-    // Show placeholder if either not interested OR source avoided
-    final shouldShowPlaceholder = isNotInterested || isSourceAvoided;
 
     return Container(
       width: double.infinity,
@@ -221,22 +222,6 @@ class _NotInterestedPlaceholder extends ConsumerWidget {
 
     // Call API to unmark as not interested
     await unmarkNotInterested(context, ref, feedItem.id);
-
-    // try {
-    //   fireAndForget(() => unmarkNotInterested(context, ref, feedItem.id));
-      
-    //   // Remove from local state
-    //   final notifier = feedType.getNotifier(ref);
-    //   await notifier.unmarkAsNotInterested(feedItem.id);
-      
-    //   if (context.mounted) {
-    //     showSnackBarSuccess(context, "Feed restored");
-    //   }
-    // } catch (e) {
-    //   if (context.mounted) {
-    //     showSnackBarError(context, "Failed to restore feed");
-    //   }
-    // }
   }
 
   @override
@@ -396,24 +381,7 @@ class _FeedContent extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Hook text
-          if (feedItem.hook != null) Container(
-            margin: EdgeInsets.only(bottom: 16),
-            decoration: BoxDecoration(
-              color: h.useColor(Colors.teal, 50),
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: h.useColor(Colors.teal, 100)!, width: 1),
-            ),
-            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            child: Text(
-              feedItem.hook!,
-              style: h.currentTextTheme.bodyMedium?.copyWith(
-                fontWeight: FontWeight.w500,
-                fontStyle: FontStyle.italic,
-                color: h.useColor(Colors.teal, 800),
-                fontSize: textSize,
-              ),
-            ),
-          ),
+          if (feedItem.hook != null) HookCard(feedItem.hook!, fontSize: textSize),
 
           // Summary text
           formatText(
@@ -544,10 +512,8 @@ class _FeedFooter extends ConsumerWidget {
       if (response.success) {
         showSnackBarSuccess(context, "Feed hidden. We'll show less content like this.");
 
-        // Mark as not interested across all feed types
-        for (var t in FeedType.values) {
-          t.getNotifier(ref).markAsNotInterested(feedItem.id);
-        }
+        // Mark as not interested across all feed types using FeedStateService
+        await FeedStateService.markNotInterestedEverywhere(ref, feedItem.id);
 
       } else {
         showSnackBarError(context, response.error ?? "Failed to mark as not interested");
@@ -743,6 +709,8 @@ class _FeedBadgeChip extends StatelessWidget {
     'coverage:multiple_sources': 'Covered by more than one source',
     // Image Source
     'image:illustrative': 'Illustrative image representing content',
+    // Engagement
+    'engagement:trending': 'High engagement and trending topics',
   };
 
   String get _badgeText {
@@ -752,7 +720,7 @@ class _FeedBadgeChip extends StatelessWidget {
     
     // Handle dynamic patterns
     if (_badgeLabel == 'madhhab') return '$_valueCapitalized Fiqh';
-    if (_badgeLabel == 'content_type' || _badgeLabel == 'topic') return _valueCapitalized;
+    if (_badgeLabel == 'content_type' || _badgeLabel == 'topic' || _badgeLabel == 'engagement') return _valueCapitalized;
     
     // Default fallback
     return '$_labelCapitalized: $_valueCapitalized';
@@ -802,7 +770,7 @@ class _FeedBadgeChip extends StatelessWidget {
         // Fallback colors based on value
         switch (_badgeValue) {
           case 'high': return Colors.red;
-          case 'medium': case 'requires_review': return Colors.orange;
+          case 'medium': case 'requires_review': case 'trending': return Colors.orange;
           case 'low': case 'verified': case 'ok': return Colors.green;
           case 'unverified': return Colors.blueGrey;
         }

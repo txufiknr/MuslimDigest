@@ -50,11 +50,14 @@ class AppRepository {
   bool get newDigestFeedAvailableToday => isDailyDigestUpToDate;
 
   /// User preferences
-  List<String> get preferredTopics => preferences.topics;
-  List<String> get avoidedTopics => preferences.avoidedTopics;
+  Set<String> get preferredTopics => preferences.topics;
+  Set<String> get avoidedTopics => preferences.avoidedTopics;
 
   /// Whether user completed daily digest reading (streak)
-  bool get isStreakToday => _ref.read(streaksProvider.notifier).isStreakToday;
+  bool get isStreakToday {
+    if (!_ref.mounted) return false;
+    return _ref.read(streaksProvider.notifier).isStreakToday;
+  }
   bool get isDailyDigestDone => isSameDay(ingestLastDate, streaks.lastReadAt);
 
   /// Reset read count if it's a new daily digest
@@ -83,7 +86,10 @@ class AppRepository {
   
   /// Determine home feed type
   // FeedType get homeFeedType => shouldFetchDailyDigest || !isDailyDigestDone ? FeedType.digest : FeedType.latest;
-  FeedType get homeFeedType => !isStreakToday && (shouldFetchDailyDigest || !isDailyDigestDone) ? FeedType.digest : FeedType.latest;
+  FeedType get homeFeedType {
+    if (!_ref.mounted) return FeedType.latest;
+    return !isStreakToday && (shouldFetchDailyDigest || !isDailyDigestDone) ? FeedType.digest : FeedType.latest;
+  }
 
   Future<bool> loadFeed({FeedType? feedType, String? topic, bool force = false}) async {
     feedType ??= homeFeedType;
