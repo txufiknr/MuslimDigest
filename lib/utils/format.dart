@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:muslimdigest/config/themes.dart';
 import 'package:muslimdigest/utils/extensions.dart';
+import 'package:muslimdigest/utils/helpers.dart';
 
 const _kBulletChars = ['-', '*', '•'];
 
@@ -280,11 +281,12 @@ Widget qaPair(String question, String answer, {
 ///
 /// Hyphenated words (e.g. "non-religious", "well-known") are never
 /// misidentified as bullet separators.
-Widget formatText(String rawText, {TextStyle? style}) {
+Widget formatText(BuildContext context, String rawText, {TextStyle? style}) {
   final result = _parseText(rawText);
 
   if (result.isHadith) {
     return hadithNarration(
+      context,
       result.narrator!,
       result.prophetStatement!,
       result.quote!,
@@ -320,6 +322,7 @@ Widget formatText(String rawText, {TextStyle? style}) {
 /// 3. The reference (normal style)
 /// [spacing] controls the vertical gap between parts.
 Widget hadithNarration(
+  BuildContext context,
   String narrator,
   String prophetStatement,
   String quote,
@@ -327,6 +330,8 @@ Widget hadithNarration(
   TextStyle? style,
   double spacing = 16,
 }) {
+  final h = MyHelper(context);
+  final hadithColor = h.useColor(Colors.teal, 800);
   return Column(
     mainAxisSize: MainAxisSize.min,
     crossAxisAlignment: CrossAxisAlignment.start,
@@ -339,12 +344,12 @@ Widget hadithNarration(
         fontSize: AppThemes.headlineSmallSize,
         fontWeight: FontWeight.w500,
         fontStyle: FontStyle.italic,
-        color: Colors.teal[800],
+        color: hadithColor,
       ) ?? TextStyle(
         fontSize: AppThemes.headlineSmallSize,
         fontWeight: FontWeight.w500,
         fontStyle: FontStyle.italic,
-        color: Colors.teal[800],
+        color: hadithColor,
       )),
       if (reference != null) Text(reference, style: style),
     ].addItemInBetween(SizedBox(height: spacing)),

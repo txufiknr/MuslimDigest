@@ -391,6 +391,7 @@ class _FeedContent extends ConsumerWidget {
 
           // Summary text
           formatText(
+            context,
             feedItem.summary,
             style: h.currentTextTheme.bodyMedium?.copyWith(
               fontSize: textSize,
@@ -527,14 +528,16 @@ class _FeedFooter extends ConsumerWidget {
       }
 
       // Call API to mark as not interested
-      final response = await markNotInterested(feedItem.id);
-      if (!context.mounted) return;
+      fireAndForget(() async {
+        final success = await markNotInterested(feedItem.id);
 
-      if (response.success) {
-        showSnackBarSuccess(context, "Feed hidden. We'll show less content like this.");
-      } else {
-        showSnackBarError(context, "Failed to mark as not interested");
-      }
+        if (!context.mounted) return;
+        if (success) {
+          showSnackBarSuccess(context, "Feed hidden. We'll show less content like this.");
+        } else {
+          showSnackBarError(context, "Failed to mark as not interested");
+        }
+      });
     } catch (e) {
       if (context.mounted) {
         showSnackBarError(context, "Network error: $e");

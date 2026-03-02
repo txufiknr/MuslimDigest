@@ -65,7 +65,7 @@ Future? _getLatestData<T>(
   
   // 2. Save data to backend when they're different
   latestSavedData[key] = currentData;
-  return ApiService.post(key, toJson(currentData));
+  return ApiService.post(key, toJson(currentData), queueOffline: false);
 }
 
 /// Logs the user's reading streak
@@ -94,7 +94,7 @@ Future<void> logStreak(WidgetRef ref) async {
 
 /// Resets all user data
 Future<void> resetUserData(WidgetRef ref) async {
-  fireAndForget(() => ApiService.post('user/reset'));
+  fireAndForget(() => ApiService.post('user/reset', {}));
   
   await Future.wait<void>([
     // Clear all feed caches first to ensure cache invalidation

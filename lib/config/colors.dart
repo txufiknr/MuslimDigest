@@ -38,5 +38,5 @@ class AppColors {
   static const Color textPrimaryLight = Color.fromARGB(255, 31, 31, 31);
   static const Color textSecondaryLight = Color.fromARGB(255, 42, 42, 42);
   static const Color textPrimaryDark = Color(0xFFFFFFFF);
-  static const Color textSecondaryDark = Color(0xFFB3B3B3);
+  static const Color textSecondaryDark = Color.fromARGB(255, 202, 202, 202);
 }

@@ -2,9 +2,10 @@ import 'dart:convert';
 import 'dart:developer' show log;
 import 'dart:io' show Platform;
 import 'package:http/http.dart' as http;
+import 'package:muslimdigest/config/constants.dart';
+import 'package:muslimdigest/variables/app.dart';
 import 'package:muslimdigest/variables/user.dart';
-import '../config/constants.dart';
-import '../variables/app.dart';
+import 'package:muslimdigest/utils/offline_queue.dart';
 
 /// HTTP content type constant for JSON requests
 const String contentType = 'application/json';
@@ -55,18 +56,18 @@ class ApiOptions {
   ApiOptions({this.timeout});
 }
 
-/// Service class for handling HTTP API communications
+/// Enhanced API service with offline support
 /// 
-/// This class provides static methods for making HTTP requests (GET, POST, PUT, DELETE)
-/// to the backend API. It handles request/response formatting, error handling,
-/// and environment-specific URL configuration.
+/// This service provides all functionality of the original ApiService
+/// plus automatic offline queuing for failed requests. When a request
+/// fails due to network issues, it's automatically queued for retry
+/// when connectivity is restored.
 class ApiService {
   /// Returns the appropriate base URL based on the build environment
   /// 
   /// Uses development URL when running in debug mode, production URL otherwise.
   /// This allows the app to connect to different API endpoints for testing
   /// and production environments.
-  // static String get baseUrl => kDebugMode ? APP_URL_API_DEV : APP_URL_API;
   static String get baseUrl => APP_IS_PRODUCTION || APP_USE_PRODUCTION_API ? APP_URL_API : APP_URL_API_DEV;
 
   /// Builds common headers for all API requests
@@ -88,18 +89,22 @@ class ApiService {
 
     return headers;
   }
-  
-  /// Makes an HTTP POST request to the specified API endpoint
+
+  /// Execute a POST request with offline support
   /// 
-  /// Used for creating new resources on the server (e.g., user registration,
-  /// creating preferences, etc.). Automatically handles JSON serialization,
-  /// headers, and error responses. Removes 'createdAt' and 'updatedAt' from body.
+  /// If the request fails due to network issues, it will be queued
+  /// for automatic retry when connectivity is restored.
   /// 
-  /// [path] - The API endpoint path (relative to base URL)
-  /// [body] - The request body data to be sent as JSON
+  /// [path] - API endpoint path
+  /// [body] - Request body data
+  /// [queueOffline] - Whether to queue failed requests (default: true)
   /// 
   /// Returns [ApiResponse] with success status, data, or error information
-  static Future<ApiResponse> post(String path, [Map<String, dynamic> body = const {}]) async {
+  static Future<ApiResponse> post(
+    String path, 
+    Map<String, dynamic> body, {
+    bool queueOffline = true,
+  }) async {
     try {
       // Create a copy of body and remove timestamp fields
       final cleanedBody = Map<String, dynamic>.from(body);
@@ -124,6 +129,7 @@ class ApiService {
       // Check for successful HTTP status codes (200 OK or 201 Created)
       final isSuccess = response.statusCode == 200 || response.statusCode == 201;
       log('🌐 POST /$path response status code: ${response.statusCode} ${isSuccess ? '✅' : '⚠️'}');
+      
       if (isSuccess) {
         // Parse the successful JSON response and return success result
         return ApiResponse(
@@ -134,35 +140,55 @@ class ApiService {
         );
       } else {
         // Handle HTTP error responses with status code information
-        return ApiResponse(
+        final apiResponse = ApiResponse(
           success: false,
           error: result['error'] ?? 'Failed to create $path: ${response.statusCode}',
           statusCode: response.statusCode,
           result: result,
         );
+        
+        // If request failed due to network issues and offline queuing is enabled
+        if (queueOffline && _isNetworkError(apiResponse)) {
+          log('[ApiService] Network error detected, queuing POST /$path');
+          await OfflineQueueService.queueRequest(
+            method: 'POST',
+            endpoint: path,
+            data: cleanedBody,
+          );
+        }
+        
+        return apiResponse;
       }
     } catch (e) {
       // Handle network-level errors (connection timeout, DNS failure, etc.)
       log('🌐 POST /$path response status code: $e ❌');
-      return ApiResponse(
+      
+      final apiResponse = ApiResponse(
         success: false,
         error: 'Network error: $e',
         statusCode: 0,
       );
+      
+      // If exception occurs and offline queuing is enabled
+      if (queueOffline) {
+        log('[ApiService] Exception occurred, queuing POST /$path: $e');
+        await OfflineQueueService.queueRequest(
+          method: 'POST',
+          endpoint: path,
+          data: body,
+        );
+      }
+      
+      return apiResponse;
     }
   }
 
-  /// Makes an HTTP PUT request to the specified API endpoint
-  /// 
-  /// Used for updating existing resources on the server (e.g., updating user
-  /// profile, modifying preferences, etc.). Automatically handles JSON
-  /// serialization, headers, and error responses. Removes 'createdAt' and 'updatedAt' from body.
-  /// 
-  /// [path] - The API endpoint path (relative to base URL)
-  /// [body] - The updated data to be sent as JSON
-  /// 
-  /// Returns [ApiResponse] with success status, data, or error information
-  static Future<ApiResponse> put(String path, Map<String, dynamic> body) async {
+  /// Execute a PUT request with offline support
+  static Future<ApiResponse> put(
+    String path, 
+    Map<String, dynamic> body, {
+    bool queueOffline = true,
+  }) async {
     try {
       // Create a copy of body and remove timestamp fields
       final cleanedBody = Map<String, dynamic>.from(body);
@@ -186,6 +212,7 @@ class ApiService {
       // Check for successful HTTP status (200 OK for PUT operations)
       final isSuccess = response.statusCode == 200;
       log('🌐 PUT /$path response status code: ${response.statusCode} ${isSuccess ? '✅' : '⚠️'}');
+      
       if (isSuccess) {
         // Parse the successful JSON response and return success result
         return ApiResponse(
@@ -196,35 +223,131 @@ class ApiService {
         );
       } else {
         // Handle HTTP error responses with status code information
-        return ApiResponse(
+        final apiResponse = ApiResponse(
           success: false,
           error: result['error'] ?? 'Failed to update $path: ${response.statusCode}',
           statusCode: response.statusCode,
           result: result,
         );
+        
+        if (queueOffline && _isNetworkError(apiResponse)) {
+          log('[ApiService] Network error detected, queuing PUT /$path');
+          await OfflineQueueService.queueRequest(
+            method: 'PUT',
+            endpoint: path,
+            data: cleanedBody,
+          );
+        }
+        
+        return apiResponse;
       }
     } catch (e) {
       // Handle network-level errors (connection timeout, DNS failure, etc.)
       log('🌐 PUT /$path response status code: $e ❌');
-      return ApiResponse(
+      
+      final apiResponse = ApiResponse(
         success: false,
         error: 'Network error: $e',
         statusCode: 0,
       );
+      
+      if (queueOffline) {
+        log('[ApiService] Exception occurred, queuing PUT /$path: $e');
+        await OfflineQueueService.queueRequest(
+          method: 'PUT',
+          endpoint: path,
+          data: body,
+        );
+      }
+      
+      return apiResponse;
     }
   }
 
-  /// Makes an HTTP GET request to the specified API endpoint
+  /// Execute a DELETE request with offline support
+  static Future<ApiResponse> delete(
+    String path, {
+    bool queueOffline = true,
+  }) async {
+    try {
+      log('🌐 DELETE /$path');
+
+      // Build headers with common information
+      final headers = await _buildHeaders();
+
+      // Construct the full URL and send DELETE request (no body needed)
+      final response = await http.delete(
+        Uri.parse('$baseUrl/$path'),
+        headers: headers,
+      ).timeout(timeout);
+
+      final result = jsonDecode(response.body) as Map<String, dynamic>;
+
+      // Check for successful HTTP status (200 OK or 204 No Content for DELETE operations)
+      final isSuccess = response.statusCode == 200 || response.statusCode == 204;
+      log('🌐 DELETE /$path response status code: ${response.statusCode} ${isSuccess ? '✅' : '⚠️'}');
+      
+      if (isSuccess) {
+        // Parse the successful JSON response and return success result
+        return ApiResponse(
+          success: result['success'] ?? true,
+          data: result['data'],
+          statusCode: response.statusCode,
+          result: result,
+        );
+      } else {
+        // Handle HTTP error responses with status code information
+        final apiResponse = ApiResponse(
+          success: false,
+          error: result['error'] ?? 'Failed to delete $path: ${response.statusCode}',
+          statusCode: response.statusCode,
+          result: result,
+        );
+        
+        if (queueOffline && _isNetworkError(apiResponse)) {
+          log('[ApiService] Network error detected, queuing DELETE /$path');
+          await OfflineQueueService.queueRequest(
+            method: 'DELETE',
+            endpoint: path,
+            data: {}, // DELETE requests typically don't have body
+          );
+        }
+        
+        return apiResponse;
+      }
+    } catch (e) {
+      // Handle network-level errors (connection timeout, DNS failure, etc.)
+      log('🌐 DELETE /$path response status code: $e ❌');
+      
+      final apiResponse = ApiResponse(
+        success: false,
+        error: 'Network error: $e',
+        statusCode: 0,
+      );
+      
+      if (queueOffline) {
+        log('[ApiService] Exception occurred, queuing DELETE /$path: $e');
+        await OfflineQueueService.queueRequest(
+          method: 'DELETE',
+          endpoint: path,
+          data: {},
+        );
+      }
+      
+      return apiResponse;
+    }
+  }
+
+  /// Execute a GET request with offline support
   /// 
-  /// Used for retrieving data from the server (e.g., fetching user profile,
-  /// getting topics list, etc.). Automatically handles headers and error
-  /// responses. No request body is sent with GET requests.
-  /// 
-  /// [path] - The API endpoint path (relative to base URL)
-  /// [queryParams] - Optional query parameters to include in the request
-  /// 
-  /// Returns [ApiResponse] with success status, data, or error information
-  static Future<ApiResponse> get(String path, {Map<String, String>? queryParams, ApiOptions? options}) async {
+  /// Note: GET requests are typically not queued as they are read-only
+  /// but we still provide the interface for consistency
+  static Future<ApiResponse> get(
+    String path, {
+    Map<String, String>? queryParams,
+    ApiOptions? options,
+    bool queueOffline = false, // Default to false for GET requests
+  }) async {
     try {
       log('🌐 GET /$path${queryParams != null ? '?${Uri(queryParameters: queryParams).query}' : ''}');
 
@@ -249,6 +372,7 @@ class ApiService {
       // Check for successful HTTP status (200 OK for GET operations)
       final isSuccess = response.statusCode == 200;
       log('🌐 GET /$path response status code: ${response.statusCode} ${isSuccess ? '✅' : '⚠️'}');
+      
       if (isSuccess) {
         // Parse the successful JSON response and return success result
         return ApiResponse(
@@ -259,76 +383,102 @@ class ApiService {
         );
       } else {
         // Handle HTTP error responses with status code information
-        return ApiResponse(
+        final apiResponse = ApiResponse(
           success: false,
           error: result['error'] ?? 'Failed to get $path: ${response.statusCode}',
           statusCode: response.statusCode,
           result: result,
         );
+        
+        // Generally don't queue GET requests, but option is available
+        if (queueOffline && _isNetworkError(apiResponse)) {
+          log('[ApiService] Network error detected, queuing GET /$path');
+          await OfflineQueueService.queueRequest(
+            method: 'GET',
+            endpoint: path,
+            data: queryParams ?? {},
+          );
+        }
+        
+        return apiResponse;
       }
     } catch (e) {
       // Handle network-level errors (connection timeout, DNS failure, etc.)
       log('🌐 GET /$path response status code: $e ❌');
-      return ApiResponse(
+      
+      final apiResponse = ApiResponse(
         success: false,
         error: 'Network error: $e',
         statusCode: 0,
       );
+      
+      if (queueOffline) {
+        log('[ApiService] Exception occurred, queuing GET /$path: $e');
+        await OfflineQueueService.queueRequest(
+          method: 'GET',
+          endpoint: path,
+          data: queryParams ?? {},
+        );
+      }
+      
+      return apiResponse;
     }
   }
 
-  /// Makes an HTTP DELETE request to the specified API endpoint
+  /// Process offline queue and retry failed requests
   /// 
-  /// Used for deleting resources on the server (e.g., removing user data,
-  /// deleting preferences, etc.). Automatically handles headers and error
-  /// responses. No request body is sent with DELETE requests.
+  /// This method should be called when:
+  /// - App starts (in splash screen)
+  /// - Connectivity is restored
+  /// - User manually triggers sync
   /// 
-  /// [path] - The API endpoint path (relative to base URL)
-  /// 
-  /// Returns [ApiResponse] with success status, data, or error information
-  static Future<ApiResponse> delete(String path) async {
-    try {
-      log('🌐 DELETE /$path');
+  /// Returns number of successfully processed requests
+  static Future<int> processOfflineQueue() async {
+    log('[ApiService] Processing offline queue...');
+    
+    return await OfflineQueueService.processQueue(
+      executeRequest: _executeQueuedRequest,
+    );
+  }
 
-      // Build headers with common information
-      final headers = await _buildHeaders();
-
-      // Construct the full URL and send DELETE request (no body needed)
-      final response = await http.delete(
-        Uri.parse('$baseUrl/$path'),
-        headers: headers,
-      ).timeout(timeout);
-
-      final result = jsonDecode(response.body) as Map<String, dynamic>;
-
-      // Check for successful HTTP status (200 OK or 204 No Content for DELETE operations)
-      final isSuccess = response.statusCode == 200 || response.statusCode == 204;
-      log('🌐 DELETE /$path response status code: ${response.statusCode} ${isSuccess ? '✅' : '⚠️'}');
-      if (isSuccess) {
-        // Parse the successful JSON response and return success result
-        return ApiResponse(
-          success: result['success'] ?? true,
-          data: result['data'],
-          statusCode: response.statusCode,
-          result: result,
-        );
-      } else {
-        // Handle HTTP error responses with status code information
-        return ApiResponse(
-          success: false,
-          error: result['error'] ?? 'Failed to delete $path: ${response.statusCode}',
-          statusCode: response.statusCode,
-          result: result,
-        );
-      }
-    } catch (e) {
-      // Handle network-level errors (connection timeout, DNS failure, etc.)
-      log('🌐 DELETE /$path response status code: $e ❌');
-      return ApiResponse(
-        success: false,
-        error: 'Network error: $e',
-        statusCode: 0,
-      );
+  /// Execute a queued request using the same logic as direct requests
+  static Future<ApiResponse> _executeQueuedRequest(
+    String method,
+    String endpoint,
+    Map<String, dynamic> data,
+  ) async {
+    switch (method.toUpperCase()) {
+      case 'POST':
+        return await post(endpoint, data, queueOffline: false); // Don't queue queued requests
+      case 'PUT':
+        return await put(endpoint, data, queueOffline: false);
+      case 'DELETE':
+        return await delete(endpoint, queueOffline: false);
+      case 'GET':
+        return await get(endpoint, 
+            queryParams: data.map((k, v) => MapEntry(k, v.toString())),
+            queueOffline: false);
+      default:
+        throw Exception('Unsupported HTTP method: $method');
     }
+  }
+
+  /// Check if an API response indicates a network error
+  static bool _isNetworkError(ApiResponse response) {
+    // Status code 0 typically indicates network connectivity issues
+    return response.statusCode == 0 || 
+           response.error?.toLowerCase().contains('network') == true ||
+           response.error?.toLowerCase().contains('connection') == true ||
+           response.error?.toLowerCase().contains('timeout') == true;
+  }
+
+  /// Get offline queue statistics
+  static Future<Map<String, dynamic>> getQueueStats() async {
+    return await OfflineQueueService.getQueueStats();
+  }
+
+  /// Clear all queued requests
+  static Future<void> clearQueue() async {
+    await OfflineQueueService.clearQueue();
   }
 }

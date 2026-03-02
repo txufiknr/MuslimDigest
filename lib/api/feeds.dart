@@ -27,16 +27,18 @@ Future<bool> deleteHistory(String clusterId) async {
   return response.success;
 }
 
-Future<ApiResponse> markNotInterested(String clusterId) {
-  return ApiService.post('feed/not_interested', {'clusterId': clusterId});
+Future<bool> markNotInterested(String clusterId) async {
+  final response = await ApiService.post('feed/not_interested', {'clusterId': clusterId});
+  return response.success;
 }
 
-Future<ApiResponse> unmarkNotInterested(String clusterId) {
-  return ApiService.delete('feed/not_interested?clusterId=$clusterId');
+Future<bool> unmarkNotInterested(String clusterId) async {
+  final response = await ApiService.delete('feed/not_interested?clusterId=$clusterId');
+  return response.success;
 }
 
 Future<ApiResponse> submitFeedback(String clusterId, String category, String message) async {
-  return ApiService.post('feed/feedback', {
+  return await ApiService.post('feed/feedback', {
     'clusterId': clusterId,
     'category': category,
     'message': message,

@@ -52,9 +52,9 @@ class _FeedbackFormState extends State<FeedbackForm> {
         // Message input
         Container(
           decoration: BoxDecoration(
-            color: AppColors.backgroundLight,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppColors.textSecondaryLight.withValues(alpha: 0.3)),
+            color: h.currentTheme.colorScheme.surfaceContainerHighest,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: h.currentTheme.colorScheme.outline),
           ),
           child: TextField(
             controller: _textController,
@@ -88,13 +88,13 @@ class _FeedbackFormState extends State<FeedbackForm> {
                   Icon(
                     type.icon,
                     size: AppThemes.iconMediumSize,
-                    color: isSelected ? Colors.white : AppColors.textSecondaryLight,
+                    color: isSelected ? Colors.white : h.currentTheme.colorScheme.onSurface,
                   ),
                   const SizedBox(width: 8),
                   Text(
                     type.label,
                     style: h.currentTheme.textTheme.bodyMedium?.copyWith(
-                      color: isSelected ? Colors.white : AppColors.textSecondaryLight,
+                      color: isSelected ? Colors.white : h.currentTheme.colorScheme.onSurface,
                       fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
                     ),
                   ),
@@ -107,7 +107,7 @@ class _FeedbackFormState extends State<FeedbackForm> {
                   setState(() => _selectedCategory = type);
                 }
               },
-              backgroundColor: AppColors.backgroundLight,
+              backgroundColor: h.currentTheme.colorScheme.surface,
               selectedColor: AppColors.accent,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(AppThemes.buttonRadius),

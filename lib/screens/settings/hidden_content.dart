@@ -164,12 +164,12 @@ class _HiddenContentPageState extends ConsumerState<HiddenContentPage> with Sing
     );
   }
 
-  Future<void> _restoreSource(Source source) async {
-    await restoreAvoidedSource(context, ref, source.id);
+  Future<bool> _restoreSource(Source source) {
+    return restoreAvoidedSource(context, ref, source.id);
   }
 
-  Future<void> _restoreFeed(String feedId) async {
-    await unmarkNotInterested(context, ref, feedId);
+  Future<bool> _restoreFeed(String feedId) {
+    return unmarkNotInterested(feedId);
   }
 }
 

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:developer' show log;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -7,6 +8,7 @@ import 'package:muslimdigest/utils/app.dart';
 import 'package:muslimdigest/utils/app_repository.dart';
 import 'package:muslimdigest/utils/extensions.dart';
 import 'package:muslimdigest/utils/functions.dart';
+import 'package:muslimdigest/services/api.dart';
 import 'package:muslimdigest/variables/user.dart';
 import '../../config/colors.dart';
 import '../../widgets/animations/loading_indicator_bar.dart';
@@ -30,7 +32,7 @@ class _SplashPageState extends ConsumerState<SplashPage> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      [_loadAppData, r.initData, r.initActiveFeed, r.loadUserFeed, _startSplash].forEach(fireAndForget);
+      [_loadAppData, r.initData, r.initActiveFeed, r.loadUserFeed, _processOfflineQueue, _startSplash].forEach(fireAndForget);
     });
   }
 
@@ -39,6 +41,18 @@ class _SplashPageState extends ConsumerState<SplashPage> {
       preCacheAssets(context),
       getAppVersion(),
     ]);
+  }
+
+  /// Process offline API queue on app startup
+  Future<void> _processOfflineQueue() async {
+    try {
+      final processedCount = await ApiService.processOfflineQueue();
+      if (processedCount > 0) {
+        log('[Splash] Processed $processedCount offline requests');
+      }
+    } catch (e) {
+      log('[Splash] Error processing offline queue: $e');
+    }
   }
 
   /// Start the splash screen animation and navigation

@@ -41,6 +41,7 @@ Future<void> main() async {
         'topics', // List of available topics (JSON string)
         'feed_type', // Active feed type (string)
         'notification_type', // Active notification type (string)
+        'offline_api_queue', // Pending API calls
       },
     ),
   );
