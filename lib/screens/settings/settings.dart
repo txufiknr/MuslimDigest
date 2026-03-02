@@ -165,13 +165,14 @@ class SettingsHeader extends ConsumerWidget {
             children: [
               TextSpan(
                 text: "You have read at least ",
-                style: h.currentTextTheme.bodyMedium?.copyWith(
-                  color: Colors.white.withValues(alpha: 0.8),
-                  fontWeight: FontWeight.w500,
-                ),
+                style: h.currentTextTheme.bodyMedium
+                // ?.copyWith(
+                //   color: Colors.white.withValues(alpha: 0.8),
+                //   fontWeight: FontWeight.w500,
+                // ),
               ),
               TextSpan(
-                text: "$totalReads",
+                text: "${totalReads > 99 ? '99+' : totalReads}",
                 style: h.currentTextTheme.bodyLarge?.copyWith(
                   color: Colors.white,
                   fontWeight: FontWeight.bold,

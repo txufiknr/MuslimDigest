@@ -32,3 +32,13 @@ Future<bool> isOnline() async {
   final connectivityResults = await Connectivity().checkConnectivity();
   return connectivityResults.any((result) => result != ConnectivityResult.none);
 }
+
+/// Check if asset exists in the app bundle
+Future<bool> doesAssetExist(String assetPath) async {
+  try {
+    await rootBundle.loadString(assetPath);
+    return true;
+  } catch (e) {
+    return false;
+  }
+}

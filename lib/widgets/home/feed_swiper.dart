@@ -99,9 +99,9 @@ class FeedSwiperState extends ConsumerState<FeedSwiper> {
   int get _currentItemIndex => _isDigestFeed ? _readCount : _readCountState;
   int get _initialItemIndex => _cardsCount == 0 ? 0 : _currentItemIndex.clamp(0, _cardsCount - 1);
   
+  // Navigation state
   bool get _canGoPrev => _cardsCount > 1 && _currentItemIndex > 0;
   bool get _canGoNext => _cardsCount > 1 && _currentItemIndex < _cardsCount - 1;
-  bool get _canUndo => _canGoPrev;
 
   // User settings
   UserSettings get _settings => ref.watch(settingsProvider);
@@ -161,6 +161,9 @@ class FeedSwiperState extends ConsumerState<FeedSwiper> {
     if (_currentItemIndex > 5 && _currentItemIndex % 5 == 0) {
       requestReview();
     }
+
+    // No need to log history when viewing history feed
+    if (widget.feedType == FeedType.history) return;
 
     // Update user total read
     // final currentUser = ref.read(userProvider);
@@ -277,7 +280,7 @@ class FeedSwiperState extends ConsumerState<FeedSwiper> {
     // log('Swipe direction: $_swipeDirection, Undo direction: $_undoDirection');
 
     return CardSwiper(
-      key: Key("CardSwiper_${_feedType}_{$_currentTopic}_$_initialItemIndex"),
+      key: Key("CardSwiper_${_feedType}_{$_currentTopic}_$_initialItemIndex}_${_swipeDirection.name}"),
       controller: _controller,
       padding: EdgeInsets.zero,
       showBackCardOnUndo: true,
@@ -285,8 +288,8 @@ class FeedSwiperState extends ConsumerState<FeedSwiper> {
       threshold: 70,
       undoDirection: _undoDirection,
       allowedSwipeDirection: AllowedSwipeDirection.only(
-        left: _swipeDirection == CardSwiperDirection.left ? _canGoNext : _canUndo,
-        right: _swipeDirection == CardSwiperDirection.right ? _canGoNext : _canUndo
+        left: _swipeDirection == CardSwiperDirection.left ? _canGoNext : _canGoPrev,
+        right: _swipeDirection == CardSwiperDirection.right ? _canGoNext : _canGoPrev,
       ),
       initialIndex: _initialItemIndex,
       numberOfCardsDisplayed: _cardsCount == 1 ? 1 : 2,

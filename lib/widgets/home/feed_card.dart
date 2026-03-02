@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lottie/lottie.dart';
@@ -11,12 +12,12 @@ import 'package:muslimdigest/providers/feed/base_feed_notifier.dart';
 import 'package:muslimdigest/providers/user/settings.dart';
 import 'package:muslimdigest/providers/user/streaks.dart';
 import 'package:muslimdigest/providers/user/user.dart';
+import 'package:muslimdigest/utils/app.dart';
 import 'package:muslimdigest/utils/dialogs.dart';
 import 'package:muslimdigest/utils/extensions.dart';
 import 'package:muslimdigest/utils/format.dart';
 import 'package:muslimdigest/utils/functions.dart';
 import 'package:muslimdigest/utils/helpers.dart';
-import 'package:muslimdigest/utils/time.dart';
 import 'package:muslimdigest/variables/app.dart';
 import 'package:muslimdigest/variables/feed.dart';
 import 'package:muslimdigest/variables/time.dart';
@@ -292,17 +293,23 @@ class _FeedHeader extends ConsumerWidget {
           
           // YouTube play button
           if (hasYouTubeVideo)
-            Image.asset('assets/images/youtube-play.png', width: 64).onTap(() {
-              openUrl(feedItem.videoUrl!);
-            }).center().fill(),
+            Image.asset('assets/images/youtube-play.png', width: 64).center().fill(),
 
-          // Ramadan animation for fasting-related content during Ramadan
-          if (isRamadan && feedItem.isRamadanContent)
-            Positioned(
-              top: 0,
-              left: 0,
-              right: 0,
-              child: Lottie.asset('assets/lottie/vibes/ramadan.json', fit: BoxFit.contain),
+          // Vibe animation overlay during Islamic event
+          if (feedItem.isOngoing && feedItem.relevantEvent != null)
+            FutureBuilder<bool>(
+              future: doesAssetExist(feedItem.vibeAnimationAsset),
+              builder: (context, snapshot) {
+                if (snapshot.data == true) {
+                  return Positioned(
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    child: Lottie.asset(feedItem.vibeAnimationAsset, fit: BoxFit.contain),
+                  );
+                }
+                return const SizedBox.shrink();
+              },
             ),
 
           // Title overlay
@@ -364,7 +371,7 @@ class _FeedHeader extends ConsumerWidget {
           //   }),
           // ),
         ],
-      ),
+      ).onTap(() => openUrl(feedItem.videoUrl!)),
     );
   }
 }

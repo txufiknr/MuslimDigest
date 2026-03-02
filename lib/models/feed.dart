@@ -1,4 +1,5 @@
-import '../config/content.dart';
+import 'package:muslimdigest/utils/time.dart';
+
 import '../utils/extensions.dart';
 
 class FeedItem {
@@ -62,10 +63,13 @@ class FeedItem {
   String get sourceLabel => source.siteName ?? source.id;
   String? get sourceLink => canonicalUrl ?? sourceUrl;
 
-  bool get isRamadanContent {
-    return badges.contains('topic:fasting') ||
-      [title, videoTitle, summary].containsAnyIgnoreCase(ramadanKeywords);
+  IslamicEvent? get relevantEvent {
+    return IslamicEvent.values.firstWhereOrNull((e) {
+      return [title, videoTitle, summary].containsAnyIgnoreCase(e.keywords);
+    });
   }
+  bool get isOngoing => relevantEvent?.isOngoing == true;
+  String get vibeAnimationAsset => 'assets/lottie/vibes/${relevantEvent?.name}.json';
 
   List<String> get badgeToDisplay => badges.where((badge) => 
     !badge.startsWith('trust_level:') &&

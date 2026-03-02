@@ -1,1 +1,1 @@
-const ramadanKeywords = ['ramadan', 'fasting'];
+// const ramadanKeywords = ['ramadan', 'fasting'];
