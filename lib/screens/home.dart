@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:muslimdigest/api/user.dart';
 import 'package:muslimdigest/models/user.dart';
 import 'package:muslimdigest/providers/feed_type.dart';
+import 'package:muslimdigest/providers/read_count_states.dart';
 import 'package:muslimdigest/providers/topic.dart';
 import 'package:muslimdigest/providers/user/preferences.dart';
 import 'package:muslimdigest/utils/app.dart';
@@ -118,7 +119,16 @@ class _HomePageState extends ConsumerState<HomePage> with RouteAware {
     if (currentFeedType == FeedType.digest) {
       r.loadUserFeed();
     } else {
-      _loadFeed(force: force);
+      // Check read count state to optimize feed loading
+      final readCountStates = ref.read(readCountStatesProvider);
+      final feedTypeKey = currentFeedType.name;
+      final readCount = readCountStates[feedTypeKey] ?? 0;
+      
+      // Skip reloading if user has already read items
+      if (readCount > 0) return;
+
+      // Load feed - cache check is handled internally
+      _loadFeed(feedType: currentFeedType);
     }
   }
 
