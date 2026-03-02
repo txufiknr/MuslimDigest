@@ -4,7 +4,6 @@ import 'package:muslimdigest/api/user.dart';
 import 'package:muslimdigest/models/feed.dart';
 import 'package:muslimdigest/providers/user/preferences.dart';
 import 'package:muslimdigest/services/api.dart';
-import 'package:muslimdigest/services/feed_state_service.dart';
 import 'package:muslimdigest/utils/dialogs.dart';
 import 'package:muslimdigest/utils/functions.dart';
 
@@ -28,17 +27,12 @@ Future<bool> deleteHistory(String clusterId) async {
   return response.success;
 }
 
-Future<ApiResponse> markNotInterested(String clusterId) async {
+Future<ApiResponse> markNotInterested(String clusterId) {
   return ApiService.post('feed/not_interested', {'clusterId': clusterId});
 }
 
-Future<ApiResponse> unmarkNotInterested(BuildContext context, WidgetRef ref, String clusterId) async {
-  final response = await ApiService.delete('feed/not_interested?clusterId=$clusterId');
-  if (response.success && context.mounted) {
-    // Remove from local feed states using FeedStateService
-    await FeedStateService.unmarkNotInterestedEverywhere(ref, clusterId);
-  }
-  return response;
+Future<ApiResponse> unmarkNotInterested(String clusterId) {
+  return ApiService.delete('feed/not_interested?clusterId=$clusterId');
 }
 
 Future<ApiResponse> submitFeedback(String clusterId, String category, String message) async {

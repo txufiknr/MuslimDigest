@@ -1,5 +1,3 @@
-import 'dart:developer';
-
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -217,13 +215,19 @@ class _NotInterestedPlaceholder extends ConsumerWidget {
   });
 
   Future<void> _undo(BuildContext context, WidgetRef ref) async {
+    // Restore avoided source
     if (isSourceAvoided) {
-      await restoreAvoidedSource(context, ref, feedItem.source.id);
+      restoreAvoidedSource(context, ref, feedItem.source.id);
       return;
     }
 
-    // Call API to unmark as not interested
-    await unmarkNotInterested(context, ref, feedItem.id);
+    // Update local state immediately - unmark from all feed types
+    if (context.mounted) {
+      await FeedStateService.unmarkNotInterestedEverywhere(ref, feedItem.id);
+    }
+    
+    // Fire-and-forget API call
+    fireAndForget(() => unmarkNotInterested(feedItem.id));
   }
 
   @override
@@ -512,24 +516,24 @@ class _FeedFooter extends ConsumerWidget {
     if (!context.mounted || !confirm) return;
     
     try {
+      // Mark as not interested across all feed types
+      if (context.mounted) {
+        await FeedStateService.markNotInterestedEverywhere(ref, feedItem.id);
+      }
+
+      // Increment user's not interested count
+      if (context.mounted) {
+        await ref.read(userProvider.notifier).incrementNotInterested();
+      }
+
       // Call API to mark as not interested
       final response = await markNotInterested(feedItem.id);
       if (!context.mounted) return;
 
-      log("markNotInterested response: ${response.result}");
-      
       if (response.success) {
         showSnackBarSuccess(context, "Feed hidden. We'll show less content like this.");
-
-        await Future.wait([
-          // Increment user's not interested count
-          ref.read(userProvider.notifier).incrementNotInterested(),
-          // Mark as not interested across all feed types
-          FeedStateService.markNotInterestedEverywhere(ref, feedItem.id),
-        ]);
-
       } else {
-        showSnackBarError(context, response.error ?? "Failed to mark as not interested");
+        showSnackBarError(context, "Failed to mark as not interested");
       }
     } catch (e) {
       if (context.mounted) {
