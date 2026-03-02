@@ -238,7 +238,7 @@ class _FeedListBasePageState extends ConsumerState<FeedListBasePage> {
       builder: (context, constraints) {
         final maxHeight = constraints.maxHeight;
         return SmartRefresher(
-          physics: state.isGetting ? NeverScrollableScrollPhysics() : AlwaysScrollableScrollPhysics(),
+          physics: _isBackgroundRefreshing || state.isGetting ? NeverScrollableScrollPhysics() : AlwaysScrollableScrollPhysics(),
           controller: _refreshController,
           enablePullDown: true,
           enablePullUp: false,

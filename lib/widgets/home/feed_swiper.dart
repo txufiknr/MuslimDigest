@@ -98,7 +98,6 @@ class FeedSwiperState extends ConsumerState<FeedSwiper> {
   int get _readCountState => max(0, _readCountStates[_readCountName] ?? 0);
   int get _currentItemIndex => _isDigestFeed ? _readCount : _readCountState;
   int get _initialItemIndex => _cardsCount == 0 ? 0 : _currentItemIndex.clamp(0, _cardsCount - 1);
-  int get _currentPage => _currentItemIndex % CURSOR_PAGINATION_LIMIT;
   
   bool get _canGoPrev => _cardsCount > 1 && _currentItemIndex > 0;
   bool get _canGoNext => _cardsCount > 1 && _currentItemIndex < _cardsCount - 1;
@@ -116,8 +115,12 @@ class FeedSwiperState extends ConsumerState<FeedSwiper> {
     final feedState = _feedType.watch(ref);
     if (!feedState.hasMore || feedState.isLoadingMore) return false;
     
-    final threshold = (CURSOR_PAGINATION_LIMIT * _currentPage) - CURSOR_PAGINATION_TRIGGER;
-    return _currentItemIndex >= threshold && _currentItemIndex < _feedItems.length - CURSOR_PAGINATION_TRIGGER;
+    // Only trigger when we're within TRIGGER items of the end of loaded items
+    // AND we've made progress through the current page (at least TRIGGER items in)
+    final itemsFromEnd = _feedItems.length - _currentItemIndex;
+    final progressInPage = _currentItemIndex % CURSOR_PAGINATION_LIMIT;
+    
+    return itemsFromEnd <= CURSOR_PAGINATION_TRIGGER && progressInPage >= CURSOR_PAGINATION_TRIGGER;
   }
 
   Future<void> _triggerLazyLoad() async {
