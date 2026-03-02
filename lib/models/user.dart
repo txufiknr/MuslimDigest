@@ -215,9 +215,9 @@ class UserPreferences {
       userId: json['userId'],
       topics: Set<String>.from(json['topics'] ?? []),
       madhahib: Set<String>.from(json['madhahib'] ?? []),
-      sources: (json['sources'] as List<Map<String, dynamic>>?)?.map(Source.fromJson).toSet() ?? const {},
+      sources: List<Map<String, dynamic>>.from(json['sources'] ?? []).map(Source.fromJson).toSet(),
       avoidedTopics: Set<String>.from(json['avoidedTopics'] ?? []),
-      avoidedSources: (json['avoidedSources'] as List<Map<String, dynamic>>?)?.map(Source.fromJson).toSet() ?? const {},
+      avoidedSources: List<Map<String, dynamic>>.from(json['avoidedSources'] ?? []).map(Source.fromJson).toSet(),
       createdAt: json['createdAt'] != null ? DateTime.parse(json['createdAt']) : null,
       updatedAt: json['updatedAt'] != null ? DateTime.parse(json['updatedAt']) : null,
     );

@@ -75,12 +75,6 @@ class BaseFeedState {
 }
 
 abstract class BaseFeedNotifier extends Notifier<BaseFeedState> {
-  /// Generate cursor from feed item in format: publishedAt|id
-  String? generateCursor(FeedItem? item) {
-    if (item == null || item.publishedAt == null) return null;
-    return '${item.publishedAt!.toIso8601String()}|${item.id}';
-  }
-  
   /// Load more items using cursor pagination
   Future<bool> loadMore({int? limit}) async {
     log('[BaseFeedNotifier] loadMore called. hasMore: ${state.hasMore}, isLoadingMore: ${state.isLoadingMore}, nextCursor: ${state.nextCursor}');
@@ -399,6 +393,8 @@ abstract class BaseFeedNotifier extends Notifier<BaseFeedState> {
         
         log('[BaseFeedNotifier] API response: received ${feedItems.length} items, isLoadMore: $isLoadMore');
         log('[BaseFeedNotifier] Current state items: ${state.items?.length ?? 0}');
+        // log('[BaseFeedNotifier] Response result: ${response.result}');
+        // log('[BaseFeedNotifier] Response result items count: ${response.result?['items'].length}');
         
         // Extract pagination info from response
         final hasMore = response.result?['hasMore'] ?? true;

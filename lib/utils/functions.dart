@@ -4,20 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 Future<void> openUrl(String url) async {
-  final uri = Uri.parse(url);
-  
-  // First try to launch the URL
-  if (await canLaunchUrl(uri)) {
-    await launchUrl(
-      uri,
-      // mode: LaunchMode.externalApplication,
-    );
-  } else {
-    // I/UrlLauncher(21394): component name for https://www.aljazeera.com/news/2026/2/22/north-koreas-kim-jong-un-re-elected-as-chief-of-workers?traffic_source=rss is null
-    // I/UrlLauncher(21394): component name for https://flutter.dev is null
-    // I/flutter (21394): Cannot launch URL: https://www.aljazeera.com/news/2026/2/22/north-koreas-kim-jong-un-re-elected-as-chief-of-workers?traffic_source=rss
-    // TODO: Cannot launch URL: https://www.aljazeera.com/news/2026/2/22/north-koreas-kim-jong-un-re-elected-as-chief-of-workers?traffic_source=rss
-    debugPrint('Cannot launch URL: $url');
+  try {
+    if (!await launchUrl(Uri.parse(url))) debugPrint('Could not launch $url');
+  } catch (e) {
+    debugPrint('Could not launch $url. Error: $e');
   }
 }
 

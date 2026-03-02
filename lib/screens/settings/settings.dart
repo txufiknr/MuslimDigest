@@ -164,7 +164,7 @@ class SettingsHeader extends ConsumerWidget {
           TextSpan(
             children: [
               TextSpan(
-                text: "You have read ",
+                text: "You have read at least ",
                 style: h.currentTextTheme.bodyMedium?.copyWith(
                   color: Colors.white.withValues(alpha: 0.8),
                   fontWeight: FontWeight.w500,
@@ -178,7 +178,7 @@ class SettingsHeader extends ConsumerWidget {
                 ),
               ),
               TextSpan(
-                text: " articles so far.",
+                text: " articles in last 7 days.",
                 style: h.currentTextTheme.bodyMedium?.copyWith(
                   color: Colors.white.withValues(alpha: 0.8),
                   fontWeight: FontWeight.w500,

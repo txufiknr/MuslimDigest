@@ -204,13 +204,7 @@ class _FeedListBasePageState extends ConsumerState<FeedListBasePage> {
       appBar: MyAppBar(
         title: widget.title,
         actions: _isBackgroundRefreshing ? [
-          Padding(
-            padding: const EdgeInsets.only(right: 16),
-            child: CupertinoActivityIndicator(
-              animating: true,
-              radius: 10,
-            ),
-          ),
+          CupertinoActivityIndicator(radius: 10).withPadding(right: 16),
         ] : null,
       ),
       body: SafeArea(
@@ -244,6 +238,7 @@ class _FeedListBasePageState extends ConsumerState<FeedListBasePage> {
       builder: (context, constraints) {
         final maxHeight = constraints.maxHeight;
         return SmartRefresher(
+          physics: state.isGetting ? NeverScrollableScrollPhysics() : AlwaysScrollableScrollPhysics(),
           controller: _refreshController,
           enablePullDown: true,
           enablePullUp: false,
@@ -262,10 +257,10 @@ class _FeedListBasePageState extends ConsumerState<FeedListBasePage> {
             itemCount: feeds.length + (feeds.isEmpty || state.hasMore ? 1 : 0),
             itemBuilder: (context, index) {
               // Empty state
+              if (state.isGetting) {
+                return _buildLoadingIndicator().sized(height: maxHeight);
+              }
               if (feeds.isEmpty) {
-                if (state.isGetting) {
-                  return _buildLoadingIndicator().sized(height: maxHeight);
-                }
                 return _buildEmptyState(h).sized(height: maxHeight);
               }
         
