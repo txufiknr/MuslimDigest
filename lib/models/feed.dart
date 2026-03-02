@@ -1,3 +1,6 @@
+import '../config/content.dart';
+import '../utils/extensions.dart';
+
 class FeedItem {
   final String id;
   final String title;
@@ -58,6 +61,11 @@ class FeedItem {
   String get displayTitle => hasVideo ? (videoTitle ?? title) : title;
   String get sourceLabel => source.siteName ?? source.id;
   String? get sourceLink => canonicalUrl ?? sourceUrl;
+
+  bool get isRamadanContent {
+    return badges.contains('topic:fasting') ||
+      [title, videoTitle, summary].containsAnyIgnoreCase(ramadanKeywords);
+  }
 
   List<String> get badgeToDisplay => badges.where((badge) => 
     !badge.startsWith('trust_level:') &&

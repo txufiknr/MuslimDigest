@@ -35,6 +35,20 @@ extension StringExtension on String {
 extension NullableStringExtension on String? {
   /// Check if string is empty or null
   bool get isEmptyOrNull => this?.isEmpty ?? true;
+  
+  /// Case-insensitive check if string contains any of the provided keywords
+  bool containsAnyIgnoreCase(List<String> keywords) {
+    if (isEmptyOrNull || keywords.isEmpty) return false;
+    final lowerCaseThis = this!.toLowerCase();
+    return keywords.any((keyword) => lowerCaseThis.contains(keyword.toLowerCase()));
+  }
+}
+
+extension ListNullableStringExtension on List<String?> {
+  /// Check if any string in the list contains any of the provided keywords (case-insensitive)
+  bool containsAnyIgnoreCase(List<String> keywords) {
+    return any((str) => str?.containsAnyIgnoreCase(keywords) == true);
+  }
 }
 
 extension WidgetExtension on Widget {

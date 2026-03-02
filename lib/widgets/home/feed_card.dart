@@ -293,7 +293,7 @@ class _FeedHeader extends ConsumerWidget {
             }).center().fill(),
 
           // Ramadan animation for fasting-related content during Ramadan
-          if (feedItem.badges.contains('topic:fasting') && isRamadan)
+          if (isRamadan && feedItem.isRamadanContent)
             Positioned(
               top: 0,
               left: 0,
