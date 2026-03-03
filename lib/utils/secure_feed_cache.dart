@@ -4,44 +4,6 @@ import 'dart:developer' show log;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:muslimdigest/models/feed.dart';
 
-/// Cache entry with metadata
-class CacheEntry<T> {
-  final T data;
-  final DateTime timestamp;
-  final DateTime expiresAt;
-  final String? etag;
-
-  CacheEntry({
-    required this.data,
-    required this.timestamp,
-    required this.expiresAt,
-    this.etag,
-  });
-
-  bool get isExpired => DateTime.now().isAfter(expiresAt);
-
-  factory CacheEntry.fromJson(
-    Map<String, dynamic> json,
-    T Function(dynamic) fromJson,
-  ) {
-    return CacheEntry<T>(
-      data: fromJson(json['data']),
-      timestamp: DateTime.parse(json['timestamp']),
-      expiresAt: DateTime.parse(json['expiresAt']),
-      etag: json['etag'],
-    );
-  }
-
-  Map<String, dynamic> toJson(dynamic Function(T) toJson) {
-    return {
-      'data': toJson(data),
-      'timestamp': timestamp.toIso8601String(),
-      'expiresAt': expiresAt.toIso8601String(),
-      'etag': etag,
-    };
-  }
-}
-
 /// Secure feed cache implementation using FlutterSecureStorage
 class SecureFeedCache {
   final FlutterSecureStorage _storage;
@@ -56,9 +18,11 @@ class SecureFeedCache {
       return 'cache:$endpoint';
     }
     
+    // Sort parameters for consistent keys
     final sortedParams = Map.fromEntries(
       queryParams.entries.toList()..sort((a, b) => a.key.compareTo(b.key))
     );
+    
     final queryString = sortedParams.entries
         .map((e) => '${e.key}=${e.value}')
         .join('&');
@@ -72,29 +36,44 @@ class SecureFeedCache {
     Map<String, String>? queryParams,
   }) async {
     final cacheKey = _generateCacheKey(endpoint, queryParams: queryParams);
+    log('[SecureFeedCache] Getting cache for key: $cacheKey');
     final cacheJson = await _storage.read(key: cacheKey);
     
-    if (cacheJson == null) return null;
+    if (cacheJson == null) {
+      log('[SecureFeedCache] Cache miss for key: $cacheKey');
+      return null;
+    }
 
     try {
-      final cacheEntry = CacheEntry<List<dynamic>>.fromJson(
-        jsonDecode(cacheJson),
-        (data) => List<dynamic>.from(data),
-      );
-
-      if (cacheEntry.isExpired) {
+      final cacheData = jsonDecode(cacheJson) as Map<String, dynamic>;
+      log('[SecureFeedCache] Cache data structure: ${cacheData.keys}');
+      
+      final expiresAt = DateTime.parse(cacheData['expiresAt'] as String);
+      
+      if (DateTime.now().isAfter(expiresAt)) {
+        log('[SecureFeedCache] Cache expired for key: $cacheKey');
         await _storage.delete(key: cacheKey);
         return null;
       }
 
+      final itemsData = cacheData['data'] as List<dynamic>;
+      log('[SecureFeedCache] Cache hit for key: $cacheKey, items: ${itemsData.length}');
+      // log('[SecureFeedCache] Sample cache data: ${itemsData.take(1).toList()}');
+      
       // Convert List<dynamic> to List<FeedItem>
-      final feedItems = cacheEntry.data
-          .map((item) => FeedItem.fromJson(item as Map<String, dynamic>))
+      final feedItems = itemsData
+          .map((item) {
+            // log('[SecureFeedCache] Parsing item: $item');
+            return FeedItem.fromJson(item as Map<String, dynamic>);
+          })
           .toList();
       
       return feedItems;
-    } catch (e) {
-      // If there's an error reading the cache, delete it and return null
+    } catch (e, stackTrace) {
+      log('[SecureFeedCache] Parse error for key: $cacheKey, invalidating cache. Error: $e');
+      log('[SecureFeedCache] Stack trace: $stackTrace');
+      log('[SecureFeedCache] Cache content was: $cacheJson');
+      // If there's a parse error, delete the cache and return null
       await _storage.delete(key: cacheKey);
       return null;
     }
@@ -115,24 +94,30 @@ class SecureFeedCache {
     final cacheDuration = expiration ?? (endpoint == 'feed' ? _digestCacheDuration : _defaultCacheDuration);
     final expiresAt = now.add(cacheDuration);
 
+    log('[SecureFeedCache] Setting cache for key: $cacheKey, items: ${items.length}, expires: $expiresAt');
+
     // Convert FeedItems to List<dynamic> for JSON serialization
     final itemsData = items.map((item) => item.toJson()).toList();
+    // log('[SecureFeedCache] Sample item being cached: ${itemsData.take(1).toList()}');
 
-    final cacheEntry = CacheEntry<List<dynamic>>(
-      data: itemsData,
-      timestamp: now,
-      expiresAt: expiresAt,
-      etag: etag,
-    );
+    final cacheData = {
+      'data': itemsData,
+      'timestamp': now.toIso8601String(),
+      'expiresAt': expiresAt.toIso8601String(),
+      'etag': etag,
+    };
+
+    log('[SecureFeedCache] Cache data structure being saved: ${cacheData.keys}');
 
     try {
       await _storage.write(
         key: cacheKey,
-        value: jsonEncode(cacheEntry.toJson((data) => data)),
+        value: jsonEncode(cacheData),
       );
+      log('[SecureFeedCache] Cache set successfully for key: $cacheKey');
     } catch (e) {
       // If writing fails, we'll just continue without caching
-      log('[SecureFeedCache] Failed to write to secure storage: $e');
+      log('[SecureFeedCache] Failed to write to secure storage for key: $cacheKey, error: $e');
     }
   }
 
@@ -147,12 +132,9 @@ class SecureFeedCache {
     if (cacheJson == null) return true;
 
     try {
-      final cacheEntry = CacheEntry<List<dynamic>>.fromJson(
-        jsonDecode(cacheJson),
-        (data) => List<dynamic>.from(data),
-      );
-
-      return cacheEntry.isExpired;
+      final cacheData = jsonDecode(cacheJson) as Map<String, dynamic>;
+      final expiresAt = DateTime.parse(cacheData['expiresAt'] as String);
+      return DateTime.now().isAfter(expiresAt);
     } catch (e) {
       return true;
     }
@@ -169,17 +151,17 @@ class SecureFeedCache {
     if (cacheJson == null) return null;
 
     try {
-      final cacheEntry = CacheEntry<List<dynamic>>.fromJson(
-        jsonDecode(cacheJson),
-        (data) => List<dynamic>.from(data),
-      );
+      final cacheData = jsonDecode(cacheJson) as Map<String, dynamic>;
+      final itemsData = cacheData['data'] as List<dynamic>;
+      final expiresAt = DateTime.parse(cacheData['expiresAt'] as String);
+      final timestamp = DateTime.parse(cacheData['timestamp'] as String);
 
       return {
-        'timestamp': cacheEntry.timestamp.toIso8601String(),
-        'expiresAt': cacheEntry.expiresAt.toIso8601String(),
-        'isExpired': cacheEntry.isExpired,
-        'etag': cacheEntry.etag,
-        'itemCount': cacheEntry.data.length,
+        'timestamp': timestamp.toIso8601String(),
+        'expiresAt': expiresAt.toIso8601String(),
+        'isExpired': DateTime.now().isAfter(expiresAt),
+        'etag': cacheData['etag'],
+        'itemCount': itemsData.length,
       };
     } catch (e) {
       return null;

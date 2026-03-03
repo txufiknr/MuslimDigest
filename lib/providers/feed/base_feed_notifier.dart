@@ -360,12 +360,17 @@ abstract class BaseFeedNotifier extends Notifier<BaseFeedState> {
   }) async {
     final cache = ref.read(feedCacheProvider);
 
+    log('[BaseFeedNotifier] loadFromEndpoint called: endpoint=$endpoint, forceRefresh=$forceRefresh, isLoadMore=$isLoadMore');
+    log('[BaseFeedNotifier] queryParams: $queryParams');
+
     if (forceRefresh) resetPagination();
     
     // Try to load from cache first (unless force refresh or load more)
     if (!forceRefresh && !isLoadMore) {
+      log('[BaseFeedNotifier] Checking cache for endpoint: $endpoint');
       final cachedItems = await cache.getFeedItems(endpoint, queryParams: queryParams);
       if (cachedItems != null) {
+        log('[BaseFeedNotifier] Cache hit! Found ${cachedItems.length} items');
         await setValue(cachedItems);
         // Set pagination state for cached data
         state = state.copyWith(
@@ -374,7 +379,11 @@ abstract class BaseFeedNotifier extends Notifier<BaseFeedState> {
           hasMore: true, // Assume more data available for cached content
         );
         return true;
+      } else {
+        log('[BaseFeedNotifier] Cache miss, proceeding to API call');
       }
+    } else {
+      log('[BaseFeedNotifier] Skipping cache check (forceRefresh=$forceRefresh, isLoadMore=$isLoadMore)');
     }
 
     state = state.copyWith(
@@ -384,6 +393,7 @@ abstract class BaseFeedNotifier extends Notifier<BaseFeedState> {
     );
     
     try {
+      log('[BaseFeedNotifier] Making API call to: $endpoint');
       final response = await ApiService.get(endpoint, queryParams: queryParams, options: options);
 
       if (response.successful) {
@@ -425,7 +435,10 @@ abstract class BaseFeedNotifier extends Notifier<BaseFeedState> {
         
         // Cache the response (only for initial loads, not load more)
         if (!isLoadMore) {
+          log('[BaseFeedNotifier] Caching ${updatedItems.length} items for endpoint: $endpoint');
           await cache.setFeedItems(endpoint, updatedItems, queryParams: queryParams);
+        } else {
+          log('[BaseFeedNotifier] Skipping cache for loadMore operation');
         }
         
         // Update pagination state

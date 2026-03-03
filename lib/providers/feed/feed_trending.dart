@@ -10,9 +10,9 @@ class FeedTrendingNotifier extends BaseFeedNotifier {
   @override
   String get endpoint => 'feed/trending';
 
-  Future<bool> load({int? limit}) async {
+  Future<bool> load({int? limit, bool forceRefresh = false}) async {
     return await loadFromEndpoint(endpoint, queryParams: {
       'limit': (limit ?? CURSOR_PAGINATION_LIMIT).toString(),
-    });
+    }, forceRefresh: forceRefresh);
   }
 }

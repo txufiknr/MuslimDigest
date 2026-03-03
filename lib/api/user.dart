@@ -5,9 +5,9 @@ import 'dart:developer' show log;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:muslimdigest/models/user.dart';
 import 'package:muslimdigest/providers/feed/feed.dart';
+import 'package:muslimdigest/providers/feed/feed_history.dart';
 import 'package:muslimdigest/providers/feed/feed_liked.dart';
 import 'package:muslimdigest/providers/feed/feed_saved.dart';
-import 'package:muslimdigest/providers/feed/feed_latest.dart';
 import 'package:muslimdigest/providers/feed/feed_cache.dart';
 import 'package:muslimdigest/providers/feed_type.dart';
 import 'package:muslimdigest/providers/read_count.dart';
@@ -110,12 +110,13 @@ Future<void> resetUserData(WidgetRef ref) async {
     ref.read(readCountStatesProvider.notifier).clear(),
     ref.read(readLastDateProvider.notifier).clear(),
     ref.read(feedTypeProvider.notifier).reset(),
-    // Feed data
+    // Feed data (clear all except trending and latest)
     ref.read(feedProvider.notifier).clear(),
     ref.read(feedLikedProvider.notifier).clear(),
     ref.read(feedSavedProvider.notifier).clear(),
+    ref.read(feedHistoryProvider.notifier).clear(),
     // ref.read(feedTrendingProvider.notifier).clear(),
-    ref.read(feedLatestProvider.notifier).clear(),
+    // ref.read(feedLatestProvider.notifier).clear(),
   ]);
 }
 

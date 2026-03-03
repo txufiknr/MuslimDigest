@@ -1,3 +1,5 @@
+import 'dart:developer' show log;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:muslimdigest/api/user.dart';
@@ -9,6 +11,7 @@ import 'package:muslimdigest/utils/functions.dart';
 
 Future<bool> markRead(String clusterId) async {
   final response = await ApiService.post('feed/history', {'clusterId': clusterId});
+  log("[markRead] post history result: ${response.result}");
   return response.success;
 }
 

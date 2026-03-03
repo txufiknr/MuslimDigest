@@ -122,25 +122,25 @@ enum FeedType {
     return watchItems(ref).firstWhereOrNull((item) => item.id == feedId);
   }
 
-  Future<bool> load(WidgetRef ref, {String? topic, int? timeoutMs, int? limit}) {
+  Future<bool> load(WidgetRef ref, {String? topic, int? timeoutMs, int? limit, bool forceRefresh = false}) {
     switch (this) {
-      case digest: return ref.read(feedProvider.notifier).load(timeoutMs: timeoutMs);
-      case latest: return ref.read(feedLatestProvider.notifier).load(topic: topic, limit: limit);
-      case trending: return ref.read(feedTrendingProvider.notifier).load(limit: limit);
-      case liked: return ref.read(feedLikedProvider.notifier).load(limit: limit);
-      case saved: return ref.read(feedSavedProvider.notifier).load(limit: limit);
-      case history: return ref.read(feedHistoryProvider.notifier).load(limit: limit);
+      case digest: return ref.read(feedProvider.notifier).load(timeoutMs: timeoutMs, forceRefresh: forceRefresh);
+      case latest: return ref.read(feedLatestProvider.notifier).load(topic: topic, limit: limit, forceRefresh: forceRefresh);
+      case trending: return ref.read(feedTrendingProvider.notifier).load(limit: limit, forceRefresh: forceRefresh);
+      case liked: return ref.read(feedLikedProvider.notifier).load(limit: limit, forceRefresh: forceRefresh);
+      case saved: return ref.read(feedSavedProvider.notifier).load(limit: limit, forceRefresh: forceRefresh);
+      case history: return ref.read(feedHistoryProvider.notifier).load(limit: limit, forceRefresh: forceRefresh);
     }
   }
 
-  Future<bool> loadWithRef(Ref ref, {String? topic, int? timeoutMs, int? limit}) {
+  Future<bool> loadWithRef(Ref ref, {String? topic, int? timeoutMs, int? limit, bool force = false}) {
     switch (this) {
-      case digest: return ref.read(feedProvider.notifier).load(timeoutMs: timeoutMs);
-      case latest: return ref.read(feedLatestProvider.notifier).load(topic: topic, limit: limit);
-      case trending: return ref.read(feedTrendingProvider.notifier).load(limit: limit);
-      case liked: return ref.read(feedLikedProvider.notifier).load(limit: limit);
-      case saved: return ref.read(feedSavedProvider.notifier).load(limit: limit);
-      case history: return ref.read(feedHistoryProvider.notifier).load(limit: limit);
+      case digest: return ref.read(feedProvider.notifier).load(timeoutMs: timeoutMs, forceRefresh: force);
+      case latest: return ref.read(feedLatestProvider.notifier).load(topic: topic, limit: limit, forceRefresh: force);
+      case trending: return ref.read(feedTrendingProvider.notifier).load(limit: limit, forceRefresh: force);
+      case liked: return ref.read(feedLikedProvider.notifier).load(limit: limit, forceRefresh: force);
+      case saved: return ref.read(feedSavedProvider.notifier).load(limit: limit, forceRefresh: force);
+      case history: return ref.read(feedHistoryProvider.notifier).load(limit: limit, forceRefresh: force);
     }
   }
 

@@ -8,6 +8,7 @@ final feedTypeProvider = NotifierProvider<FeedTypeNotifier, FeedType>(FeedTypeNo
 class FeedTypeNotifier extends Notifier<FeedType> {
   static const _key = 'feed_type';
 
+  /// Based on user streak today
   FeedType get _defaultFeedType => ref.read(appRepositoryProvider).homeFeedType;
 
   @override
@@ -17,7 +18,7 @@ class FeedTypeNotifier extends Notifier<FeedType> {
   }
 
   Future<void> reset() async {
-    state = _defaultFeedType;
+    state = FeedType.digest; // always reset to digest feed
     await ref
         .read(preferencesRepositoryProvider)
         .remove(_key);

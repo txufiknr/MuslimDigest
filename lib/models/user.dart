@@ -39,6 +39,12 @@ class User {
     };
   }
 
+  // TODO: 5 emoji badge tier based on totalReads (0 - 100)
+  String get totalReadsBadge {
+    if (totalReads >= 0) return '🌱';
+    return '🌱';
+  }
+
   factory User.fromJson(Map<String, dynamic> json) {
     return User(
       userId: json['userId'],

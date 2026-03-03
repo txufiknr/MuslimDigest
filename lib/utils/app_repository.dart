@@ -87,6 +87,7 @@ class AppRepository {
   /// Determine home feed type
   // FeedType get homeFeedType => shouldFetchDailyDigest || !isDailyDigestDone ? FeedType.digest : FeedType.latest;
   FeedType get homeFeedType {
+    if (isFirstRun) return FeedType.digest; // always digest for first time user
     if (!_ref.mounted) return FeedType.latest;
     return !isStreakToday && (shouldFetchDailyDigest || !isDailyDigestDone) ? FeedType.digest : FeedType.latest;
   }
@@ -109,11 +110,15 @@ class AppRepository {
     // Reset swiper page index to zero
     if (force) unawaited(resetReadCount(feedType, topic));
 
-    return feedType.loadWithRef(_ref, topic: topic);
+    return feedType.loadWithRef(_ref, topic: topic, force: force);
   }
 
   Future<void> loadUserFeed({bool force = false}) async {
+    // Intentional design: skips feed loading during splash for first-time users to
+    // prioritize onboarding experience, only loading the daily digest after they complete
+    // the initial setup and reach the home screen.
     if (isFirstRun) return;
+    
     if (!force && !shouldFetchDailyDigest) return;
     log('[loadUserFeed] isDailyDigestUpToDate: $isDailyDigestUpToDate');
     log('[loadUserFeed] isDailyDigestDone: $isDailyDigestDone');
@@ -132,6 +137,7 @@ class AppRepository {
 
   /// Initialize active feed tab on every app launch
   Future<void> initActiveFeed() async {
+    if (isFirstRun) return; // no need to do anything for first time user
     final currentFeedType = _ref.read(feedTypeProvider);
     final currentTopic = _ref.read(topicProvider);
     final trendingCount = _ref.watch(feedTrendingProvider).total;

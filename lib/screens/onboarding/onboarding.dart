@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:muslimdigest/config/themes.dart';
+import 'package:muslimdigest/providers/feed/feed.dart';
 import 'package:muslimdigest/providers/user/user.dart';
 import 'package:muslimdigest/utils/extensions.dart';
 import 'package:muslimdigest/variables/user.dart';
@@ -19,6 +20,7 @@ class OnboardingPage extends ConsumerWidget {
   /// Start reading as a guest (global)
   void _startReadingNow(BuildContext context, WidgetRef ref) async {
     await ref.read(userProvider.notifier).setValue(PrefData.user);
+    ref.read(feedProvider.notifier).load(); // load digest feed immediately
     if (context.mounted) context.go('/home');
   }
 

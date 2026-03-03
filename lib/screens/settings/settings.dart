@@ -43,8 +43,6 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
 
   @override
   Widget build(BuildContext context) {
-    // final h = MyHelper(context);
-
     return Scaffold(
       body: Container(
         decoration: BoxDecoration(
@@ -139,14 +137,12 @@ class SettingsHeader extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final h = MyHelper(context);
     final user = ref.watch(userProvider);
-    final firstName = user.firstName;
-    final totalReads = user.totalReads;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          '$GREETINGS, $firstName',
+          '$GREETINGS, ${user.firstName}',
           style: h.currentTextTheme.headlineMedium?.copyWith(
             fontWeight: FontWeight.bold,
             color: Colors.white,
@@ -160,33 +156,39 @@ class SettingsHeader extends ConsumerWidget {
           ),
         ),
         const SizedBox(height: 16),
-        Text.rich(
-          TextSpan(
-            children: [
+        Row(
+          children: [
+            // TODO: show rank badge
+            Text(user.totalReadsBadge),
+            SizedBox(width: 8,),
+            Text.rich(
               TextSpan(
-                text: "You have read at least ",
-                style: h.currentTextTheme.bodyMedium
-                // ?.copyWith(
-                //   color: Colors.white.withValues(alpha: 0.8),
-                //   fontWeight: FontWeight.w500,
-                // ),
+                children: [
+                  TextSpan(
+                    text: "You have read at least ",
+                    style: h.currentTextTheme.bodyMedium?.copyWith(
+                      color: Colors.white.withValues(alpha: 0.9),
+                      // fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  TextSpan(
+                    text: "${user.totalReads > 99 ? '99+' : user.totalReads}",
+                    style: h.currentTextTheme.bodyLarge?.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  TextSpan(
+                    text: " articles in last 7 days.",
+                    style: h.currentTextTheme.bodyMedium?.copyWith(
+                      color: Colors.white.withValues(alpha: 0.9),
+                      // fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
               ),
-              TextSpan(
-                text: "${totalReads > 99 ? '99+' : totalReads}",
-                style: h.currentTextTheme.bodyLarge?.copyWith(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              TextSpan(
-                text: " articles in last 7 days.",
-                style: h.currentTextTheme.bodyMedium?.copyWith(
-                  color: Colors.white.withValues(alpha: 0.8),
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
-          ),
+            ).expand(),
+          ],
         ),
         // const SizedBox(height: 16),
         // Text(

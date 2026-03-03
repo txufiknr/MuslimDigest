@@ -97,7 +97,7 @@ class FeedItem {
       sources: List<String>.from(json['sources'] ?? []),
       cluster: Cluster.fromJson(json['cluster']),
       badges: List<String>.from(json['badges'] ?? []),
-      alsoRead: List<Cluster>.from(json['alsoRead']?.map(Cluster.fromJson) ?? []),
+      alsoRead: List<Cluster>.from(List<Map<String, dynamic>>.from(json['alsoRead'] ?? []).map(Cluster.fromJson)),
       source: Source.fromJson(json['source']),
       likeCount: json['likeCount'] ?? 0,
       isBreaking: json['isBreaking'] ?? false,
