@@ -1,3 +1,4 @@
+import 'dart:developer' show log;
 import 'dart:math' show max;
 
 import 'package:flutter/cupertino.dart';
@@ -123,10 +124,24 @@ class _FeedListBasePageState extends ConsumerState<FeedListBasePage> {
   Future<void> _onRefresh() async {
     try {
       final notifier = ref.read(widget.provider.notifier);
+      
+      // For history feed, add a small delay to allow backend to process latest reads
+      // if (widget.feedType == FeedType.history) {
+      //   log('[feed_list_base] Adding delay for history refresh to allow backend sync');
+      //   await Future.delayed(const Duration(milliseconds: 500));
+      // }
+      
       await notifier.loadFromEndpoint(
         widget.feedType.endpoint,
         forceRefresh: true,
       );
+
+      final items = ref.read(widget.provider).items ?? [];
+      if (items.isNotEmpty) {
+        log('[feed_list_base] first feed title: "${items.first.displayTitle}"');
+      } else {
+        log('[feed_list_base] no item loaded"');
+      }
       
       _refreshController.refreshCompleted();
     } catch (e) {

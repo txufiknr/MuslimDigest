@@ -201,7 +201,7 @@ class _HomePageState extends ConsumerState<HomePage> with RouteAware {
               ),
               // Main feed swiper
               FeedSwiper(
-                onReload: _loadFeed,
+                onReload: () => _loadFeed(force: true),
                 onSeeLatest: () => _openFeedLatest(force: true),
                 onSeeHome: _openFeed,
               ).expand(),

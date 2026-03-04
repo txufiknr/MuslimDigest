@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:in_app_review/in_app_review.dart';
+import 'package:muslimdigest/config/constants.dart';
 import 'package:muslimdigest/utils/route.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -51,3 +52,5 @@ final inAppReview = InAppReview.instance;
 final sharePlus = SharePlus.instance;
 
 final routeObserver = MyRouteObserver();
+
+String get copyrightText => '© ${DateTime.now().year} $APP_COPYRIGHT';

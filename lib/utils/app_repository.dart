@@ -168,7 +168,7 @@ class AppRepository {
       return false;
     }
     final results = await Future.wait<bool>([
-      _ref.read(userProvider.notifier).load(),
+      if (isExistingUser) _ref.read(userProvider.notifier).load(),
       _ref.read(feedTrendingProvider.notifier).load(),
       _ref.read(topicsProvider.notifier).load(),
       loadFeed(),
@@ -185,8 +185,6 @@ class AppRepository {
     }
     final results = await Future.wait<bool>([
       _ref.read(userProvider.notifier).load(),
-      // _ref.read(feedLikedProvider.notifier).load(),
-      // _ref.read(feedSavedProvider.notifier).load(),
     ]);
     final isSuccess = results.every((result) => result);
     return isSuccess;

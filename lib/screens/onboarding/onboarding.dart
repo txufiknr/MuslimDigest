@@ -6,6 +6,7 @@ import 'package:muslimdigest/config/themes.dart';
 import 'package:muslimdigest/providers/feed/feed.dart';
 import 'package:muslimdigest/providers/user/user.dart';
 import 'package:muslimdigest/utils/extensions.dart';
+import 'package:muslimdigest/variables/app.dart';
 import 'package:muslimdigest/variables/user.dart';
 import '../../config/constants.dart';
 import '../../config/colors.dart';
@@ -106,7 +107,7 @@ class OnboardingPage extends ConsumerWidget {
                       Column(
                         children: [
                           Text(
-                            '© ${DateTime.now().year} $APP_COPYRIGHT',
+                            copyrightText,
                             style: h.currentTextTheme.bodySmall?.copyWith(
                               color: Colors.white.withValues(alpha: 0.7),
                             ),

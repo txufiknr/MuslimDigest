@@ -115,8 +115,6 @@ Future<void> resetUserData(WidgetRef ref) async {
     ref.read(feedLikedProvider.notifier).clear(),
     ref.read(feedSavedProvider.notifier).clear(),
     ref.read(feedHistoryProvider.notifier).clear(),
-    // ref.read(feedTrendingProvider.notifier).clear(),
-    // ref.read(feedLatestProvider.notifier).clear(),
   ]);
 }
 

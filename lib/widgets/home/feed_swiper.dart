@@ -10,12 +10,14 @@ import 'package:muslimdigest/config/colors.dart';
 import 'package:muslimdigest/config/feeds.dart';
 import 'package:muslimdigest/config/themes.dart';
 import 'package:muslimdigest/models/user.dart';
+import 'package:muslimdigest/providers/feed/feed_cache.dart';
+import 'package:muslimdigest/providers/feed/feed_history.dart';
 import 'package:muslimdigest/providers/feed_type.dart';
 import 'package:muslimdigest/providers/read_count.dart';
 import 'package:muslimdigest/providers/read_count_states.dart';
 import 'package:muslimdigest/providers/topic.dart';
 import 'package:muslimdigest/providers/user/settings.dart';
-import 'package:muslimdigest/providers/feed/feed_history.dart';
+import 'package:muslimdigest/providers/user/user.dart';
 import 'package:muslimdigest/utils/app.dart';
 import 'package:muslimdigest/utils/app_repository.dart';
 import 'package:muslimdigest/utils/extensions.dart';
@@ -140,7 +142,7 @@ class FeedSwiperState extends ConsumerState<FeedSwiper> {
     super.dispose();
   }
 
-  Future<void> _incrementReadCount(FeedItem feedItem) async {
+  Future<void> _incrementReadCount(FeedItem previousItem) async {
     if (_isDigestFeed) {
       final readCount = ref.read(readCountProvider);
       final newCount = (readCount + 1).clamp(0, DAILY_READ_TARGET);
@@ -165,15 +167,7 @@ class FeedSwiperState extends ConsumerState<FeedSwiper> {
     // No need to log history when viewing history feed
     if (widget.feedType == FeedType.history) return;
 
-    // Update user total read
-    // final currentUser = ref.read(userProvider);
-    // ref.read(userProvider.notifier).setValue(currentUser.copyWith(readCount: currentUser.readCount + 1));
-
-    // Update feed/history state by adding the read feed to history
-    await _updateHistoryState(feedItem);
-    
-    // Track reading history to backend
-    fireAndForget(() => markRead(feedItem.cluster.id));
+    await _logHistory(previousItem, true);
   }
 
   Future<void> _updateHistoryState(FeedItem feedItem) async {
@@ -196,13 +190,16 @@ class FeedSwiperState extends ConsumerState<FeedSwiper> {
         // Add the feed item to the beginning of history
         await historyNotifier.setValue([feedItem, ...currentHistoryItems]);
       }
+
+      // Invalidate cache for feed history since it was updated
+      await ref.read(feedCacheProvider).invalidateAllCacheForEndpoint('feed/history');
     } catch (e) {
       // Log error but don't block the main functionality
       debugPrint('Error updating history state: $e');
     }
   }
 
-  Future<void> _decreaseReadCount() async {
+  Future<void> _decreaseReadCount(FeedItem previousItem) async {
     if (_isDigestFeed) {
       final readCount = ref.read(readCountProvider);
       if (readCount == 0) return;
@@ -213,9 +210,22 @@ class FeedSwiperState extends ConsumerState<FeedSwiper> {
       });
     }
 
+    await _logHistory(previousItem);
+  }
+
+  Future<void> _logHistory(FeedItem previousItem, [bool addTotalReads = false]) async {
     // Update user total read
-    // final currentUser = ref.read(userProvider);
-    // ref.read(userProvider.notifier).setValue(currentUser.copyWith(readCount: currentUser.readCount - 1));
+    if (addTotalReads) {
+      final currentUser = ref.read(userProvider);
+      await ref.read(userProvider.notifier).setValue(currentUser.copyWith(totalReads: currentUser.totalReads + 1));
+    }
+
+    // Update feed/history state by adding the read feed to history
+    await _updateHistoryState(previousItem);
+    
+    // Track reading history to backend
+    log('[swiper] Should mark read: "${previousItem.displayTitle}"');
+    fireAndForget(() => markRead(previousItem.cluster.id));
   }
 
   @override
@@ -267,6 +277,7 @@ class FeedSwiperState extends ConsumerState<FeedSwiper> {
               icon: Icon(CupertinoIcons.back),
               variant: MyButtonVariant.success,
               onPressed: widget.onSeeHome,
+              outlined: true,
             )
           ],
         ],
@@ -306,19 +317,19 @@ class FeedSwiperState extends ConsumerState<FeedSwiper> {
       isLoop: false,
       onEnd: requestReview,
       onSwipe: (previousIndex, currentIndex, direction) async {
+        final previousItem = _feedItems[previousIndex];
+        // log('[feed] Swipe direction: $direction, previousItem: ${previousItem.title}');
+        // log('[feed] Swiped item: ${previousItem.title}');
+
         // When an undo swipe is detected
         if (direction != _swipeDirection) {
           // Trigger the undo action on the controller
           _controller.undo();
-          _decreaseReadCount();
+          _decreaseReadCount(previousItem);
           
           // Return false to prevent the default swipe action
           return false;
         }
-
-        final previousItem = _feedItems[previousIndex];
-        // log('[feed] Swipe direction: $direction, previousItem: ${previousItem.title}');
-        // log('[feed] Swiped item: ${previousItem.title}');
 
         _incrementReadCount(previousItem);
 

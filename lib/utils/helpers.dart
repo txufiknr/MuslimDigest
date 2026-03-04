@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:muslimdigest/config/colors.dart';
 import 'package:theme_provider/theme_provider.dart';
 
 class MyHelper {
@@ -23,6 +24,7 @@ class MyHelper {
   TextStyle? get inputStyleLarge => currentTextTheme.bodyLarge;
   TextStyle? get hintStyle => inputStyle?.copyWith(color: currentTheme.hintColor);
   TextStyle? get hintStyleLarge => inputStyleLarge?.copyWith(color: currentTheme.hintColor);
+  Color get textColor => currentTextTheme.bodyMedium?.color ?? pickColor(AppColors.textSecondaryLight, AppColors.textSecondaryDark);
 
   // Theme helpers
   int pickShade(int lightShade) {

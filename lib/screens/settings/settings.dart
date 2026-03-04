@@ -43,6 +43,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final h = MyHelper(context);
+
     return Scaffold(
       body: Container(
         decoration: BoxDecoration(
@@ -61,6 +63,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               Row(
                 children: [
                   Logo(size: 40).onTap(context.pop),
+                  SizedBox(width: 12),
+                  Text(APP_NAME, style: h.currentTextTheme.labelMedium?.copyWith(color: Colors.white),),
                   Spacer(),
                   MyIconButton(icon: CupertinoIcons.chevron_left_2, iconColor: Colors.white, onPressed: context.pop),
                 ],
@@ -501,7 +505,8 @@ class SettingsFooter extends StatelessWidget {
         ),
         const SizedBox(height: 16),
         Text(
-          '$APP_NAME $appVersion',
+          '$APP_NAME $appVersion\n$copyrightText',
+          textAlign: TextAlign.center,
           style: h.currentTextTheme.bodySmall?.copyWith(
             color: Colors.white.withValues(alpha: 0.7),
           ),

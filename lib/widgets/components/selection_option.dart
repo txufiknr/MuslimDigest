@@ -32,10 +32,10 @@ class SelectionOption<T> extends StatelessWidget {
       width: fullWidth ? double.infinity : null,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isSelected ? AppColors.accent.withValues(alpha: 0.1) : AppColors.backgroundLight,
+        color: isSelected ? AppColors.accent.withValues(alpha: 0.1) : h.currentTheme.colorScheme.surface,
         borderRadius: BorderRadius.circular(AppThemes.buttonRadius),
         border: Border.all(
-          color: isSelected ? AppColors.accent : AppColors.textSecondaryLight.withValues(alpha: 0.3),
+          color: isSelected ? AppColors.accent : h.textColor.withValues(alpha: 0.3),
         ),
       ),
       child: Row(
@@ -43,14 +43,14 @@ class SelectionOption<T> extends StatelessWidget {
           Icon(
             icon,
             size: AppThemes.iconLargeSize,
-            color: isSelected ? AppColors.accent : AppColors.textSecondaryLight,
+            color: isSelected ? AppColors.accent : h.textColor,
           ),
           const SizedBox(width: 16),
           Text(
             label,
-            style: h.currentTextTheme.labelSmall?.copyWith(
+            style: h.currentTextTheme.labelMedium?.copyWith(
               fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-              color: isSelected ? AppColors.accent : AppColors.textPrimaryLight,
+              color: isSelected ? AppColors.accent : h.textColor,
             ),
           ).expand(),
           if (isSelected)
