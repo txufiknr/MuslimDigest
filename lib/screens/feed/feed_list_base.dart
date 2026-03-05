@@ -340,7 +340,7 @@ class _FeedListBasePageState extends ConsumerState<FeedListBasePage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                       decoration: BoxDecoration(
                         color: AppColors.primary.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(12),
@@ -350,6 +350,7 @@ class _FeedListBasePageState extends ConsumerState<FeedListBasePage> {
                         style: h.currentTextTheme.bodySmall?.copyWith(
                           color: AppColors.primary,
                           fontWeight: FontWeight.w500,
+                          fontSize: 12,
                         ),
                       ),
                     ),
@@ -396,6 +397,7 @@ class _FeedListBasePageState extends ConsumerState<FeedListBasePage> {
             tooltip: widget.actionTooltip,
             backgroundColor: AppColors.primary.withValues(alpha: 0.1),
             iconColor: AppColors.primary,
+            iconSize: 18,
             size: 40,
           ),
         ],

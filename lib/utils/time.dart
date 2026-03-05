@@ -32,9 +32,9 @@ bool get isIslamicNewYear => hijriDate.month == 1 && hijriDate.day == 1;
 /// Check if it's Day of Arafah (9 Dhu al-Hijjah)
 bool get isDayOfArafah => hijriDate.month == 12 && hijriDate.day == 9;
 
-/// Check if it's Laylat al-Qadr (Night of Power, odd nights in last 7 days of Ramadan: 23, 25, 27, 29)
+/// Check if it's Laylat al-Qadr (Night of Power, odd nights in last 10 days of Ramadan: 21, 23, 25, 27, 29)
 bool get isLaylatAlQadr => hijriDate.month == 9 && 
-    hijriDate.day >= 23 && 
+    hijriDate.day >= 21 && 
     hijriDate.day <= 29 && 
     hijriDate.day % 2 == 1;
 
@@ -117,6 +117,146 @@ enum IslamicEvent {
       case DayOfArafah:    return isDayOfArafah;
       case LaylatAlQadr:   return isLaylatAlQadr;
       case Ramadan:        return isRamadan;
+    }
+  }
+}
+
+/// Utility class for Islamic event content matching and scoring
+class IslamicEventMatcher {
+  /// Find the best matching Islamic event for given content
+  static IslamicEvent? findBestMatch({
+    required String title,
+    String? videoTitle,
+    required String summary,
+    String? topic,
+  }) {
+    if (title.isEmpty && (videoTitle?.isEmpty ?? true) && summary.isEmpty && (topic?.isEmpty ?? true)) {
+      return null;
+    }
+    
+    IslamicEvent? bestEvent;
+    double bestScore = 0.0;
+    
+    for (final event in IslamicEvent.values) {
+      final score = _calculateEventScore(
+        event: event,
+        title: title,
+        videoTitle: videoTitle,
+        summary: summary,
+        topic: topic,
+      );
+      if (score > bestScore) {
+        bestScore = score;
+        bestEvent = event;
+      }
+    }
+    
+    // Only return event if it has a meaningful score
+    return bestScore > 3.0 ? bestEvent : null;
+  }
+
+  /// Calculate keyword match score for an IslamicEvent
+  static double _calculateEventScore({
+    required IslamicEvent event,
+    required String title,
+    String? videoTitle,
+    required String summary,
+    String? topic,
+  }) {
+    final contentFields = [
+      {'content': title, 'weight': 3.0},
+      if (videoTitle != null) {'content': videoTitle, 'weight': 2.5},
+      {'content': summary, 'weight': 2.0},
+      if (topic != null) {'content': topic, 'weight': 1.0},
+    ];
+
+    double totalScore = 0.0;
+    
+    for (final field in contentFields) {
+      final content = field['content'] as String;
+      final weight = field['weight'] as double;
+      
+      // Check for exact phrase matches (highest score)
+      for (final keyword in event.keywords) {
+        if (content.toLowerCase().contains(keyword.toLowerCase())) {
+          // Higher score for exact phrase matches
+          totalScore += weight * 5.0;
+          
+          // Bonus for longer keywords (more specific)
+          totalScore += keyword.length * 0.5 * weight;
+          
+          // Extra bonus for multi-word phrases (more specific)
+          if (keyword.contains(' ')) {
+            totalScore += weight * 3.0;
+          }
+          
+          // Super bonus for unique identifying keywords
+          if (_isUniqueKeyword(keyword, event)) {
+            totalScore += weight * 10.0;
+          }
+        }
+      }
+      
+      // Check individual word matches with context awareness
+      final contentWords = content.toLowerCase().split(RegExp(r'\s+'));
+      for (final keyword in event.keywords) {
+        final keywordWords = keyword.toLowerCase().split(RegExp(r'\s+'));
+        
+        for (final kwWord in keywordWords) {
+          // Skip very common words that could create false positives
+          if (_isCommonWord(kwWord)) continue;
+          
+          if (contentWords.contains(kwWord)) {
+            totalScore += weight * 0.8;
+          }
+        }
+      }
+    }
+    
+    // Specificity bonus: prefer more specific events over general ones
+    switch (event) {
+      case IslamicEvent.LaylatAlQadr:
+        totalScore += 2.0; // Most specific
+        break;
+      case IslamicEvent.DayOfArafah:
+      case IslamicEvent.EidAlFitr:
+      case IslamicEvent.EidAlAdha:
+        totalScore += 1.5; // Specific events
+        break;
+      case IslamicEvent.IslamicNewYear:
+        totalScore += 1.0; // Moderately specific
+        break;
+      case IslamicEvent.Ramadan:
+        totalScore += 0.5; // General month
+        break;
+    }
+    
+    return totalScore;
+  }
+
+  /// Filter out common words that could create false positives
+  static bool _isCommonWord(String word) {
+    const commonWords = {
+      'night', 'power', 'day', 'month', 'year', 'time', 'holy', 'new', 'islamic', 'date', 'updates'
+    };
+    return commonWords.contains(word);
+  }
+
+  /// Check if a keyword is unique to a specific event
+  static bool _isUniqueKeyword(String keyword, IslamicEvent event) {
+    switch (event) {
+      case IslamicEvent.EidAlAdha:
+        return ['adha', 'sacrifice', 'ibrahim'].contains(keyword.toLowerCase());
+      case IslamicEvent.EidAlFitr:
+        return ['fitr', 'breaking fast'].contains(keyword.toLowerCase());
+      case IslamicEvent.LaylatAlQadr:
+        return ['laylat', 'qadr', 'destiny'].contains(keyword.toLowerCase());
+      case IslamicEvent.DayOfArafah:
+        return ['arafah', 'arafat', 'forgiveness'].contains(keyword.toLowerCase());
+      case IslamicEvent.IslamicNewYear:
+        return ['hijri', 'muharram'].contains(keyword.toLowerCase());
+      case IslamicEvent.Ramadan:
+        return ['iftar', 'suhur'].contains(keyword.toLowerCase());
     }
   }
 }

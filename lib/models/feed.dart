@@ -1,8 +1,6 @@
 import 'package:muslimdigest/utils/time.dart';
 import 'package:muslimdigest/variables/feed.dart';
 
-import '../utils/extensions.dart';
-
 class FeedItem {
   final String id;
   final String title;
@@ -67,13 +65,14 @@ class FeedItem {
   String get sourceLabel => source.siteName ?? source.id;
   String? get sourceLink => canonicalUrl ?? sourceUrl;
 
-  IslamicEvent? get relevantEvent {
-    return IslamicEvent.values.firstWhereOrNull((e) {
-      return [title, videoTitle, summary, topic].containsAnyIgnoreCase(e.keywords);
-    });
-  }
-  bool get isOngoing => relevantEvent?.isOngoing == true;
-  String get vibeAnimationAsset => 'assets/lottie/vibes/${relevantEvent?.name}.json';
+  IslamicEvent? get relatedEvent => IslamicEventMatcher.findBestMatch(
+    title: title,
+    videoTitle: videoTitle,
+    summary: summary,
+    topic: topic,
+  );
+  bool get isOngoing => relatedEvent?.isOngoing == true;
+  String get vibeAnimationAsset => 'assets/lottie/vibes/${relatedEvent?.name}.json';
 
   List<String> get badgeToDisplay => badges.where((badge) => 
     !badge.startsWith('trust_level:') &&

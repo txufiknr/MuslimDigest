@@ -18,6 +18,7 @@ import 'package:muslimdigest/utils/extensions.dart';
 import 'package:muslimdigest/utils/format.dart';
 import 'package:muslimdigest/utils/functions.dart';
 import 'package:muslimdigest/utils/helpers.dart';
+import 'package:muslimdigest/utils/time.dart';
 import 'package:muslimdigest/variables/app.dart';
 import 'package:muslimdigest/variables/feed.dart';
 import 'package:muslimdigest/variables/time.dart';
@@ -306,7 +307,7 @@ class _FeedHeader extends ConsumerWidget {
             Image.asset('assets/images/youtube-play.png', width: 64).center().fill(),
 
           // Vibe animation overlay during Islamic event
-          if (feedItem.isOngoing && feedItem.relevantEvent != null)
+          if (feedItem.isOngoing && feedItem.relatedEvent != null)
             FutureBuilder<bool>(
               future: doesAssetExist(feedItem.vibeAnimationAsset),
               builder: (context, snapshot) {
@@ -352,36 +353,42 @@ class _FeedHeader extends ConsumerWidget {
           ),
 
           // Image URL overlay
-          // if (feedItem.imageUrl != null) Positioned(
-          //   top: 0,
-          //   left: 0,
-          //   right: 0,
-          //   child: Container(
-          //     padding: EdgeInsets.all(AppThemes.contentPadding),
-          //     decoration: BoxDecoration(
-          //       gradient: LinearGradient(
-          //         begin: Alignment.topCenter,
-          //         end: Alignment.bottomCenter,
-          //         colors: [
-          //           Colors.transparent,
-          //           Colors.black.withValues(alpha: 0.7),
-          //         ],
-          //       ),
-          //     ),
-          //     child: Text(
-          //       feedItem.imageUrl ?? '',
-          //       style: h.currentTextTheme.titleSmall?.copyWith(
-          //         color: Colors.white,
-          //       ),
-          //       maxLines: 2,
-          //       overflow: TextOverflow.ellipsis,
-          //     ),
-          //   ).onTap(() {
-          //     openUrl(feedItem.imageUrl!);
-          //   }),
-          // ),
+          if (feedItem.relatedEvent != null) Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: Container(
+              padding: EdgeInsets.all(AppThemes.contentPadding),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.transparent,
+                    Colors.black.withValues(alpha: 0.7),
+                  ],
+                ),
+              ),
+              child: Text(
+                feedItem.relatedEvent!.title,
+                style: h.currentTextTheme.titleSmall?.copyWith(
+                  color: Colors.white,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ).onTap(() {
+              openUrl(feedItem.imageUrl!);
+            }),
+          ),
         ],
-      ).onTap(() => openUrl(feedItem.videoUrl!)),
+      ).onTap(() {
+        debugPrint('📅 title: ${feedItem.relatedEvent!.title}');
+        debugPrint('📅 isOngoing: ${feedItem.relatedEvent!.isOngoing}');
+        debugPrint('📅 feedItem.isOngoing: ${feedItem.isOngoing}');
+        debugPrint('📅 feedItem.vibeAnimationAsset: ${feedItem.vibeAnimationAsset}');
+        debugPrint('📅 isRamadan: $isRamadan');
+      }),
     );
   }
 }
