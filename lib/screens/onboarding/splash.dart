@@ -8,7 +8,7 @@ import 'package:muslimdigest/utils/app.dart';
 import 'package:muslimdigest/utils/app_repository.dart';
 import 'package:muslimdigest/utils/extensions.dart';
 import 'package:muslimdigest/utils/functions.dart';
-import 'package:muslimdigest/services/api.dart';
+import 'package:muslimdigest/services/dio.dart';
 import 'package:muslimdigest/variables/user.dart';
 import '../../config/colors.dart';
 import '../../widgets/animations/loading_indicator_bar.dart';

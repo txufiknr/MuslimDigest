@@ -162,8 +162,7 @@ class SettingsHeader extends ConsumerWidget {
         const SizedBox(height: 16),
         Row(
           children: [
-            // TODO: show rank badge
-            Text(user.totalReadsBadge),
+            Text(user.totalReadsRank.badge),
             SizedBox(width: 8,),
             Text.rich(
               TextSpan(

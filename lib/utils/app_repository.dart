@@ -92,7 +92,7 @@ class AppRepository {
     return !isStreakToday && (shouldFetchDailyDigest || !isDailyDigestDone) ? FeedType.digest : FeedType.latest;
   }
 
-  Future<bool> loadFeed({FeedType? feedType, String? topic, bool force = false}) async {
+  Future<bool> loadFeed({FeedType? feedType, String? topic, bool force = false, String? requestId}) async {
     feedType ??= homeFeedType;
 
     // Check if we should load the feed
@@ -110,16 +110,19 @@ class AppRepository {
     // Reset swiper page index to zero
     if (force) unawaited(resetReadCount(feedType, topic));
 
-    return feedType.loadWithRef(_ref, topic: topic, force: force);
+    return feedType.loadWithRef(_ref, topic: topic, force: force, requestId: requestId);
   }
 
   Future<void> loadUserFeed({bool force = false}) async {
-    // Intentional design: skips feed loading during splash for first-time users to
-    // prioritize onboarding experience, only loading the daily digest after they complete
-    // the initial setup and reach the home screen.
+    // First time user: will load personalized feed after onboarding
     if (isFirstRun) return;
     
-    if (!force && !shouldFetchDailyDigest) return;
+    // Daily digest is up to date
+    if (!force && !shouldFetchDailyDigest) {
+      log('🧾 User feed is up to date, no need to refresh...');
+      return;
+    }
+
     log('[loadUserFeed] isDailyDigestUpToDate: $isDailyDigestUpToDate');
     log('[loadUserFeed] isDailyDigestDone: $isDailyDigestDone');
     log('[loadUserFeed] readLastDate: $readLastDate');
@@ -128,8 +131,10 @@ class AppRepository {
     log('[loadUserFeed] isToday(ingestLastDate): ${isToday(ingestLastDate!)}');
     log('[loadUserFeed] homeFeedType: ${homeFeedType.name}');
     log('[loadUserFeed] shouldFetchDailyDigest: $shouldFetchDailyDigest');
+
     final isFeedLoaded = await loadFeed(force: force);
     log("[loadUserFeed] ${isFeedLoaded ? '✅ Feed loaded successfully (${homeFeedType.name})' : '❌ Failed to load feed (${homeFeedType.name})'}");
+
     if (isFeedLoaded && homeFeedType == FeedType.digest) {
       await initReadCount(force: force);
     }

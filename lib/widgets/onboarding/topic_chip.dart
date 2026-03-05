@@ -27,6 +27,42 @@ class TopicChipColors {
     this.neutralBorder = Colors.white,
   });
 
+  /// Create theme-aware colors for light mode
+  factory TopicChipColors.light(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return TopicChipColors(
+      preferredText: Colors.white,
+      preferredBackground: colorScheme.primary,
+      avoidedText: Colors.white,
+      avoidedBackground: colorScheme.error,
+      neutralText: colorScheme.primary,
+      neutralBackground: Colors.white,
+      avoidedBorder: colorScheme.error,
+      neutralBorder: colorScheme.primary,
+    );
+  }
+
+  /// Create theme-aware colors for dark mode
+  factory TopicChipColors.dark(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return TopicChipColors(
+      preferredText: colorScheme.primary,
+      preferredBackground: Colors.white,
+      avoidedText: Colors.white,
+      avoidedBackground: colorScheme.error,
+      neutralText: Colors.white,
+      neutralBackground: colorScheme.surface,
+      avoidedBorder: colorScheme.error,
+      neutralBorder: Colors.white,
+    );
+  }
+
+  /// Create theme-aware colors based on current theme
+  factory TopicChipColors.fromTheme(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return isDark ? TopicChipColors.dark(context) : TopicChipColors.light(context);
+  }
+
   /// Get text color for given state
   Color getTextColor(TopicState state) {
     switch (state) {

@@ -90,9 +90,7 @@ class FeedSwiperState extends ConsumerState<FeedSwiper> {
   int get _readCount => ref.watch(readCountProvider);
   FeedType get _homeFeedType => ref.read(appRepositoryProvider).homeFeedType;
   String? get _currentTopic => widget.feedType == null ? ref.watch(topicProvider) : null;
-  int get _cardsCount => _isDigestFeed && _feedItems.length == DAILY_READ_TARGET
-    ? _feedItems.length + 1
-    : _feedItems.length;
+  int get _cardsCount => _feedItems.length + (_isDigestFeed ? 1 : 0);
 
   // Read state
   Map<String, int> get _readCountStates => ref.watch(readCountStatesProvider);
@@ -145,9 +143,9 @@ class FeedSwiperState extends ConsumerState<FeedSwiper> {
   Future<void> _incrementReadCount(FeedItem previousItem) async {
     if (_isDigestFeed) {
       final readCount = ref.read(readCountProvider);
-      final newCount = (readCount + 1).clamp(0, DAILY_READ_TARGET);
+      final newCount = (readCount + 1).clamp(0, _feedItems.length);
       await Future.wait([
-        if (newCount == DAILY_READ_TARGET) logStreak(ref),
+        if (newCount == _feedItems.length) logStreak(ref),
         ref.read(readCountProvider.notifier).setValue(newCount),
       ]);
     } else {
@@ -309,7 +307,7 @@ class FeedSwiperState extends ConsumerState<FeedSwiper> {
         if (index == _cardsCount) return SizedBox.shrink();
         return FeedCard(
           _feedType,
-          feedItem: _isDigestFeed && index == DAILY_READ_TARGET ? null : _feedItems[index],
+          feedItem: _isDigestFeed && index == _feedItems.length ? null : _feedItems[index],
           onSeeLatest: widget.onSeeLatest,
         );
       },

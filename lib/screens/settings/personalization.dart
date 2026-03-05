@@ -131,16 +131,17 @@ class _PersonalizationPageState extends ConsumerState<PersonalizationPage> with 
   Widget _buildTopicChip(MyHelper h, String topic, WidgetRef ref) {
     return TopicChipSelector(
       topic: topic,
-      colors: const TopicChipColors(
-        neutralText: AppColors.primary,
-        neutralBackground: Colors.white,
-        neutralBorder: AppColors.primary,
-        preferredText: Colors.white,
-        preferredBackground: AppColors.primary,
-        avoidedText: Colors.white,
-        avoidedBackground: AppColors.error,
-        avoidedBorder: AppColors.error,
-      ),
+      // colors: const TopicChipColors(
+      //   neutralText: AppColors.primary,
+      //   neutralBackground: Colors.white,
+      //   neutralBorder: AppColors.primary,
+      //   preferredText: Colors.white,
+      //   preferredBackground: AppColors.primary,
+      //   avoidedText: Colors.white,
+      //   avoidedBackground: AppColors.error,
+      //   avoidedBorder: AppColors.error,
+      // ),
+      colors: TopicChipColors.fromTheme(context),
     );
   }
 

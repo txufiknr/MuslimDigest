@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:developer' show log;
 import 'package:connectivity_plus/connectivity_plus.dart';
-import 'package:muslimdigest/services/api.dart';
+import 'package:muslimdigest/services/dio.dart';
 
 /// Manages connectivity monitoring and automatic offline queue processing
 class ConnectivityMonitor {

@@ -1,5 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:muslimdigest/services/api.dart';
+import 'package:muslimdigest/services/dio.dart';
 import 'package:muslimdigest/utils/repository.dart';
 
 class TopicsState {

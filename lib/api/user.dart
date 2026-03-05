@@ -18,7 +18,7 @@ import 'package:muslimdigest/providers/user/preferences.dart';
 import 'package:muslimdigest/providers/user/settings.dart';
 import 'package:muslimdigest/providers/user/streaks.dart';
 import 'package:muslimdigest/providers/user/user.dart';
-import 'package:muslimdigest/services/api.dart';
+import 'package:muslimdigest/services/dio.dart';
 import 'package:muslimdigest/utils/api.dart';
 import 'package:muslimdigest/utils/functions.dart';
 import 'package:muslimdigest/variables/time.dart';

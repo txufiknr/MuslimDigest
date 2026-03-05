@@ -10,9 +10,9 @@ class FeedSavedNotifier extends BaseFeedNotifier {
   @override
   String get endpoint => 'feed/saved';
 
-  Future<bool> load({int? limit, bool forceRefresh = false}) async {
+  Future<bool> load({int? limit, bool forceRefresh = false, String? requestId}) async {
     return await loadFromEndpoint(endpoint, queryParams: {
       'limit': (limit ?? CURSOR_PAGINATION_LIMIT).toString(),
-    }, forceRefresh: forceRefresh);
+    }, forceRefresh: forceRefresh, requestId: requestId);
   }
 }

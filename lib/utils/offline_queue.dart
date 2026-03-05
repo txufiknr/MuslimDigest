@@ -3,7 +3,7 @@ import 'dart:developer' show log;
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:muslimdigest/variables/app.dart';
 import 'package:uuid/uuid.dart';
-import 'package:muslimdigest/services/api.dart';
+import 'package:muslimdigest/services/dio.dart';
 
 /// Represents a queued API request for offline processing
 class QueuedRequest {

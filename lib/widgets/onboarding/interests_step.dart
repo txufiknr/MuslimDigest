@@ -9,16 +9,12 @@ import 'package:muslimdigest/widgets/components/button.dart';
 import 'package:muslimdigest/widgets/components/topic_chip_selector.dart';
 import '../../utils/helpers.dart';
 import 'package:muslimdigest/widgets/animations/loader.dart';
+import 'package:muslimdigest/widgets/onboarding/topic_chip.dart';
 
 /// Interests selection step widget for onboarding
 class OnboardingInterestsStep extends ConsumerWidget {
 
   const OnboardingInterestsStep({super.key});
-
-  /// Build individual topic chip using reusable TopicChipSelector
-  Widget _buildTopicChip(MyHelper h, String topic, WidgetRef ref) {
-    return TopicChipSelector(topic: topic);
-  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -66,7 +62,7 @@ class OnboardingInterestsStep extends ConsumerWidget {
             runSpacing: 6,
             alignment: WrapAlignment.center,
             children: availableTopics.map((topic) {
-              return _buildTopicChip(h, topic, ref);
+              return TopicChipSelector(topic: topic, colors: TopicChipColors.light(context));
             }).toList(),
           ).withPaddingHorizontal(16),
       ],

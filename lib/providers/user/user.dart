@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:muslimdigest/models/user.dart';
 import 'package:muslimdigest/providers/ingest_last_date.dart';
 import 'package:muslimdigest/providers/user/streaks.dart';
-import 'package:muslimdigest/services/api.dart';
+import 'package:muslimdigest/services/dio.dart';
 import 'package:muslimdigest/utils/repository.dart';
 import 'package:muslimdigest/utils/time.dart';
 import 'package:muslimdigest/variables/feed.dart' show FeedType;

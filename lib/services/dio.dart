@@ -1,7 +1,7 @@
-import 'dart:convert';
 import 'dart:developer' show log;
 import 'dart:io' show Platform;
-import 'package:http/http.dart' as http;
+
+import 'package:dio/dio.dart';
 import 'package:muslimdigest/config/constants.dart';
 import 'package:muslimdigest/variables/app.dart';
 import 'package:muslimdigest/variables/user.dart';
@@ -47,22 +47,64 @@ class ApiResponse {
     this.result,
   });
 
+  /// Factory constructor for cancelled requests
+  factory ApiResponse.cancelled() {
+    return ApiResponse(
+      success: false,
+      error: 'Request cancelled',
+      statusCode: 0,
+    );
+  }
+
+  /// Factory constructor for successful responses
+  factory ApiResponse.success(Map<String, dynamic> result, int statusCode) {
+    return ApiResponse(
+      success: result['success'] ?? true,
+      data: result['data'] ?? result['items'], // Handle both data and items fields
+      statusCode: statusCode,
+      result: result,
+    );
+  }
+
+  /// Factory constructor for error responses
+  factory ApiResponse.error(String action, String path, int statusCode, Map<String, dynamic> result) {
+    return ApiResponse(
+      success: false,
+      error: result['error'] ?? 'Failed to $action $path: $statusCode',
+      statusCode: statusCode,
+      result: result,
+    );
+  }
+
+  /// Factory constructor for network errors
+  factory ApiResponse.networkError(String message, {int statusCode = 0}) {
+    return ApiResponse(
+      success: false,
+      error: 'Network error: $message',
+      statusCode: statusCode,
+    );
+  }
+
   bool get successful => success && data != null;
 }
 
 class ApiOptions {
   Duration? timeout;
+  CancelToken? cancelToken;
 
-  ApiOptions({this.timeout});
+  ApiOptions({this.timeout, this.cancelToken});
 }
 
-/// Enhanced API service with offline support
+/// Enhanced API service with offline support using Dio
 /// 
 /// This service provides all functionality of the original ApiService
 /// plus automatic offline queuing for failed requests. When a request
 /// fails due to network issues, it's automatically queued for retry
 /// when connectivity is restored.
 class ApiService {
+  static Dio? _dio;
+  static final Map<String, CancelToken> _activeRequests = {};
+
   /// Returns the appropriate base URL based on the build environment
   /// 
   /// Uses development URL when running in debug mode, production URL otherwise.
@@ -70,6 +112,123 @@ class ApiService {
   /// and production environments.
   static String get baseUrl => APP_IS_PRODUCTION || APP_USE_PRODUCTION_API ? APP_URL_API : APP_URL_API_DEV;
 
+  /// Get or create Dio instance with common configuration
+  static Dio get dio {
+    _dio ??= Dio(BaseOptions(
+      baseUrl: baseUrl,
+      connectTimeout: timeout,
+      receiveTimeout: timeout,
+      sendTimeout: timeout,
+      headers: {
+        'Content-Type': contentType,
+      },
+    ));
+    return _dio!;
+  }
+
+  /// Create a new cancel token for request tracking
+  static CancelToken _createCancelToken(String requestId) {
+    // Cancel existing request with same ID if any
+    _cancelRequest(requestId);
+    
+    final cancelToken = CancelToken();
+    _activeRequests[requestId] = cancelToken;
+    
+    // Clean up when request completes or is cancelled
+    cancelToken.whenCancel.then((_) {
+      _activeRequests.remove(requestId);
+      log('[ApiService] Request $requestId cancelled');
+    });
+    
+    return cancelToken;
+  }
+
+  /// Cancel a specific request by ID
+  static void _cancelRequest(String requestId) {
+    final existingToken = _activeRequests[requestId];
+    if (existingToken != null && !existingToken.isCancelled) {
+      existingToken.cancel('Request cancelled by newer request');
+      log('[ApiService] Cancelled previous request: $requestId');
+    }
+  }
+
+  /// Cancel all active requests
+  static void cancelAllRequests() {
+    for (final requestId in _activeRequests.keys) {
+      _cancelRequest(requestId);
+    }
+    log('[ApiService] Cancelled all active requests');
+  }
+
+  /// Get count of active requests
+  static int get activeRequestCount => _activeRequests.length;
+
+  /// Clean body data by removing timestamp fields
+  static Map<String, dynamic> _cleanBody(Map<String, dynamic> body) {
+    final cleanedBody = Map<String, dynamic>.from(body);
+    cleanedBody.remove('createdAt');
+    cleanedBody.remove('updatedAt');
+    return cleanedBody;
+  }
+
+  /// Handle DioException with cancellation check and offline queuing
+  static Future<ApiResponse> _handleDioException(
+    DioException e,
+    String method,
+    String path, {
+    Map<String, dynamic>? data,
+    bool queueOffline = true,
+  }) async {
+    log('🌐 $method /$path response status code: ${e.message} ❌');
+    
+    // Check if request was cancelled
+    if (e.type == DioExceptionType.cancel) {
+      log('[ApiService] $method /$path request was cancelled');
+      return ApiResponse.cancelled();
+    }
+    
+    final apiResponse = ApiResponse.networkError(
+      e.message ?? 'Unknown Dio error',
+      statusCode: e.response?.statusCode ?? 0,
+    );
+    
+    // If Dio exception occurs and offline queuing is enabled
+    if (queueOffline && _isNetworkError(apiResponse)) {
+      log('[ApiService] DioException occurred, queuing $method /$path: ${e.message}');
+      await OfflineQueueService.queueRequest(
+        method: method,
+        endpoint: path,
+        data: data ?? {},
+      );
+    }
+    
+    return apiResponse;
+  }
+
+  /// Handle generic exceptions with offline queuing
+  static Future<ApiResponse> _handleException(
+    Exception e,
+    String method,
+    String path, {
+    Map<String, dynamic>? data,
+    bool queueOffline = true,
+  }) async {
+    log('🌐 $method /$path response status code: $e ❌');
+    
+    final apiResponse = ApiResponse.networkError(e.toString());
+    
+    // If exception occurs and offline queuing is enabled
+    if (queueOffline) {
+      log('[ApiService] Exception occurred, queuing $method /$path: $e');
+      await OfflineQueueService.queueRequest(
+        method: method,
+        endpoint: path,
+        data: data ?? {},
+      );
+    }
+    
+    return apiResponse;
+  }
   /// Builds common headers for all API requests
   /// 
   /// Includes authentication, app version, and platform information.
@@ -98,33 +257,41 @@ class ApiService {
   /// [path] - API endpoint path
   /// [body] - Request body data
   /// [queueOffline] - Whether to queue failed requests (default: true)
+  /// [requestId] - Unique identifier for request cancellation (optional)
+  /// [options] - Additional request options including timeout and cancel token
   /// 
   /// Returns [ApiResponse] with success status, data, or error information
   static Future<ApiResponse> post(
     String path, 
     Map<String, dynamic> body, {
     bool queueOffline = true,
+    String? requestId,
+    ApiOptions? options,
   }) async {
     try {
       // Create a copy of body and remove timestamp fields
-      final cleanedBody = Map<String, dynamic>.from(body);
-      cleanedBody.remove('createdAt');
-      cleanedBody.remove('updatedAt');
+      final cleanedBody = _cleanBody(body);
       
       log('🌐 POST /$path $cleanedBody');
 
       // Build headers with common information
       final headers = await _buildHeaders();
+      
+      // Create cancel token if requestId provided
+      final cancelToken = requestId != null ? _createCancelToken(requestId) : options?.cancelToken;
 
-      // Construct the full URL by combining base URL with endpoint path
-      final response = await http.post(
-        Uri.parse('$baseUrl/$path'),
-        headers: headers,
-        // Convert cleaned body map to JSON string for the request
-        body: jsonEncode(cleanedBody),
-      ).timeout(timeout);
+      // Send POST request using Dio
+      final response = await dio.post(
+        '/$path',
+        data: cleanedBody,
+        options: Options(
+          headers: headers,
+          receiveTimeout: options?.timeout ?? timeout,
+        ),
+        cancelToken: cancelToken,
+      );
 
-      final result = jsonDecode(response.body) as Map<String, dynamic>;
+      final result = response.data as Map<String, dynamic>;
 
       // Check for successful HTTP status codes (200 OK or 201 Created)
       final isSuccess = response.statusCode == 200 || response.statusCode == 201;
@@ -132,20 +299,10 @@ class ApiService {
       
       if (isSuccess) {
         // Parse the successful JSON response and return success result
-        return ApiResponse(
-          success: result['success'] ?? true,
-          data: result['data'],
-          statusCode: response.statusCode,
-          result: result,
-        );
+        return ApiResponse.success(result, response.statusCode!);
       } else {
         // Handle HTTP error responses with status code information
-        final apiResponse = ApiResponse(
-          success: false,
-          error: result['error'] ?? 'Failed to create $path: ${response.statusCode}',
-          statusCode: response.statusCode,
-          result: result,
-        );
+        final apiResponse = ApiResponse.error('create', path, response.statusCode!, result);
         
         // If request failed due to network issues and offline queuing is enabled
         if (queueOffline && _isNetworkError(apiResponse)) {
@@ -159,27 +316,10 @@ class ApiService {
         
         return apiResponse;
       }
+    } on DioException catch (e) {
+      return await _handleDioException(e, 'POST', path, data: body, queueOffline: queueOffline);
     } catch (e) {
-      // Handle network-level errors (connection timeout, DNS failure, etc.)
-      log('🌐 POST /$path response status code: $e ❌');
-      
-      final apiResponse = ApiResponse(
-        success: false,
-        error: 'Network error: $e',
-        statusCode: 0,
-      );
-      
-      // If exception occurs and offline queuing is enabled
-      if (queueOffline) {
-        log('[ApiService] Exception occurred, queuing POST /$path: $e');
-        await OfflineQueueService.queueRequest(
-          method: 'POST',
-          endpoint: path,
-          data: body,
-        );
-      }
-      
-      return apiResponse;
+      return await _handleException(e as Exception, 'POST', path, data: body, queueOffline: queueOffline);
     }
   }
 
@@ -188,26 +328,33 @@ class ApiService {
     String path, 
     Map<String, dynamic> body, {
     bool queueOffline = true,
+    String? requestId,
+    ApiOptions? options,
   }) async {
     try {
       // Create a copy of body and remove timestamp fields
-      final cleanedBody = Map<String, dynamic>.from(body);
-      cleanedBody.remove('createdAt');
-      cleanedBody.remove('updatedAt');
+      final cleanedBody = _cleanBody(body);
       
       log('🌐 PUT /$path $cleanedBody');
 
       // Build headers with common information
       final headers = await _buildHeaders();
+      
+      // Create cancel token if requestId provided
+      final cancelToken = requestId != null ? _createCancelToken(requestId) : options?.cancelToken;
 
-      // Construct the full URL and send PUT request with JSON body
-      final response = await http.put(
-        Uri.parse('$baseUrl/$path'),
-        headers: headers,
-        body: jsonEncode(cleanedBody),
-      ).timeout(timeout);
+      // Send PUT request using Dio
+      final response = await dio.put(
+        '/$path',
+        data: cleanedBody,
+        options: Options(
+          headers: headers,
+          receiveTimeout: options?.timeout ?? timeout,
+        ),
+        cancelToken: cancelToken,
+      );
 
-      final result = jsonDecode(response.body) as Map<String, dynamic>;
+      final result = response.data as Map<String, dynamic>;
 
       // Check for successful HTTP status (200 OK for PUT operations)
       final isSuccess = response.statusCode == 200;
@@ -215,20 +362,10 @@ class ApiService {
       
       if (isSuccess) {
         // Parse the successful JSON response and return success result
-        return ApiResponse(
-          success: result['success'] ?? true,
-          data: result['data'],
-          statusCode: response.statusCode,
-          result: result,
-        );
+        return ApiResponse.success(result, response.statusCode!);
       } else {
         // Handle HTTP error responses with status code information
-        final apiResponse = ApiResponse(
-          success: false,
-          error: result['error'] ?? 'Failed to update $path: ${response.statusCode}',
-          statusCode: response.statusCode,
-          result: result,
-        );
+        final apiResponse = ApiResponse.error('update', path, response.statusCode!, result);
         
         if (queueOffline && _isNetworkError(apiResponse)) {
           log('[ApiService] Network error detected, queuing PUT /$path');
@@ -241,26 +378,10 @@ class ApiService {
         
         return apiResponse;
       }
+    } on DioException catch (e) {
+      return await _handleDioException(e, 'PUT', path, data: body, queueOffline: queueOffline);
     } catch (e) {
-      // Handle network-level errors (connection timeout, DNS failure, etc.)
-      log('🌐 PUT /$path response status code: $e ❌');
-      
-      final apiResponse = ApiResponse(
-        success: false,
-        error: 'Network error: $e',
-        statusCode: 0,
-      );
-      
-      if (queueOffline) {
-        log('[ApiService] Exception occurred, queuing PUT /$path: $e');
-        await OfflineQueueService.queueRequest(
-          method: 'PUT',
-          endpoint: path,
-          data: body,
-        );
-      }
-      
-      return apiResponse;
+      return await _handleException(e as Exception, 'PUT', path, data: body, queueOffline: queueOffline);
     }
   }
 
@@ -268,20 +389,29 @@ class ApiService {
   static Future<ApiResponse> delete(
     String path, {
     bool queueOffline = true,
+    String? requestId,
+    ApiOptions? options,
   }) async {
     try {
       log('🌐 DELETE /$path');
 
       // Build headers with common information
       final headers = await _buildHeaders();
+      
+      // Create cancel token if requestId provided
+      final cancelToken = requestId != null ? _createCancelToken(requestId) : options?.cancelToken;
 
-      // Construct the full URL and send DELETE request (no body needed)
-      final response = await http.delete(
-        Uri.parse('$baseUrl/$path'),
-        headers: headers,
-      ).timeout(timeout);
+      // Send DELETE request using Dio
+      final response = await dio.delete(
+        '/$path',
+        options: Options(
+          headers: headers,
+          receiveTimeout: options?.timeout ?? timeout,
+        ),
+        cancelToken: cancelToken,
+      );
 
-      final result = jsonDecode(response.body) as Map<String, dynamic>;
+      final result = response.data as Map<String, dynamic>;
 
       // Check for successful HTTP status (200 OK or 204 No Content for DELETE operations)
       final isSuccess = response.statusCode == 200 || response.statusCode == 204;
@@ -289,20 +419,10 @@ class ApiService {
       
       if (isSuccess) {
         // Parse the successful JSON response and return success result
-        return ApiResponse(
-          success: result['success'] ?? true,
-          data: result['data'],
-          statusCode: response.statusCode,
-          result: result,
-        );
+        return ApiResponse.success(result, response.statusCode!);
       } else {
         // Handle HTTP error responses with status code information
-        final apiResponse = ApiResponse(
-          success: false,
-          error: result['error'] ?? 'Failed to delete $path: ${response.statusCode}',
-          statusCode: response.statusCode,
-          result: result,
-        );
+        final apiResponse = ApiResponse.error('delete', path, response.statusCode!, result);
         
         if (queueOffline && _isNetworkError(apiResponse)) {
           log('[ApiService] Network error detected, queuing DELETE /$path');
@@ -315,26 +435,10 @@ class ApiService {
         
         return apiResponse;
       }
+    } on DioException catch (e) {
+      return await _handleDioException(e, 'DELETE', path, data: {}, queueOffline: queueOffline);
     } catch (e) {
-      // Handle network-level errors (connection timeout, DNS failure, etc.)
-      log('🌐 DELETE /$path response status code: $e ❌');
-      
-      final apiResponse = ApiResponse(
-        success: false,
-        error: 'Network error: $e',
-        statusCode: 0,
-      );
-      
-      if (queueOffline) {
-        log('[ApiService] Exception occurred, queuing DELETE /$path: $e');
-        await OfflineQueueService.queueRequest(
-          method: 'DELETE',
-          endpoint: path,
-          data: {},
-        );
-      }
-      
-      return apiResponse;
+      return await _handleException(e as Exception, 'DELETE', path, data: {}, queueOffline: queueOffline);
     }
   }
 
@@ -347,6 +451,7 @@ class ApiService {
     Map<String, String>? queryParams,
     ApiOptions? options,
     bool queueOffline = false, // Default to false for GET requests
+    String? requestId,
   }) async {
     try {
       log('🌐 GET /$path${queryParams != null ? '?${Uri(queryParameters: queryParams).query}' : ''}');
@@ -354,20 +459,22 @@ class ApiService {
       // Build headers with common information
       final headers = await _buildHeaders();
       log('🌐 GET headers: $headers');
+      
+      // Create cancel token if requestId provided
+      final cancelToken = requestId != null ? _createCancelToken(requestId) : options?.cancelToken;
 
-      // Construct the full URL with query parameters if provided
-      var uri = Uri.parse('$baseUrl/$path');
-      if (queryParams != null) {
-        uri = Uri.parse('$baseUrl/$path').replace(queryParameters: queryParams);
-      }
+      // Send GET request using Dio with query parameters
+      final response = await dio.get(
+        '/$path',
+        queryParameters: queryParams,
+        options: Options(
+          headers: headers,
+          receiveTimeout: options?.timeout ?? timeout,
+        ),
+        cancelToken: cancelToken,
+      );
 
-      // Construct the full URL and send GET request (no body needed)
-      final response = await http.get(
-        uri,
-        headers: headers,
-      ).timeout(options?.timeout ?? timeout);
-
-      final result = jsonDecode(response.body) as Map<String, dynamic>;
+      final result = response.data as Map<String, dynamic>;
 
       // Check for successful HTTP status (200 OK for GET operations)
       final isSuccess = response.statusCode == 200;
@@ -375,20 +482,10 @@ class ApiService {
       
       if (isSuccess) {
         // Parse the successful JSON response and return success result
-        return ApiResponse(
-          success: result['success'] ?? true,
-          data: result['data'] ?? result['items'],
-          statusCode: response.statusCode,
-          result: result,
-        );
+        return ApiResponse.success(result, response.statusCode!);
       } else {
         // Handle HTTP error responses with status code information
-        final apiResponse = ApiResponse(
-          success: false,
-          error: result['error'] ?? 'Failed to get $path: ${response.statusCode}',
-          statusCode: response.statusCode,
-          result: result,
-        );
+        final apiResponse = ApiResponse.error('get', path, response.statusCode!, result);
         
         // Generally don't queue GET requests, but option is available
         if (queueOffline && _isNetworkError(apiResponse)) {
@@ -402,26 +499,10 @@ class ApiService {
         
         return apiResponse;
       }
+    } on DioException catch (e) {
+      return await _handleDioException(e, 'GET', path, data: queryParams ?? {}, queueOffline: queueOffline);
     } catch (e) {
-      // Handle network-level errors (connection timeout, DNS failure, etc.)
-      log('🌐 GET /$path response status code: $e ❌');
-      
-      final apiResponse = ApiResponse(
-        success: false,
-        error: 'Network error: $e',
-        statusCode: 0,
-      );
-      
-      if (queueOffline) {
-        log('[ApiService] Exception occurred, queuing GET /$path: $e');
-        await OfflineQueueService.queueRequest(
-          method: 'GET',
-          endpoint: path,
-          data: queryParams ?? {},
-        );
-      }
-      
-      return apiResponse;
+      return await _handleException(e as Exception, 'GET', path, data: queryParams ?? {}, queueOffline: queueOffline);
     }
   }
 

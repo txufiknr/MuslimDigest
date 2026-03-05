@@ -2,7 +2,9 @@ import 'dart:math' show max;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:muslimdigest/models/feed.dart';
 import 'package:muslimdigest/providers/feed/base_feed_notifier.dart';
+import 'package:muslimdigest/providers/feed/feed_not_interested.dart';
 import 'package:muslimdigest/providers/user/preferences.dart';
 import 'package:muslimdigest/utils/dialogs.dart';
 import 'package:muslimdigest/utils/extensions.dart';
@@ -33,12 +35,17 @@ class FeedStateService {
   /// Mark feed as not interested across all feed types
   static Future<void> markNotInterestedEverywhere(
     WidgetRef ref,
-    String feedId, {
+    FeedItem feedItem, {
     FeedbackCategory? reason,
   }) async {
+    final feedId = feedItem.id;
     await executeOnAllFeedTypes(ref, (notifier) {
       return notifier.markAsNotInterested(feedId, reason: reason);
     });
+
+    // Prepend feed item to the not interested feed
+    final notInterestedNotifier = ref.read(feedNotInterestedProvider.notifier);
+    await notInterestedNotifier.prependItem(feedItem);
   }
 
   /// Unmark feed as not interested across all feed types
@@ -49,17 +56,23 @@ class FeedStateService {
     await executeOnAllFeedTypes(ref, (notifier) {
       return notifier.unmarkAsNotInterested(feedId);
     });
+
+    // Remove feed item from the not interested feed
+    final notInterestedNotifier = ref.read(feedNotInterestedProvider.notifier);
+    await notInterestedNotifier.removeItem(feedId);
   }
 
   /// Check if feed should be hidden (SSOT logic)
   static bool shouldHideFeed(
     WidgetRef ref,
-    String feedId,
-    String sourceId,
+    FeedItem? feedItem,
   ) {
-    final preferences = ref.watch(preferencesProvider);
-    final isSourceAvoided = preferences.avoidedSources.any((s) => s.id == sourceId);
+    if (feedItem == null) return false;
     
+    final feedId = feedItem.id;
+    final preferences = ref.watch(preferencesProvider);
+    final isSourceAvoided = preferences.avoidedSources.contains(feedItem.source);
+
     // Check any feed type for not interested status
     final isNotInterested = FeedType.values.any((feedType) {
       return feedType.watch(ref).isNotInterested(feedId);

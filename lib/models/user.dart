@@ -1,8 +1,26 @@
 import 'package:muslimdigest/config/settings.dart';
 import 'package:muslimdigest/models/feed.dart';
+import 'package:muslimdigest/utils/extensions.dart';
 import 'package:muslimdigest/utils/users.dart';
 import 'package:muslimdigest/variables/feed.dart';
 import 'package:muslimdigest/variables/user.dart';
+
+enum ReadsRank {
+  beginner('Beginner', '🌱', 0),
+  learner('Learner', '📖', 20),
+  reader('Reader', '📚', 40),
+  scholar('Scholar', '🎓', 60),
+  expert('Expert', '🏆', 80);
+
+  const ReadsRank(this.label, this.badge, this.minReads);
+  final String label;
+  final String badge;
+  final int minReads;
+
+  static ReadsRank getFromTotalReads(int totalReads) {
+    return values.reversed.toList().firstWhereOrNull((rank) => rank.minReads <= totalReads) ?? beginner;
+  }
+}
 
 class User {
   final String userId;
@@ -32,6 +50,10 @@ class User {
   String get firstName {
     final extractedFirstName = extractFirstName(name);
     if (extractedFirstName.isNotEmpty) return extractedFirstName;
+    return greeting;
+  }
+
+  String get greeting {
     return switch (gender) {
       Gender.male => 'Brother',
       Gender.female => 'Sister',
@@ -39,10 +61,8 @@ class User {
     };
   }
 
-  // TODO: 5 emoji badge tier based on totalReads (0 - 100)
-  String get totalReadsBadge {
-    if (totalReads >= 0) return '🌱';
-    return '🌱';
+  ReadsRank get totalReadsRank {
+    return ReadsRank.getFromTotalReads(totalReads);
   }
 
   factory User.fromJson(Map<String, dynamic> json) {

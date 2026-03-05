@@ -1,3 +1,4 @@
+import 'dart:developer' show log;
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -89,7 +90,6 @@ class _FeedCardState extends ConsumerState<FeedCard> with AutomaticKeepAliveClie
 
   Future<void> _share() async {
     setState(() => _isTakingScreenshot = true);
-    await delay(100); // Wait for the feed to be fully rendered
     final imagePath = await _screenshot(); // Take the screenshot of feed
     if (!mounted) return;
 
@@ -112,13 +112,32 @@ class _FeedCardState extends ConsumerState<FeedCard> with AutomaticKeepAliveClie
   }
 
   Future<String?> _screenshot() async {
-    final imageName = "${_feedId ?? today.toIso8601String().substring(0, 10)}.png";
-    final directory = await getApplicationDocumentsDirectory();
-    final imagePath = await _screenshotController.captureAndSave(directory.path, fileName: imageName);
-    if (mounted && imagePath == null) {
-      showSnackBar(context, "Cannot save image. Please try again.");
+    try {
+      final imageName = "${_feedId ?? today.toIso8601String().substring(0, 10)}.png";
+      
+      // Use temporary directory for better compatibility across Android versions
+      final directory = await getTemporaryDirectory();
+      final imagePath = await _screenshotController.captureAndSave(
+        directory.path, 
+        fileName: imageName,
+        pixelRatio: 2.0, // Higher quality
+        delay: Duration(milliseconds: 100), // Small delay for rendering
+      );
+      
+      if (mounted && imagePath == null) {
+        showSnackBarError(context, "Cannot save image. Please try again.");
+        return null;
+      }
+      
+      log('[FeedCard] Screenshot saved to: $imagePath');
+      return imagePath;
+    } catch (e) {
+      log('[FeedCard] Screenshot error: $e');
+      if (mounted) {
+        showSnackBarError(context, "Screenshot failed: ${e.toString()}");
+      }
+      return null;
     }
-    return imagePath;
   }
 
   @override
@@ -129,23 +148,15 @@ class _FeedCardState extends ConsumerState<FeedCard> with AutomaticKeepAliveClie
     final currentStreak = streaks.currentStreak;
     final isStreakCard = widget.feedItem == null;
 
-    // Use FeedStateService for SSOT logic to determine if feed should be hidden
-    final shouldShowPlaceholder = widget.feedItem != null && 
-        FeedStateService.shouldHideFeed(
-          ref, 
-          widget.feedItem!.id, 
-          widget.feedItem!.source.id,
-        );
-
-    // Get the reason if it's marked as not interested
+    // Determine if feed should be hidden
+    final shouldShowPlaceholder = FeedStateService.shouldHideFeed(ref, widget.feedItem);
     final reason = shouldShowPlaceholder 
         ? FeedStateService.getNotInterestedReason(ref, widget.feedItem!.id)
         : null;
 
     // Check if this feed item should be hidden due to avoided source
     final preferences = ref.watch(preferencesProvider);
-    final isSourceAvoided = widget.feedItem != null &&
-        preferences.avoidedSources.contains(widget.feedItem!.source);
+    final isSourceAvoided = preferences.avoidedSources.contains(widget.feedItem?.source);
 
     return Container(
       width: double.infinity,
@@ -411,7 +422,7 @@ class _FeedContent extends ConsumerWidget {
               spacing: 6,
               runSpacing: 6,
               children: feedItem.badgeToDisplay.map((badge) {
-                return _FeedBadgeChip(badge);
+                return _FeedBadgeChip(badge, feedItem.isNuanced);
               }).toList(),
             ),
           ],
@@ -499,7 +510,7 @@ class _FeedFooter extends ConsumerWidget {
           const Spacer(),
 
           // Action buttons
-          if (isTakingScreenshot) Logo(size: 100,) else ...<Widget>[
+          if (isTakingScreenshot) Logo(size: 50,) else ...<Widget>[
             if (likeCount > 0) Text(formatNumber(likeCount), textAlign: TextAlign.right, style: h.currentTextTheme.bodySmall,).withPadding(right: 4),
             MyIconButton(icon: isLiked ? CupertinoIcons.heart_fill : CupertinoIcons.heart, size: 50, outlined: true, onPressed: onLike, iconColor: isLiked ? AppColors.primary : null),
             MyIconButton(icon: isSaved ? CupertinoIcons.bookmark_fill : CupertinoIcons.bookmark, size: 50, outlined: true, onPressed: onSave, iconColor: isSaved ? AppColors.primary : null),
@@ -525,7 +536,7 @@ class _FeedFooter extends ConsumerWidget {
     try {
       // Mark as not interested across all feed types
       if (context.mounted) {
-        await FeedStateService.markNotInterestedEverywhere(ref, feedItem.id);
+        await FeedStateService.markNotInterestedEverywhere(ref, feedItem);
       }
 
       // Increment user's not interested count
@@ -553,7 +564,9 @@ class _FeedFooter extends ConsumerWidget {
 
   Future<void> _avoidSource(BuildContext context, WidgetRef ref) async {
     // Do nothing if source already avoided
-    if (isSourceAvoided(ref, feedItem.source.id)) return;
+    // if (isSourceAvoided(ref, feedItem.source.id)) return;
+    final isSourceAvoided = ref.read(preferencesProvider).avoidedSources.contains(feedItem.source);
+    if (isSourceAvoided) return;
 
     // Display confirmation dialog
     final sourceName = feedItem.source.name ?? 'this source';
@@ -681,15 +694,16 @@ class _FeedFooterSource extends StatelessWidget {
 
 class _FeedBadgeChip extends StatelessWidget {
   final String badge;
+  final bool isNuanced;
   
-  const _FeedBadgeChip(this.badge);
+  const _FeedBadgeChip(this.badge, this.isNuanced);
 
   List<String> get _badgeSplit => badge.split(':');
   String get _badgeLabel => _badgeSplit[0];
   String get _badgeValue => _badgeSplit[1];
 
   String get _labelCapitalized => _badgeLabel.unslugTitleCase();
-  String get _valueCapitalized => _badgeValue.unslugTitleCase();
+  String get _valueCapitalized => _badgeValue == "qna" ? "Q&A" : _badgeValue.unslugTitleCase();
 
   static const Map<String, String> _badgeMappings = {
     'topic:quran': 'Qur’an',
@@ -741,7 +755,7 @@ class _FeedBadgeChip extends StatelessWidget {
 
   IconData? get _badgeIcon {
     switch (badge) {
-      case 'engagement:trending': return CupertinoIcons.graph_square_fill;
+      case 'engagement:trending': return isNuanced ? CupertinoIcons.moon_stars_fill : CupertinoIcons.graph_square_fill;
       case 'content_risk:high': return CupertinoIcons.exclamationmark_triangle_fill;
       default: return null;
     }
@@ -752,9 +766,11 @@ class _FeedBadgeChip extends StatelessWidget {
     final mappedText = _badgeMappings[badge];
     if (mappedText != null) return mappedText;
     
+    if (badge == 'engagement:trending' && isNuanced) return "Highlight";
+
     // Handle dynamic patterns
     if (_badgeLabel == 'madhhab') return '$_valueCapitalized Fiqh';
-    if (_badgeLabel == 'content_type' || _badgeLabel == 'topic' || _badgeLabel == 'engagement') return _valueCapitalized;
+    if (['content_type', 'content_tier', 'topic', 'engagement'].contains(_badgeLabel)) return _valueCapitalized;
     
     // Default fallback
     return '$_labelCapitalized: $_valueCapitalized';
@@ -786,6 +802,12 @@ class _FeedBadgeChip extends StatelessWidget {
           case 'medium': return Colors.blue;
           case 'basic': return Colors.cyan;
           case 'unverified': return Colors.blueGrey;
+        }
+
+      case 'content_tier':
+        switch (_badgeValue) {
+          case 'evergreen': return Colors.green;
+          case 'ephemeral': return Colors.amber;
         }
         
       case 'topic':

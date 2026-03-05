@@ -1,4 +1,5 @@
 import 'package:muslimdigest/utils/time.dart';
+import 'package:muslimdigest/variables/feed.dart';
 
 import '../utils/extensions.dart';
 
@@ -27,6 +28,7 @@ class FeedItem {
   final int likeCount;
   final List<Cluster> alsoRead;
   final DateTime? createdAt;
+  final FeedbackCategory? feedbackCategory; // For not interested reason
 
   FeedItem({
     required this.id,
@@ -53,10 +55,12 @@ class FeedItem {
     this.isSaved = false,
     this.likeCount = 0,
     this.alsoRead = const [],
+    this.feedbackCategory,
   });
 
   bool get hasVideo => videoUrl != null;
   bool get hasYouTubeVideo => videoUrl?.contains('youtu') == true;
+  bool get isNuanced => ['quran', 'hadith', 'fiqh'].contains(cluster.contentType);
 
   // Display labels on feed card
   String get displayTitle => hasVideo ? (videoTitle ?? title) : title;
@@ -65,7 +69,7 @@ class FeedItem {
 
   IslamicEvent? get relevantEvent {
     return IslamicEvent.values.firstWhereOrNull((e) {
-      return [title, videoTitle, summary].containsAnyIgnoreCase(e.keywords);
+      return [title, videoTitle, summary, topic].containsAnyIgnoreCase(e.keywords);
     });
   }
   bool get isOngoing => relevantEvent?.isOngoing == true;
@@ -103,6 +107,7 @@ class FeedItem {
       isBreaking: json['isBreaking'] ?? false,
       isLiked: json['isLiked'] ?? false,
       isSaved: json['isSaved'] ?? false,
+      feedbackCategory: FeedbackCategory.fromString(json['feedbackCategory']),
     );
   }
 
@@ -132,6 +137,7 @@ class FeedItem {
       'isLiked': isLiked,
       'isSaved': isSaved,
       'likeCount': likeCount,
+      'feedbackCategory': feedbackCategory,
     };
   }
 
@@ -160,6 +166,7 @@ class FeedItem {
     bool? isLiked,
     bool? isSaved,
     int? likeCount,
+    FeedbackCategory? feedbackCategory,
   }) {
     return FeedItem(
       id: id ?? this.id,
@@ -186,6 +193,7 @@ class FeedItem {
       isLiked: isLiked ?? this.isLiked,
       isSaved: isSaved ?? this.isSaved,
       likeCount: likeCount ?? this.likeCount,
+      feedbackCategory: feedbackCategory ?? this.feedbackCategory,
     );
   }
 
@@ -240,6 +248,7 @@ class Cluster {
   final String id;
   final String? displayTitle;
   final int articleCount;
+  final String? contentType;
   final Map<String, int> topicDistribution;
   final double trendingScore;
   final String? trustLevel;
@@ -253,6 +262,7 @@ class Cluster {
     required this.id,
     this.displayTitle,
     this.articleCount = 1,
+    this.contentType,
     this.topicDistribution = const {},
     this.trendingScore = 0.0,
     this.trustLevel,
@@ -267,6 +277,7 @@ class Cluster {
     return Cluster(
       id: json['id'],
       articleCount: json['articleCount'] ?? 1,
+      contentType: json['contentType'],
       topicDistribution: Map<String, int>.from(json['topicDistribution'] ?? {}),
       trendingScore: json['trendingScore']?.toDouble() ?? 0.0,
       trustLevel: json['trustLevel'],
@@ -283,6 +294,7 @@ class Cluster {
       'id': id,
       'displayTitle': displayTitle,
       'articleCount': articleCount,
+      'contentType': contentType,
       'topicDistribution': topicDistribution,
       'trendingScore': trendingScore,
       'trustLevel': trustLevel,
@@ -301,6 +313,7 @@ Cluster(
   id: $id,
   displayTitle: $displayTitle,
   articleCount: $articleCount,
+  contentType: $contentType,
   topicDistribution: $topicDistribution,
   trendingScore: $trendingScore,
   trustLevel: $trustLevel,
@@ -375,4 +388,19 @@ Source(
   ogImage: $ogImage
 )''';
   }
+
+  @override
+  int get hashCode => 1;
+
+  @override
+  bool operator ==(Object other) => identical(this, other) || (
+    other is Source &&
+    runtimeType == other.runtimeType &&
+    other.id == id &&
+    other.name == name &&
+    other.trustLevel == trustLevel &&
+    other.siteName == siteName &&
+    other.siteIcon == siteIcon &&
+    other.ogImage == ogImage
+  );
 }

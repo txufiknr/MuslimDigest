@@ -1,7 +1,7 @@
 v2 features:
+[x] notifikasi daily
+[x] read count badges emoji
+[x] interests topic chips dark theme
 [ ] tambah tab QnA
-[ ] notifikasi daily
 [ ] GET feed/not_interested
-[ ] read count badges emoji
 [ ] debug share screenshot
-[ ] interests topic chips dark theme

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:developer';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -10,7 +11,7 @@ import 'package:muslimdigest/providers/topic.dart';
 import 'package:muslimdigest/providers/user/preferences.dart';
 import 'package:muslimdigest/utils/app.dart';
 import 'package:muslimdigest/utils/app_repository.dart';
-import 'package:muslimdigest/utils/debounce.dart';
+// import 'package:muslimdigest/utils/debounce.dart';
 import 'package:muslimdigest/utils/dialogs.dart';
 import 'package:muslimdigest/utils/extensions.dart';
 import 'package:muslimdigest/utils/functions.dart';
@@ -30,11 +31,24 @@ class HomePage extends ConsumerStatefulWidget {
 class _HomePageState extends ConsumerState<HomePage> with RouteAware {
   AppRepository get r => ref.read(appRepositoryProvider);
 
-  late final Debounce _topicChangeDebounce = const Duration(milliseconds: 500).debounce;
+  // late final Debounce _topicChangeDebounce = const Duration(milliseconds: 500).debounce;
   late final AppLifecycleListener _lifeCycleListener;
   UserPreferences? lastUserPreferences;
   var _isWillExit = false;
+  
+  // Request cancellation tracking
+  String? _currentFeedRequestId;
+  static int _requestCounter = 0;
 
+  /// Init feed loading
+  void _initFeed() {
+    final feedType = ref.read(feedTypeProvider);
+    final isNone = feedType.read(ref).isNone;
+    if (isNone) {
+      log('🧾 Feed is empty and need loading...');
+      r.loadUserFeed(force: true);
+    }
+  }
 
   /// Save all user data
   void _saveAllData() {
@@ -65,6 +79,7 @@ class _HomePageState extends ConsumerState<HomePage> with RouteAware {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       _saveAllData();
+      _initFeed();
     });
   }
 
@@ -105,7 +120,7 @@ class _HomePageState extends ConsumerState<HomePage> with RouteAware {
   @override
   void dispose() {
     routeObserver.unsubscribe(this);
-    _topicChangeDebounce.dispose();
+    // _topicChangeDebounce.dispose();
     _lifeCycleListener.dispose();
     super.dispose();
   }
@@ -137,8 +152,23 @@ class _HomePageState extends ConsumerState<HomePage> with RouteAware {
 
   Future<void> _loadFeed({FeedType? feedType, String? topic, bool force = false}) async {
     feedType ??= ref.read(feedTypeProvider);
-    final success = await r.loadFeed(feedType: feedType, topic: topic, force: force);
-    if (mounted && !success) return _showLoadFeedFailed(() => _loadFeed(feedType: feedType, topic: topic, force: force));
+    
+    // Cancel previous request and create new request ID
+    _currentFeedRequestId = 'feed_${++_requestCounter}_${feedType?.name ?? 'unknown'}_${topic ?? 'default'}';
+    
+    log('[HomePage] Starting feed load with request ID: $_currentFeedRequestId');
+    
+    final success = await r.loadFeed(
+      feedType: feedType, 
+      topic: topic, 
+      force: force,
+      requestId: _currentFeedRequestId,
+    );
+    
+    // Only show error if this is still the current request
+    if (mounted && !success && _currentFeedRequestId != null) {
+      return _showLoadFeedFailed(() => _loadFeed(feedType: feedType, topic: topic, force: force));
+    }
   }
 
   Future<void> _showLoadFeedFailed(Future<void> Function() onRetry) async {
@@ -165,12 +195,15 @@ class _HomePageState extends ConsumerState<HomePage> with RouteAware {
       if (!mounted || previous == next) return;
       if (next == null) return;
 
+      ref.read(feedTypeProvider.notifier).setValue(FeedType.latest);
+
       // Debounce rapid topic tab switching to prevent excessive API calls
-      _topicChangeDebounce.run(() {
-        if (!mounted) return;
-        ref.read(feedTypeProvider.notifier).setValue(FeedType.latest);
+      // _topicChangeDebounce.run(() {
+        // if (!mounted) return;
+        // Cancel previous feed request and start new one
+        log('[HomePage] Topic changed from $previous to $next, cancelling previous request');
         _loadFeed(feedType: FeedType.latest, topic: next);
-      });
+      // });
     });
 
     return PopScope(

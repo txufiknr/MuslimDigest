@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:muslimdigest/providers/feed/feed.dart';
 import 'package:muslimdigest/providers/feed_type.dart';
 import 'package:muslimdigest/providers/read_count.dart';
 import 'package:muslimdigest/providers/user/streaks.dart';
@@ -25,7 +26,8 @@ class ReadingStreakFooter extends ConsumerWidget {
 
     // Reading streak progress
     final readCount = ref.watch(readCountProvider);
-    final progress = readCount / DAILY_READ_TARGET;
+    final readTarget = ref.watch(feedProvider).items?.length ?? DAILY_READ_TARGET;
+    final progress = readCount / readTarget;
     final h = MyHelper(context);
     return AnimatedProgressBar(
       progress: progress,

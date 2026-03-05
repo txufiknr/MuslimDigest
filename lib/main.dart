@@ -11,6 +11,7 @@ import 'config/router.dart';
 import 'variables/app.dart';
 import 'package:theme_provider/theme_provider.dart';
 import 'providers/shared_preferences.dart';
+import 'utils/notification_scheduler.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -55,6 +56,9 @@ Future<void> main() async {
       accessibility: KeychainAccessibility.first_unlock_this_device,
     ),
   );
+  
+  // Initialize notifications and schedule daily reminder
+  await NotificationScheduler.initializeAndSchedule();
   
   // Run the app
   runApp(

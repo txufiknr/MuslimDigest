@@ -7,6 +7,7 @@ import 'package:muslimdigest/config/constants.dart';
 import 'package:muslimdigest/config/feeds.dart';
 import 'package:muslimdigest/config/themes.dart';
 import 'package:muslimdigest/models/user.dart';
+import 'package:muslimdigest/providers/feed/feed.dart';
 import 'package:muslimdigest/providers/feed/feed_trending.dart';
 import 'package:muslimdigest/providers/feed_type.dart';
 import 'package:muslimdigest/providers/read_count.dart';
@@ -100,12 +101,13 @@ class _HomeHeaderState extends ConsumerState<HomeHeader> {
 
     // Conditions
     final currentStreak = streaks.currentStreak;
-    final isStreak = readCount == DAILY_READ_TARGET;
+    final readTarget = ref.read(feedProvider).items?.length ?? DAILY_READ_TARGET;
+    final isStreak = readCount == readTarget;
     final isStreakAlive = currentStreak > 0;
 
     // Messages
     final streakMessage = isStreakAlive ? "You’ve been learning for ${formatNumber(currentStreak)} days in a row 🌱" : "Let’s start a fresh reading rhythm 🌱";
-    final streakHint = isStreak ? "Come back tomorrow for another streak." : "Read ${DAILY_READ_TARGET - readCount} more for next streak!";
+    final streakHint = isStreak ? "Come back tomorrow for another streak." : "Read ${readTarget - readCount} more for next streak!";
 
     await showBottomModalSheetContent(context, title: "Reading Streak", widgets: [
       Text("$GREETINGS, $firstName. $streakMessage", style: h.currentTextTheme.bodyMedium,),

@@ -1,0 +1,144 @@
+import 'package:flutter/foundation.dart';
+import 'package:awesome_notifications/awesome_notifications.dart';
+import 'package:muslimdigest/services/notification_service.dart';
+import 'package:muslimdigest/variables/user.dart';
+import 'package:muslimdigest/variables/settings.dart';
+
+/// Helper class for managing notification scheduling and lifecycle
+class NotificationScheduler {
+  /// Initialize notifications and schedule daily reminder based on user preference
+  static Future<void> initializeAndSchedule() async {
+    try {
+      // Initialize the notification service
+      await NotificationService.initialize();
+      
+      // Check if notifications are allowed
+      final areAllowed = await NotificationService.areNotificationsEnabled();
+      
+      if (areAllowed) {
+        // Check user's notification preference
+        final notificationType = PrefData.notificationType;
+        
+        if (notificationType != NotificationType.none) {
+          // Schedule the daily notification for 'all' or 'digest' types
+          await NotificationService.scheduleDailyNotification();
+          debugPrint('📅 Notification scheduler initialized successfully');
+        } else {
+          debugPrint('📅 Notifications disabled by user preference');
+        }
+      } else {
+        debugPrint('⚠️ Notifications are not allowed by user');
+      }
+    } catch (e) {
+      debugPrint('❌ Error initializing notification scheduler: $e');
+    }
+  }
+
+  /// Reschedule daily notification (useful after app updates)
+  static Future<void> rescheduleDailyNotification() async {
+    try {
+      // Check user preference before rescheduling
+      final notificationType = PrefData.notificationType;
+      
+      if (notificationType != NotificationType.none) {
+        await NotificationService.scheduleDailyNotification();
+        debugPrint('🔄 Daily notification rescheduled');
+      } else {
+        debugPrint('🔄 Skipping reschedule - notifications disabled by user');
+      }
+    } catch (e) {
+      debugPrint('❌ Error rescheduling daily notification: $e');
+    }
+  }
+
+  /// Handle notification preference change
+  static Future<void> handlePreferenceChange(NotificationType newType) async {
+    try {
+      if (newType == NotificationType.none) {
+        // Disable all notifications
+        await NotificationService.cancelAllNotifications();
+        debugPrint('🔕 Notifications disabled by user preference');
+      } else {
+        // Enable daily notifications (both 'all' and 'digest' are the same)
+        await NotificationService.scheduleDailyNotification();
+        debugPrint('🔔 Notifications enabled by user preference: ${newType.name}');
+      }
+    } catch (e) {
+      debugPrint('❌ Error handling preference change: $e');
+    }
+  }
+
+  /// Handle notification received when app is in foreground
+  static void handleForegroundNotification(ReceivedAction receivedAction) {
+    debugPrint('🔔 Foreground notification received: ${receivedAction.payload}');
+    
+    // Handle different notification types
+    final notificationType = receivedAction.payload?['type'];
+    
+    switch (notificationType) {
+      case 'daily_reminder':
+        _handleDailyReminder(receivedAction);
+        break;
+      case 'test':
+        _handleTestNotification(receivedAction);
+        break;
+      default:
+        debugPrint('🤷 Unknown notification type: $notificationType');
+    }
+  }
+
+  /// Handle daily reminder notification
+  static void _handleDailyReminder(ReceivedAction receivedAction) {
+    debugPrint('📖 Daily reminder notification tapped');
+    // You can navigate to a specific screen or perform an action
+    // For example, navigate to the home screen or open today's digest
+  }
+
+  /// Handle test notification
+  static void _handleTestNotification(ReceivedAction receivedAction) {
+    debugPrint('🧪 Test notification tapped');
+    // Handle test notification actions
+  }
+
+  /// Get notification status information
+  static Future<Map<String, dynamic>> getNotificationStatus() async {
+    try {
+      final areAllowed = await NotificationService.areNotificationsEnabled();
+      final scheduledNotifications = await AwesomeNotifications().listScheduledNotifications();
+      
+      return {
+        'areAllowed': areAllowed,
+        'scheduledCount': scheduledNotifications.length,
+        'scheduledNotifications': scheduledNotifications.map((n) => {
+          'id': n.content?.id,
+          'title': n.content?.title,
+          'body': n.content?.body,
+          'scheduledTime': n.schedule?.toString(),
+        }).toList(),
+      };
+    } catch (e) {
+      debugPrint('❌ Error getting notification status: $e');
+      return {
+        'areAllowed': false,
+        'scheduledCount': 0,
+        'scheduledNotifications': [],
+        'error': e.toString(),
+      };
+    }
+  }
+
+  /// Debug method to print current notification status
+  static Future<void> debugNotificationStatus() async {
+    final status = await getNotificationStatus();
+    debugPrint('📊 Notification Status:');
+    debugPrint('  - Allowed: ${status['areAllowed']}');
+    debugPrint('  - Scheduled: ${status['scheduledCount']} notifications');
+    
+    if (status['scheduledNotifications'].isNotEmpty) {
+      debugPrint('  - Scheduled notifications:');
+      for (final notification in status['scheduledNotifications']) {
+        debugPrint('    * ID: ${notification['id']} - ${notification['title']}');
+      }
+    }
+  }
+}

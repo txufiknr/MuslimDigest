@@ -6,7 +6,7 @@ import 'package:muslimdigest/api/feeds.dart';
 import 'package:muslimdigest/models/feed.dart';
 import 'package:muslimdigest/providers/ingest_last_date.dart';
 import 'package:muslimdigest/providers/user/user.dart';
-import 'package:muslimdigest/services/api.dart';
+import 'package:muslimdigest/services/dio.dart';
 import 'package:muslimdigest/providers/feed/feed_cache.dart';
 import 'package:muslimdigest/services/feed_state_service.dart';
 import 'package:muslimdigest/variables/feed.dart';
@@ -356,7 +356,8 @@ abstract class BaseFeedNotifier extends Notifier<BaseFeedState> {
     Map<String, String>? queryParams,
     ApiOptions? options,
     bool isLoadMore = false,
-    bool forceRefresh = false
+    bool forceRefresh = false,
+    String? requestId,
   }) async {
     final cache = ref.read(feedCacheProvider);
 
@@ -394,7 +395,12 @@ abstract class BaseFeedNotifier extends Notifier<BaseFeedState> {
     
     try {
       log('[BaseFeedNotifier] Making API call to: $endpoint');
-      final response = await ApiService.get(endpoint, queryParams: queryParams, options: options);
+      final response = await ApiService.get(
+        endpoint, 
+        queryParams: queryParams, 
+        options: options,
+        requestId: requestId,
+      );
 
       if (response.successful) {
         final feedItems = List<FeedItem>.from(

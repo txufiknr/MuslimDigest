@@ -14,7 +14,7 @@ import 'package:muslimdigest/config/themes.dart';
 import 'package:muslimdigest/models/feed.dart';
 import 'package:muslimdigest/providers/feed/base_feed_notifier.dart';
 import 'package:muslimdigest/providers/user/user.dart';
-import 'package:muslimdigest/services/api.dart';
+import 'package:muslimdigest/services/dio.dart';
 import 'package:muslimdigest/services/feed_state_service.dart';
 import 'package:muslimdigest/utils/extensions.dart';
 import 'package:muslimdigest/utils/functions.dart';
@@ -33,6 +33,7 @@ abstract class FeedListBasePage extends ConsumerStatefulWidget {
   final IconData placeholderIcon;
   final String placeholderTooltip;
   final FeedType feedType;
+  final bool useScaffold;
 
   const FeedListBasePage({
     super.key,
@@ -42,6 +43,7 @@ abstract class FeedListBasePage extends ConsumerStatefulWidget {
     required this.placeholderIcon,
     required this.placeholderTooltip,
     required this.feedType,
+    this.useScaffold = true,
   });
 
   /// Get the appropriate provider for this feed type
@@ -213,6 +215,9 @@ class _FeedListBasePageState extends ConsumerState<FeedListBasePage> {
   Widget build(BuildContext context) {
     final h = MyHelper(context);
     final state = ref.watch(widget.provider);
+    final list = _buildFeedList(h, state);
+
+    if (!widget.useScaffold) return list;
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -222,9 +227,7 @@ class _FeedListBasePageState extends ConsumerState<FeedListBasePage> {
         //   CupertinoActivityIndicator(radius: 10).withPadding(right: 16),
         // ] : null,
       ),
-      body: SafeArea(
-        child: _buildFeedList(h, state),
-      ),
+      body: SafeArea(child: list),
     );
   }
 
@@ -350,7 +353,28 @@ class _FeedListBasePageState extends ConsumerState<FeedListBasePage> {
                         ),
                       ),
                     ),
+
+                    // Not interested reason badge (only show for not interested feeds)
+                    if (feed.feedbackCategory != null) ...[
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: feed.feedbackCategory!.color.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          feed.feedbackCategory!.label,
+                          style: h.currentTextTheme.bodySmall?.copyWith(
+                            color: feed.feedbackCategory!.color,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ],
+
                     Spacer(),
+
                     if (feed.createdAt != null) Text(
                       formatDateTime(feed.createdAt!),
                       textAlign: TextAlign.right,

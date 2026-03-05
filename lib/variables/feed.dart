@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:muslimdigest/config/colors.dart';
 import 'package:muslimdigest/models/feed.dart';
 import 'package:muslimdigest/providers/feed/base_feed_notifier.dart';
 import 'package:muslimdigest/providers/feed/feed.dart';
@@ -8,6 +9,7 @@ import 'package:muslimdigest/providers/feed/feed_liked.dart';
 import 'package:muslimdigest/providers/feed/feed_latest.dart';
 import 'package:muslimdigest/providers/feed/feed_saved.dart';
 import 'package:muslimdigest/providers/feed/feed_trending.dart';
+import 'package:muslimdigest/providers/feed/feed_not_interested.dart';
 import 'package:muslimdigest/utils/extensions.dart';
 
 enum FeedbackCategory {
@@ -17,8 +19,13 @@ enum FeedbackCategory {
   bug_report,
   other;
 
+  static FeedbackCategory? fromString(String? value) {
+    if (value == null) return null;
+    return FeedbackCategory.values.firstWhereOrNull((e) => e.name == value);
+  }
+
   String get label {
-    return name.unslug().toCapitalized();
+    return name.unslugTitleCase();
   }
 
   IconData get icon {
@@ -28,6 +35,21 @@ enum FeedbackCategory {
       case fake_news: return CupertinoIcons.exclamationmark_shield;
       case bug_report: return CupertinoIcons.bandage;
       case other: return CupertinoIcons.question_circle;
+    }
+  }
+
+  Color get color {
+    switch (this) {
+      case FeedbackCategory.suggestion:
+        return AppColors.mutedLight;
+      case FeedbackCategory.inappropriate_content:
+        return AppColors.error;
+      case FeedbackCategory.fake_news:
+        return AppColors.error;
+      case FeedbackCategory.bug_report:
+        return AppColors.warning;
+      case FeedbackCategory.other:
+        return AppColors.mutedLight;
     }
   }
 
@@ -42,7 +64,8 @@ enum FeedType {
   latest,
   saved,
   liked,
-  history;
+  history,
+  notInterested;
 
   static FeedType fromString(String name) {
     return values.firstWhere(
@@ -80,6 +103,7 @@ enum FeedType {
       case latest: return CupertinoIcons.antenna_radiowaves_left_right;
       case trending: return CupertinoIcons.bubble_left_bubble_right;
       case history: return CupertinoIcons.clock;
+      case notInterested: return CupertinoIcons.hand_thumbsdown;
       default: return CupertinoIcons.square_on_square;
     }
   }
@@ -92,6 +116,7 @@ enum FeedType {
       case saved: return ref.read(feedSavedProvider.notifier);
       case history: return ref.read(feedHistoryProvider.notifier);
       case digest: return ref.read(feedProvider.notifier);
+      case notInterested: return ref.read(feedNotInterestedProvider.notifier);
     }
   }
 
@@ -103,6 +128,7 @@ enum FeedType {
       case saved: return ref.read(feedSavedProvider.notifier);
       case history: return ref.read(feedHistoryProvider.notifier);
       case digest: return ref.read(feedProvider.notifier);
+      case notInterested: return ref.read(feedNotInterestedProvider.notifier);
     }
   }
   
@@ -130,17 +156,19 @@ enum FeedType {
       case liked: return ref.read(feedLikedProvider.notifier).load(limit: limit, forceRefresh: forceRefresh);
       case saved: return ref.read(feedSavedProvider.notifier).load(limit: limit, forceRefresh: forceRefresh);
       case history: return ref.read(feedHistoryProvider.notifier).load(limit: limit, forceRefresh: forceRefresh);
+      case notInterested: return ref.read(feedNotInterestedProvider.notifier).load(limit: limit, forceRefresh: forceRefresh);
     }
   }
 
-  Future<bool> loadWithRef(Ref ref, {String? topic, int? timeoutMs, int? limit, bool force = false}) {
+  Future<bool> loadWithRef(Ref ref, {String? topic, int? timeoutMs, int? limit, bool force = false, String? requestId}) {
     switch (this) {
-      case digest: return ref.read(feedProvider.notifier).load(timeoutMs: timeoutMs, forceRefresh: force);
-      case latest: return ref.read(feedLatestProvider.notifier).load(topic: topic, limit: limit, forceRefresh: force);
-      case trending: return ref.read(feedTrendingProvider.notifier).load(limit: limit, forceRefresh: force);
-      case liked: return ref.read(feedLikedProvider.notifier).load(limit: limit, forceRefresh: force);
-      case saved: return ref.read(feedSavedProvider.notifier).load(limit: limit, forceRefresh: force);
-      case history: return ref.read(feedHistoryProvider.notifier).load(limit: limit, forceRefresh: force);
+      case digest: return ref.read(feedProvider.notifier).load(timeoutMs: timeoutMs, forceRefresh: force, requestId: requestId);
+      case latest: return ref.read(feedLatestProvider.notifier).load(topic: topic, limit: limit, forceRefresh: force, requestId: requestId);
+      case trending: return ref.read(feedTrendingProvider.notifier).load(limit: limit, forceRefresh: force, requestId: requestId);
+      case liked: return ref.read(feedLikedProvider.notifier).load(limit: limit, forceRefresh: force, requestId: requestId);
+      case saved: return ref.read(feedSavedProvider.notifier).load(limit: limit, forceRefresh: force, requestId: requestId);
+      case history: return ref.read(feedHistoryProvider.notifier).load(limit: limit, forceRefresh: force, requestId: requestId);
+      case notInterested: return ref.read(feedNotInterestedProvider.notifier).load(limit: limit, forceRefresh: force, requestId: requestId);
     }
   }
 
@@ -153,6 +181,7 @@ enum FeedType {
       case liked: return ref.watch(feedLikedProvider);
       case saved: return ref.watch(feedSavedProvider);
       case history: return ref.watch(feedHistoryProvider);
+      case notInterested: return ref.watch(feedNotInterestedProvider);
     }
   }
 
@@ -165,6 +194,7 @@ enum FeedType {
       case liked: return ref.read(feedLikedProvider);
       case saved: return ref.read(feedSavedProvider);
       case history: return ref.read(feedHistoryProvider);
+      case notInterested: return ref.read(feedNotInterestedProvider);
     }
   }
 
@@ -177,6 +207,7 @@ enum FeedType {
       case liked: return ref.read(feedLikedProvider);
       case saved: return ref.read(feedSavedProvider);
       case history: return ref.read(feedHistoryProvider);
+      case notInterested: return ref.read(feedNotInterestedProvider);
     }
   }
 }

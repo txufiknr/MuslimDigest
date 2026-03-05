@@ -11,7 +11,7 @@ class FeedLatestNotifier extends BaseFeedNotifier {
   @override
   String get endpoint => 'feed/latest';
 
-  Future<bool> load({String? topic, int? limit, bool forceRefresh = false}) async {
+  Future<bool> load({String? topic, int? limit, bool forceRefresh = false, String? requestId}) async {
     final topicValue = topic ?? ref.read(topicProvider);
     
     // Build query parameters, excluding null values for consistent cache keys
@@ -24,6 +24,6 @@ class FeedLatestNotifier extends BaseFeedNotifier {
       queryParams['topic'] = topicValue;
     }
     
-    return await loadFromEndpoint(endpoint, queryParams: queryParams, forceRefresh: forceRefresh);
+    return await loadFromEndpoint(endpoint, queryParams: queryParams, forceRefresh: forceRefresh, requestId: requestId);
   }
 }
