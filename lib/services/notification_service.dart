@@ -14,15 +14,13 @@ class NotificationService {
     await AwesomeNotifications().initialize(
       'asset://assets/images/icons/icon.png', // App icon
       NotificationConfig.channels,
-      debug: true,
+      debug: APP_IS_DEVELOPMENT,
     );
-
-    // Request notification permissions
-    await _requestPermissions();
+    // Note: Permission request moved to home page for better UX
   }
 
   /// Request notification permissions
-  static Future<bool> _requestPermissions() async {
+  static Future<bool> requestPermissions() async {
     return await AwesomeNotifications().requestPermissionToSendNotifications();
   }
 

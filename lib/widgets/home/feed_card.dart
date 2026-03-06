@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lottie/lottie.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:muslimdigest/config/colors.dart';
 import 'package:muslimdigest/config/constants.dart';
 import 'package:muslimdigest/config/settings.dart';
@@ -114,7 +115,17 @@ class _FeedCardState extends ConsumerState<FeedCard> with AutomaticKeepAliveClie
 
   Future<String?> _screenshot() async {
     try {
+      // Request storage permission first
+      final storagePermission = await Permission.storage.request();
+      if (!storagePermission.isGranted) {
+        if (mounted) {
+          showSnackBarError(context, "Storage permission is required to save screenshots. Please enable it in settings.");
+        }
+        return null;
+      }
+
       final imageName = "${_feedId ?? today.toIso8601String().substring(0, 10)}.png";
+      // final directory = await getApplicationDocumentsDirectory();
       
       // Use temporary directory for better compatibility across Android versions
       final directory = await getTemporaryDirectory();

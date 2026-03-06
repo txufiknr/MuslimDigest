@@ -7,10 +7,10 @@ import 'package:muslimdigest/variables/settings.dart';
 
 /// Helper class for managing notification scheduling and lifecycle
 class NotificationScheduler {
-  /// Initialize notifications and schedule daily reminder based on user preference
-  static Future<void> initializeAndSchedule() async {
+  /// Initialize notifications without requesting permissions (for app startup)
+  static Future<void> initialize() async {
     try {
-      // Initialize the notification service
+      // Initialize the notification service only (no permission request)
       await NotificationService.initialize();
       
       // Set up notification listeners for foreground notifications
@@ -21,25 +21,45 @@ class NotificationScheduler {
         onDismissActionReceivedMethod: NotificationController.onDismissActionReceived,
       );
       
-      // Check if notifications are allowed
-      final areAllowed = await NotificationService.areNotificationsEnabled();
+      debugPrint('📅 Notification system initialized (permissions not requested yet)');
+    } catch (e) {
+      debugPrint('❌ Error initializing notification system: $e');
+    }
+  }
+
+  /// Request permissions and schedule daily reminder (called from home page)
+  static Future<void> requestPermissionsAndSchedule() async {
+    try {
+      // Request notification permissions
+      final areAllowed = await NotificationService.requestPermissions();
       
       if (areAllowed) {
-        // Check user's notification preference
-        final notificationType = PrefData.notificationType;
-        
-        if (notificationType != NotificationType.none) {
-          // Schedule the daily notification for 'all' or 'digest' types
-          await NotificationService.scheduleDailyNotification();
-          debugPrint('📅 Notification scheduler initialized successfully');
-        } else {
-          debugPrint('📅 Notifications disabled by user preference');
-        }
+        debugPrint('✅ Notification permissions granted');
+        // Schedule the daily notification if user preference allows
+        await _scheduleIfPreferenceAllows();
       } else {
-        debugPrint('⚠️ Notifications are not allowed by user');
+        debugPrint('⚠️ Notification permissions denied');
       }
     } catch (e) {
-      debugPrint('❌ Error initializing notification scheduler: $e');
+      debugPrint('❌ Error requesting notification permissions: $e');
+    }
+  }
+
+  /// Schedule daily reminder based on user preference (internal method)
+  static Future<void> _scheduleIfPreferenceAllows() async {
+    try {
+      // Check user's notification preference
+      final notificationType = PrefData.notificationType;
+      
+      if (notificationType != NotificationType.none) {
+        // Schedule the daily notification for 'all' or 'digest' types
+        await NotificationService.scheduleDailyNotification();
+        debugPrint('📅 Daily notification scheduled for 2 AM UTC');
+      } else {
+        debugPrint('📅 Notifications disabled by user preference');
+      }
+    } catch (e) {
+      debugPrint('❌ Error scheduling daily notification: $e');
     }
   }
 
@@ -50,7 +70,7 @@ class NotificationScheduler {
       final notificationType = PrefData.notificationType;
       
       if (notificationType != NotificationType.none) {
-        await NotificationService.scheduleDailyNotification();
+        await _scheduleIfPreferenceAllows();
         debugPrint('🔄 Daily notification rescheduled');
       } else {
         debugPrint('🔄 Skipping reschedule - notifications disabled by user');
@@ -69,7 +89,7 @@ class NotificationScheduler {
         debugPrint('🔕 Notifications disabled by user preference');
       } else {
         // Enable daily notifications (both 'all' and 'digest' are the same)
-        await NotificationService.scheduleDailyNotification();
+        await _scheduleIfPreferenceAllows();
         debugPrint('🔔 Notifications enabled by user preference: ${newType.name}');
       }
     } catch (e) {

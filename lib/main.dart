@@ -57,8 +57,8 @@ Future<void> main() async {
     ),
   );
   
-  // Initialize notifications and schedule daily reminder
-  await NotificationScheduler.initializeAndSchedule();
+  // Initialize notification system (permissions will be requested from home page)
+  await NotificationScheduler.initialize();
   
   // Run the app
   runApp(

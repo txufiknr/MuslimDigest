@@ -11,6 +11,7 @@ import 'package:muslimdigest/providers/topic.dart';
 import 'package:muslimdigest/providers/user/preferences.dart';
 import 'package:muslimdigest/utils/app.dart';
 import 'package:muslimdigest/utils/app_repository.dart';
+import 'package:muslimdigest/utils/notification_scheduler.dart';
 // import 'package:muslimdigest/utils/debounce.dart';
 import 'package:muslimdigest/utils/dialogs.dart';
 import 'package:muslimdigest/utils/extensions.dart';
@@ -80,6 +81,8 @@ class _HomePageState extends ConsumerState<HomePage> with RouteAware {
       if (!mounted) return;
       _saveAllData();
       _initFeed();
+      // Request notification permissions and schedule daily reminder
+      NotificationScheduler.requestPermissionsAndSchedule();
     });
   }
 
