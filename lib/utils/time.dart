@@ -101,10 +101,10 @@ enum IslamicEvent {
   List<String> get keywords {
     switch (this) {
       case EidAlFitr:      return ['eid', 'fitr', 'celebration', 'festival', 'breaking fast'];
-      case EidAlAdha:      return ['eid', 'adha', 'sacrifice', 'hajj', 'ibrahim', 'islamic'];
+      case EidAlAdha:      return ['eid', 'adha', 'sacrifice', 'hajj', 'ibrahim'];
       case IslamicNewYear: return ['islamic', 'new year', 'hijri', 'muharram', 'calendar'];
       case DayOfArafah:    return ['arafah', 'arafat', 'hajj', 'mount', 'worship', 'forgiveness'];
-      case LaylatAlQadr:   return ['laylat', 'qadr', 'power', 'destiny', 'night', 'ramadan'];
+      case LaylatAlQadr:   return ['laylat', 'qadr', 'power', 'destiny', 'night', 'ramadan', 'odd nights'];
       case Ramadan:        return ['ramadan', 'fasting', 'iftar', 'suhur', 'holy month'];
     }
   }
@@ -229,6 +229,11 @@ class IslamicEventMatcher {
       case IslamicEvent.Ramadan:
         totalScore += 0.5; // General month
         break;
+    }
+    
+    // Ongoing event bonus: prioritize events currently happening
+    if (event.isOngoing) {
+      totalScore += 2.5; // Moderate bonus for currently ongoing events
     }
     
     return totalScore;

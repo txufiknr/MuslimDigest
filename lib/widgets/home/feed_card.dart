@@ -378,16 +378,23 @@ class _FeedHeader extends ConsumerWidget {
                 overflow: TextOverflow.ellipsis,
               ),
             ).onTap(() {
-              openUrl(feedItem.imageUrl!);
+              debugPrint('🧾 Feed info:');
+              debugPrint('🧾 title: ${feedItem.title}');
+              debugPrint('🧾 video title: ${feedItem.videoTitle}');
+              debugPrint('🧾 summary: ${feedItem.summary}');
+              debugPrint('🧾 topic: ${feedItem.topic}');
+
+              debugPrint('🧾 Event info:');
+              debugPrint('📅 event title: ${feedItem.relatedEvent!.title}');
+              debugPrint('📅 isOngoing: ${feedItem.relatedEvent!.isOngoing}');
+              debugPrint('📅 feedItem.isOngoing: ${feedItem.isOngoing}');
+              debugPrint('📅 feedItem.vibeAnimationAsset: ${feedItem.vibeAnimationAsset}');
+              debugPrint('📅 isRamadan: $isRamadan');
             }),
           ),
         ],
       ).onTap(() {
-        debugPrint('📅 title: ${feedItem.relatedEvent!.title}');
-        debugPrint('📅 isOngoing: ${feedItem.relatedEvent!.isOngoing}');
-        debugPrint('📅 feedItem.isOngoing: ${feedItem.isOngoing}');
-        debugPrint('📅 feedItem.vibeAnimationAsset: ${feedItem.vibeAnimationAsset}');
-        debugPrint('📅 isRamadan: $isRamadan');
+        if (hasYouTubeVideo) openUrl(feedItem.videoUrl!);
       }),
     );
   }

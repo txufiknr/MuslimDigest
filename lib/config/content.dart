@@ -1,1 +1,0 @@
-// const ramadanKeywords = ['ramadan', 'fasting'];

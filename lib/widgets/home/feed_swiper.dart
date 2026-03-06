@@ -162,9 +162,6 @@ class FeedSwiperState extends ConsumerState<FeedSwiper> {
       requestReview();
     }
 
-    // No need to log history when viewing history feed
-    if (widget.feedType == FeedType.history) return;
-
     await _logHistory(previousItem, true);
   }
 
@@ -212,6 +209,9 @@ class FeedSwiperState extends ConsumerState<FeedSwiper> {
   }
 
   Future<void> _logHistory(FeedItem previousItem, [bool addTotalReads = false]) async {
+    // No need to log history when viewing history feed
+    if (widget.feedType == FeedType.history) return;
+
     // Update user total read
     if (addTotalReads) {
       final currentUser = ref.read(userProvider);
@@ -251,7 +251,7 @@ class FeedSwiperState extends ConsumerState<FeedSwiper> {
       return Column(
         children: [
           TrendingFeedsCard().center().expand(),
-          Lottie.asset('assets/lottie/pulse.json', width: 150),
+          Lottie.asset('assets/lottie/pulse.json', height: 150),
         ],
       );
     }

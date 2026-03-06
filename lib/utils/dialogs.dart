@@ -151,10 +151,10 @@ Future<dynamic> showBottomModalSheetMessage(BuildContext context, String message
       ).withPadding(bottom: 12)),
       
       // Remove padding from last button
-      if (buttons.isNotEmpty) 
-        const SizedBox.shrink()
+      if (buttons.isEmpty)
+        const SizedBox(height: 12)
       else
-        const SizedBox(height: 12),
+        const SizedBox.shrink()
     ]
   );
 }

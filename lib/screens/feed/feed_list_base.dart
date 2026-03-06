@@ -56,7 +56,6 @@ abstract class FeedListBasePage extends ConsumerStatefulWidget {
 class _FeedListBasePageState extends ConsumerState<FeedListBasePage> {
   final ScrollController _scrollController = ScrollController();
   final RefreshController _refreshController = RefreshController(initialRefresh: false);
-  // bool _isBackgroundRefreshing = false;
 
   @override
   void initState() {
@@ -90,32 +89,11 @@ class _FeedListBasePageState extends ConsumerState<FeedListBasePage> {
   Future<void> _loadInitialFeeds() async {
     final state = ref.read(widget.provider);
 
-    // Smart cache strategy: Show cached data first, then refresh in background
-    // For liked, saved, and history feeds, show cached data immediately and refresh in background
-    // For other feeds, only load if we have no cached data
-    // final isPersonalFeed = widget.feedType == FeedType.liked || 
-    //                      widget.feedType == FeedType.saved || 
-    //                      widget.feedType == FeedType.history;
-    
-    if (state.isEmpty) {
-      // No cached data - must load from backend
+    // No cached data, or there might be more items - must load from backend
+    if (state.isEmpty || state.hasMore) {
       final notifier = ref.read(widget.provider.notifier);
       await notifier.loadFromEndpoint(widget.feedType.endpoint);
-    // } else if (isPersonalFeed) {
-    //   // Have cached data - show it immediately and refresh in background
-    //   setState(() => _isBackgroundRefreshing = true);
-    //   Future.microtask(() async {
-    //     try {
-    //       final notifier = ref.read(widget.provider.notifier);
-    //       await notifier.loadFromEndpoint(widget.feedType.endpoint, forceRefresh: true);
-    //     } finally {
-    //       if (mounted) {
-    //         setState(() => _isBackgroundRefreshing = false);
-    //       }
-    //     }
-    //   });
     }
-    // For other feeds, if we have cached data, just show it (no refresh needed)
   }
 
   Future<void> _loadMoreFeeds() async {
@@ -126,13 +104,6 @@ class _FeedListBasePageState extends ConsumerState<FeedListBasePage> {
   Future<void> _onRefresh() async {
     try {
       final notifier = ref.read(widget.provider.notifier);
-      
-      // For history feed, add a small delay to allow backend to process latest reads
-      // if (widget.feedType == FeedType.history) {
-      //   log('[feed_list_base] Adding delay for history refresh to allow backend sync');
-      //   await Future.delayed(const Duration(milliseconds: 500));
-      // }
-      
       await notifier.loadFromEndpoint(
         widget.feedType.endpoint,
         forceRefresh: true,
@@ -221,12 +192,7 @@ class _FeedListBasePageState extends ConsumerState<FeedListBasePage> {
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: MyAppBar(
-        title: widget.title,
-        // actions: _isBackgroundRefreshing ? [
-        //   CupertinoActivityIndicator(radius: 10).withPadding(right: 16),
-        // ] : null,
-      ),
+      appBar: MyAppBar(title: widget.title),
       body: SafeArea(child: list),
     );
   }
@@ -247,18 +213,11 @@ class _FeedListBasePageState extends ConsumerState<FeedListBasePage> {
   Widget _buildFeedList(MyHelper h, BaseFeedState state) {
     final feeds = state.items ?? [];
 
-    // Show loading indicator when initially loading
-    // if (state.isGetting) {
-    //   return _buildLoadingState();
-    // }
-
     return LayoutBuilder(
       builder: (context, constraints) {
         final maxHeight = constraints.maxHeight;
         return SmartRefresher(
-          physics:
-          // _isBackgroundRefreshing ||
-          state.isGetting
+          physics: state.isGetting
             ? NeverScrollableScrollPhysics()
             : AlwaysScrollableScrollPhysics(),
           controller: _refreshController,

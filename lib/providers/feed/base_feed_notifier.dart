@@ -374,10 +374,13 @@ abstract class BaseFeedNotifier extends Notifier<BaseFeedState> {
         log('[BaseFeedNotifier] Cache hit! Found ${cachedItems.length} items');
         await setValue(cachedItems);
         // Set pagination state for cached data
+        // Set pagination state for cached data
+        // If we have a full page of items, assume there might be more data
+        final hasMore = cachedItems.length % CURSOR_PAGINATION_LIMIT == 0;
         state = state.copyWith(
           isLoading: false,
           isLoadingMore: false,
-          hasMore: true, // Assume more data available for cached content
+          hasMore: hasMore,
         );
         return true;
       } else {
