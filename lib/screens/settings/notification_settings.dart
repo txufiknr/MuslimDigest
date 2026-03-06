@@ -74,7 +74,6 @@ class _NotificationSettingsState extends ConsumerState<NotificationSettings> {
       if (mounted) {
         showSnackBarError(context, "Failed to send test notification");
         debugPrint('Failed to send test notification: $e');
-        // TODO: I/flutter (19655): Failed to send test notification: Unsupported operation: Cannot modify an unmodifiable list
       }
     }
   }

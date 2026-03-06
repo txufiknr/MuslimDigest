@@ -65,7 +65,7 @@ class OnboardingAgeStep extends ConsumerWidget {
         const SizedBox(height: 32),
         
         GridView.builder(
-          padding: const EdgeInsets.symmetric(horizontal: 32),
+          padding: const EdgeInsets.symmetric(horizontal: 16),
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(

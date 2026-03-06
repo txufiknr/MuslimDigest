@@ -166,7 +166,7 @@ class _WelcomePageState extends ConsumerState<WelcomePage> {
                             _buildInterestsStep(),
                             _buildNameStep(),
                           ].map((widget) => Center(child: SingleChildScrollView(
-                            padding: const EdgeInsets.symmetric(vertical: 32),
+                            padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 16),
                             child: widget,
                           ))).toList(),
                         ),

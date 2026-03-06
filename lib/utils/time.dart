@@ -100,7 +100,7 @@ enum IslamicEvent {
 
   List<WeightedKeyword> get weightedKeywords {
     switch (this) {
-      case EidAlFitr:      
+      case EidAlFitr:
         return [
           WeightedKeyword('eid', KeywordWeight.strong),
           WeightedKeyword('fitr', KeywordWeight.strong),
@@ -108,7 +108,7 @@ enum IslamicEvent {
           WeightedKeyword('festival', KeywordWeight.medium),
           WeightedKeyword('breaking fast', KeywordWeight.strong),
         ];
-      case EidAlAdha:      
+      case EidAlAdha:
         return [
           WeightedKeyword('eid', KeywordWeight.strong),
           WeightedKeyword('adha', KeywordWeight.strong),
@@ -116,15 +116,14 @@ enum IslamicEvent {
           WeightedKeyword('qurban', KeywordWeight.strong),
           WeightedKeyword('ibrahim', KeywordWeight.strong),
         ];
-      case IslamicNewYear: 
+      case IslamicNewYear:
         return [
-          WeightedKeyword('islamic', KeywordWeight.weak),
           WeightedKeyword('new year', KeywordWeight.medium),
           WeightedKeyword('hijri', KeywordWeight.strong),
           WeightedKeyword('muharram', KeywordWeight.strong),
           WeightedKeyword('calendar', KeywordWeight.weak),
         ];
-      case DayOfArafah:    
+      case DayOfArafah:
         return [
           WeightedKeyword('arafah', KeywordWeight.strong),
           WeightedKeyword('arafat', KeywordWeight.strong),
@@ -133,7 +132,7 @@ enum IslamicEvent {
           WeightedKeyword('worship', KeywordWeight.medium),
           WeightedKeyword('forgiveness', KeywordWeight.medium),
         ];
-      case LaylatAlQadr:   
+      case LaylatAlQadr:
         return [
           WeightedKeyword('laylat', KeywordWeight.strong),
           WeightedKeyword('qadr', KeywordWeight.strong),
@@ -142,7 +141,7 @@ enum IslamicEvent {
           WeightedKeyword('night', KeywordWeight.weak),
           WeightedKeyword('odd nights', KeywordWeight.strong),
         ];
-      case Ramadan:        
+      case Ramadan:
         return [
           WeightedKeyword('ramadan', KeywordWeight.strong),
           WeightedKeyword('fasting', KeywordWeight.strong),
