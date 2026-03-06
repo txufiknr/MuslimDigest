@@ -8,9 +8,10 @@ import 'package:muslimdigest/providers/user/preferences.dart';
 import 'package:muslimdigest/services/dio.dart';
 import 'package:muslimdigest/utils/dialogs.dart';
 import 'package:muslimdigest/utils/functions.dart';
+import 'package:muslimdigest/variables/feed.dart';
 
-Future<bool> markRead(String clusterId) async {
-  final response = await ApiService.post('feed/history', {'clusterId': clusterId});
+Future<bool> markRead(String clusterId, FeedType? source) async {
+  final response = await ApiService.post('feed/history', {'clusterId': clusterId, 'source': ?source?.name});
   log("[markRead] post history result: ${response.result}");
   return response.success;
 }

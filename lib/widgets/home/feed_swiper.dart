@@ -223,7 +223,7 @@ class FeedSwiperState extends ConsumerState<FeedSwiper> {
     
     // Track reading history to backend
     log('[swiper] Should mark read: "${previousItem.displayTitle}"');
-    fireAndForget(() => markRead(previousItem.cluster.id));
+    fireAndForget(() => markRead(previousItem.cluster.id, widget.feedType));
   }
 
   @override
