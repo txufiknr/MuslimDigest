@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:awesome_notifications/awesome_notifications.dart';
 import 'package:muslimdigest/services/notification_service.dart';
+import 'package:muslimdigest/services/notification_controller.dart';
 import 'package:muslimdigest/variables/user.dart';
 import 'package:muslimdigest/variables/settings.dart';
 
@@ -11,6 +12,14 @@ class NotificationScheduler {
     try {
       // Initialize the notification service
       await NotificationService.initialize();
+      
+      // Set up notification listeners for foreground notifications
+      AwesomeNotifications().setListeners(
+        onActionReceivedMethod: NotificationController.onActionReceived,
+        onNotificationCreatedMethod: NotificationController.onNotificationCreated,
+        onNotificationDisplayedMethod: NotificationController.onNotificationDisplayed,
+        onDismissActionReceivedMethod: NotificationController.onDismissActionReceived,
+      );
       
       // Check if notifications are allowed
       final areAllowed = await NotificationService.areNotificationsEnabled();

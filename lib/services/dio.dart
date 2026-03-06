@@ -121,6 +121,7 @@ class ApiService {
       sendTimeout: timeout,
       headers: {
         'Content-Type': contentType,
+        'User-Agent': userAgent,
       },
     ));
     return _dio!;

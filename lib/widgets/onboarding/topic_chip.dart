@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:muslimdigest/config/colors.dart';
+import 'package:muslimdigest/config/themes.dart';
 import 'package:muslimdigest/utils/extensions.dart';
 import 'package:muslimdigest/utils/helpers.dart';
 
@@ -28,8 +29,8 @@ class TopicChipColors {
   });
 
   /// Create theme-aware colors for light mode
-  factory TopicChipColors.light(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+  factory TopicChipColors.light() {
+    final colorScheme = AppThemes.lightColorScheme;
     return TopicChipColors(
       preferredText: Colors.white,
       preferredBackground: colorScheme.primary,
@@ -43,8 +44,8 @@ class TopicChipColors {
   }
 
   /// Create theme-aware colors for dark mode
-  factory TopicChipColors.dark(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+  factory TopicChipColors.dark() {
+    final colorScheme = AppThemes.darkColorScheme;
     return TopicChipColors(
       preferredText: colorScheme.primary,
       preferredBackground: Colors.white,
@@ -60,7 +61,7 @@ class TopicChipColors {
   /// Create theme-aware colors based on current theme
   factory TopicChipColors.fromTheme(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    return isDark ? TopicChipColors.dark(context) : TopicChipColors.light(context);
+    return isDark ? TopicChipColors.dark() : TopicChipColors.light();
   }
 
   /// Get text color for given state

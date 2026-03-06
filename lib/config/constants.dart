@@ -19,6 +19,7 @@ const APP_URL_DONATE = "https://sociabuzz.com/txufiknr/donate";
 // API URLs from environment variables
 final APP_URL_API = dotenv.env['APP_URL_API']!;
 final APP_URL_API_DEV = dotenv.env['APP_URL_API_DEV']!;
+final APP_USER_AGENT = dotenv.env['APP_USER_AGENT'] ?? "MuslimDigestApp";
 
 // App assets
 const APP_ASSETS_LOGO = "assets/images/icons/logo.png";

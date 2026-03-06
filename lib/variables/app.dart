@@ -54,3 +54,5 @@ final sharePlus = SharePlus.instance;
 final routeObserver = MyRouteObserver();
 
 String get copyrightText => '© ${DateTime.now().year} $APP_COPYRIGHT';
+
+String get userAgent => '$APP_USER_AGENT/$appVersion';

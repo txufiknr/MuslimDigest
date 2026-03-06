@@ -28,9 +28,7 @@ class NotificationService {
 
   /// Get a random notification message
   static String getRandomNotification() {
-    // final index = Random().nextInt(NOTIFICATIONS.length);
-    // return NOTIFICATIONS[index];
-    return (NOTIFICATIONS..shuffle()).first;
+    return (List<String>.from(NOTIFICATIONS)..shuffle()).first;
   }
 
   /// Schedule daily notification at 2 AM UTC

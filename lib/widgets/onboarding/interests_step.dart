@@ -62,7 +62,7 @@ class OnboardingInterestsStep extends ConsumerWidget {
             runSpacing: 6,
             alignment: WrapAlignment.center,
             children: availableTopics.map((topic) {
-              return TopicChipSelector(topic: topic, colors: TopicChipColors.light(context));
+              return TopicChipSelector(topic: topic, colors: TopicChipColors.light());
             }).toList(),
           ).withPaddingHorizontal(16),
       ],
