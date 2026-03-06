@@ -16,6 +16,8 @@ import 'package:muslimdigest/providers/feed/base_feed_notifier.dart';
 import 'package:muslimdigest/providers/user/user.dart';
 import 'package:muslimdigest/services/dio.dart';
 import 'package:muslimdigest/services/feed_state_service.dart';
+import 'package:muslimdigest/utils/app_repository.dart';
+import 'package:muslimdigest/utils/dialogs.dart';
 import 'package:muslimdigest/utils/extensions.dart';
 import 'package:muslimdigest/utils/functions.dart';
 import 'package:muslimdigest/utils/helpers.dart';
@@ -56,6 +58,12 @@ abstract class FeedListBasePage extends ConsumerStatefulWidget {
 class _FeedListBasePageState extends ConsumerState<FeedListBasePage> {
   final ScrollController _scrollController = ScrollController();
   final RefreshController _refreshController = RefreshController(initialRefresh: false);
+  
+  // Request cancellation tracking
+  String? _currentFeedRequestId;
+  static int _requestCounter = 0;
+  
+  AppRepository get r => ref.read(appRepositoryProvider);
 
   @override
   void initState() {
@@ -102,23 +110,34 @@ class _FeedListBasePageState extends ConsumerState<FeedListBasePage> {
   }
 
   Future<void> _onRefresh() async {
-    try {
-      final notifier = ref.read(widget.provider.notifier);
-      await notifier.loadFromEndpoint(
-        widget.feedType.endpoint,
-        forceRefresh: true,
-      );
-
-      final items = ref.read(widget.provider).items ?? [];
-      if (items.isNotEmpty) {
-        log('[feed_list_base] first feed title: "${items.first.displayTitle}"');
-      } else {
-        log('[feed_list_base] no item loaded"');
-      }
-      
-      _refreshController.refreshCompleted();
-    } catch (e) {
-      _refreshController.refreshFailed();
+    // Cancel previous request and create new request ID
+    _currentFeedRequestId = 'feed_${++_requestCounter}_${widget.feedType.name}_refresh';
+    
+    log('[FeedListBase] Starting refresh with request ID: $_currentFeedRequestId');
+    
+    final success = await r.loadFeed(
+      feedType: widget.feedType,
+      force: true,
+      requestId: _currentFeedRequestId,
+    );
+    
+    // Only show error if this is still the current request
+    if (mounted && !success && _currentFeedRequestId != null) {
+      return _showLoadFeedFailed(() => _onRefresh());
+    }
+    
+    _refreshController.refreshCompleted();
+  }
+  
+  Future<void> _showLoadFeedFailed(Future<void> Function() onRetry) async {
+    final shouldRetry = await showRetryableError(
+      context,
+      title: 'Failed to fetch feed items.',
+      message: 'Failed to load your feed. Would you like to retry?',
+      footer: 'Or try checking your internet connection first.',
+    );
+    if (shouldRetry) {
+      return onRetry();
     }
   }
 
@@ -217,9 +236,7 @@ class _FeedListBasePageState extends ConsumerState<FeedListBasePage> {
       builder: (context, constraints) {
         final maxHeight = constraints.maxHeight;
         return SmartRefresher(
-          physics: state.isGetting
-            ? NeverScrollableScrollPhysics()
-            : AlwaysScrollableScrollPhysics(),
+          physics: state.isGetting ? NeverScrollableScrollPhysics() : AlwaysScrollableScrollPhysics(),
           controller: _refreshController,
           enablePullDown: true,
           enablePullUp: false,

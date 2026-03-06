@@ -9,8 +9,8 @@ import 'package:muslimdigest/utils/app_repository.dart';
 import 'package:muslimdigest/utils/extensions.dart';
 import 'package:muslimdigest/utils/functions.dart';
 import 'package:muslimdigest/services/dio.dart';
+import 'package:muslimdigest/utils/helpers.dart';
 import 'package:muslimdigest/variables/user.dart';
-import '../../config/colors.dart';
 import '../../widgets/animations/loading_indicator_bar.dart';
 import '../../widgets/components/logo.dart';
 
@@ -70,8 +70,9 @@ class _SplashPageState extends ConsumerState<SplashPage> {
 
   @override
   Widget build(BuildContext context) {
+    final h = MyHelper(context);
     return Scaffold(
-      backgroundColor: AppColors.backgroundLight,
+      backgroundColor: h.currentTheme.scaffoldBackgroundColor,
       body: Column(
         children: [
           // Main content area
