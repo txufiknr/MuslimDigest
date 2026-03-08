@@ -1,4 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:muslimdigest/utils/extensions.dart';
+
+String getContentTypeLabel(String? contentType) {
+  contentType ??= 'article';
+  switch (contentType) {
+    case 'qna': return 'Q&A';
+    default: return contentType.unslugTitleCase();
+  }
+}
 
 MaterialColor getContentTypeColor(String? contentType) {
   switch (contentType ?? 'article') {
@@ -12,4 +21,11 @@ MaterialColor getContentTypeColor(String? contentType) {
     case 'virtue': return Colors.deepOrange;
     default: return Colors.teal;
   }
+}
+
+String getTopicLabel(String topic) {
+  if (topic == 'quran') return 'Qur’an';
+  if (topic == 'dua') return 'Duʿa';
+  if (topic == 'news' || topic == 'muslimworld') return 'Muslim world';
+  return topic.toCapitalized();
 }

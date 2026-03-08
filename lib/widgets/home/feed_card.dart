@@ -1,12 +1,10 @@
 import 'dart:developer' show log;
-import 'dart:io';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lottie/lottie.dart';
 import 'package:muslimdigest/utils/contents.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:muslimdigest/config/colors.dart';
 import 'package:muslimdigest/config/constants.dart';
 import 'package:muslimdigest/config/settings.dart';
@@ -25,7 +23,6 @@ import 'package:muslimdigest/utils/helpers.dart';
 import 'package:muslimdigest/utils/time.dart';
 import 'package:muslimdigest/variables/app.dart';
 import 'package:muslimdigest/variables/feed.dart';
-import 'package:muslimdigest/variables/time.dart';
 import 'package:muslimdigest/widgets/components/badge.dart';
 import 'package:muslimdigest/widgets/components/button.dart';
 import 'package:muslimdigest/widgets/components/cached_image.dart';
@@ -119,37 +116,38 @@ class _FeedCardState extends ConsumerState<FeedCard> with AutomaticKeepAliveClie
   Future<String?> _screenshot() async {
     try {
       // Request appropriate storage permissions based on Android version
-      bool hasPermission = false;
-      
-      if (Platform.isAndroid) {
-        hasPermission = 
-        // For Android 13+ (API 33+), use READ_MEDIA_IMAGES
-        await requestAndroid13StoragePermission() ||
-        // For older Android versions, fallback to storage permissions
-        await requestLegacyStoragePermission();
-      } else {
-        // For iOS and other platforms, use storage permission
-        final storagePermission = await Permission.storage.request();
-        hasPermission = storagePermission.isGranted;
-      }
-      
+      final hasPermission = await requestStoragePermission();
       if (!hasPermission) {
-        if (mounted) {
-          showSnackBarError(context, "Storage permission is required to save screenshots. Please enable it in settings.");
-        }
+        if (mounted) showSnackBarError(context, "Storage permission is required to save screenshots. Please enable it in settings.");
         return null;
       }
-
-      final imageName = "${_feedId ?? today.toIso8601String().substring(0, 10)}.png";
-      // final directory = await getApplicationDocumentsDirectory();
       
-      // Use temporary directory for better compatibility across Android versions
-      final directory = await getTemporaryDirectory();
+      // Use application documents directory for better compatibility
+      final directory = await getApplicationDocumentsDirectory();
+      final imageName = "$_feedId.png";
+      
+      // Ensure directory exists
+      if (!await directory.exists()) {
+        await directory.create(recursive: true);
+      }
+      
+      // Validate directory path
+      if (directory.path.isEmpty) {
+        log('[FeedCard] Error: Directory path is empty');
+        if (mounted) showSnackBarError(context, "Cannot access storage directory. Please try again.");
+        return null;
+      }
+      
+      log('[FeedCard] Attempting screenshot to: ${directory.path}/$imageName');
+      
+      // Add delay to ensure widget is fully rendered
+      await Future.delayed(Duration(milliseconds: 200));
+      
       final imagePath = await _screenshotController.captureAndSave(
         directory.path, 
         fileName: imageName,
-        pixelRatio: 2.0, // Higher quality
-        delay: Duration(milliseconds: 100), // Small delay for rendering
+        pixelRatio: 2.0,
+        delay: Duration(milliseconds: 100),
       );
       
       if (mounted && imagePath == null) {
@@ -162,7 +160,7 @@ class _FeedCardState extends ConsumerState<FeedCard> with AutomaticKeepAliveClie
     } catch (e) {
       log('[FeedCard] Screenshot error: $e');
       if (mounted) {
-        showSnackBarError(context, "Screenshot failed: ${e.toString()}");
+        showSnackBarError(context, "Screenshot failed. Please try again.");
       }
       return null;
     }
@@ -186,54 +184,57 @@ class _FeedCardState extends ConsumerState<FeedCard> with AutomaticKeepAliveClie
     final preferences = ref.watch(preferencesProvider);
     final isSourceAvoided = preferences.avoidedSources.contains(widget.feedItem?.source);
 
-    return Container(
-      width: double.infinity,
-      decoration: h.cardDecoration,
-      padding: isStreakCard ? EdgeInsets.all(AppThemes.contentPadding) : EdgeInsets.zero,
-      child: isStreakCard ? Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text("Another day of beneficial knowledge.", textAlign: TextAlign.center, style: h.currentTextTheme.titleLarge),
-          Text(MESSAGES[(currentStreak - 1) % MESSAGES.length], textAlign: TextAlign.center, style: h.currentTextTheme.bodyMedium),
-          StreaksCard(),
-          Lottie.asset('assets/lottie/streak.json'),
-          MyButton(text: "Continue reading", icon: Icon(CupertinoIcons.book), onPressed: widget.onSeeLatest,),
-          MyDivider(),
-          Row(
-            children: _isTakingScreenshot ? [
-              Text('Check out $APP_NAME and level up your Islamic knowledge').expand(),
-              Logo(size: 100,),
-            ] : [
-              Text("Do you want to share it?", style: h.currentTextTheme.bodySmall?.copyWith(fontSize: 16)).expand(),
-              MyIconButton(icon: CupertinoIcons.share, onPressed: _share,)
-            ],
-          ),
-        ].addItemInBetween(SizedBox(height: 16,)),
-      ) : shouldShowPlaceholder ? _NotInterestedPlaceholder(
-        feedType: widget.feedType,
-        feedItem: widget.feedItem!,
-        reason: reason,
-        isSourceAvoided: isSourceAvoided,
-      ).center() : Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header with image and title
-          _FeedHeader(feedItem: widget.feedItem!),
-          
-          // Content with article text and badges
-          _FeedContent(feedItem: widget.feedItem!).expand(),
-          
-          // Footer with source and actions buttons
-          _FeedFooter(
-            feedType: widget.feedType,
-            feedItem: widget.feedItem!,
-            isTakingScreenshot: _isTakingScreenshot,
-            onShare: _share,
-            onSave: _save,
-            onLike: _like,
-          ),
-        ],
+    return Screenshot(
+      controller: _screenshotController,
+      child: Container(
+        width: double.infinity,
+        decoration: h.cardDecoration,
+        padding: isStreakCard ? EdgeInsets.all(AppThemes.contentPadding) : EdgeInsets.zero,
+        child: isStreakCard ? Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text("Another day of beneficial knowledge.", textAlign: TextAlign.center, style: h.currentTextTheme.titleLarge),
+            Text(MESSAGES[(currentStreak - 1) % MESSAGES.length], textAlign: TextAlign.center, style: h.currentTextTheme.bodyMedium),
+            StreaksCard(),
+            Lottie.asset('assets/lottie/streak.json'),
+            MyButton(text: "Continue reading", icon: Icon(CupertinoIcons.book), onPressed: widget.onSeeLatest,),
+            MyDivider(),
+            Row(
+              children: _isTakingScreenshot ? [
+                Text('Check out $APP_NAME and level up your Islamic knowledge').expand(),
+                Logo(size: 100,),
+              ] : [
+                Text("Do you want to share it?", style: h.currentTextTheme.bodySmall?.copyWith(fontSize: 16)).expand(),
+                MyIconButton(icon: CupertinoIcons.share, onPressed: _share,)
+              ],
+            ),
+          ].addItemInBetween(SizedBox(height: 16,)),
+        ) : shouldShowPlaceholder ? _NotInterestedPlaceholder(
+          feedType: widget.feedType,
+          feedItem: widget.feedItem!,
+          reason: reason,
+          isSourceAvoided: isSourceAvoided,
+        ).center() : Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header with image and title
+            _FeedHeader(feedItem: widget.feedItem!),
+            
+            // Content with article text and badges
+            _FeedContent(feedItem: widget.feedItem!).expand(),
+            
+            // Footer with source and actions buttons
+            _FeedFooter(
+              feedType: widget.feedType,
+              feedItem: widget.feedItem!,
+              isTakingScreenshot: _isTakingScreenshot,
+              onShare: _share,
+              onSave: _save,
+              onLike: _like,
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -317,8 +318,10 @@ class _FeedHeader extends ConsumerWidget {
 
     final vibe = (() {
       if (feedItem.madhhab != null) {
+        final madhhabName = feedItem.madhhab!.toCapitalized();
         return Vibe(
-          title: "${feedItem.madhhab!.unslugTitleCase()} Fiqh",
+          title: "$madhhabName Fiqh",
+          description: 'Based on $madhhabName fiqh',
           color: Colors.indigo,
         );
       }
@@ -357,8 +360,8 @@ class _FeedHeader extends ConsumerWidget {
       }
       if (feedItem.cluster.contentType != null) {
         return Vibe(
-          title: feedItem.cluster.contentType!.unslugTitleCase(),
-          color: Colors.blue,
+          title: getContentTypeLabel(feedItem.cluster.contentType!),
+          color: getContentTypeColor(feedItem.cluster.contentType!),
         );
       }
       return Vibe(
@@ -814,9 +817,7 @@ class _FeedBadgeChip extends StatelessWidget {
   List<String> get _badgeSplit => badge.split(':');
   String get _badgeLabel => _badgeSplit[0];
   String get _badgeValue => _badgeSplit[1];
-
-  String get _labelCapitalized => _badgeLabel.unslugTitleCase();
-  String get _valueCapitalized => _badgeValue == "qna" ? "Q&A" : _badgeValue.unslugTitleCase();
+  String get _valueCapitalized => _badgeValue.unslugTitleCase();
 
   static const Map<String, String> _badgeMappings = {
     // Trust & Source Credibility
@@ -879,13 +880,11 @@ class _FeedBadgeChip extends StatelessWidget {
 
     // Handle dynamic patterns
     if (_badgeLabel == 'madhhab') return '$_valueCapitalized Fiqh';
-    if (_badgeValue == 'quran') return 'Qur’an';
-    if (_badgeValue == 'dua') return 'Duʿa';
-    if (_badgeValue == 'news' || _badgeValue == 'muslimworld') return 'Muslim world';
-    if (['content_type', 'content_tier', 'topic', 'engagement'].contains(_badgeLabel)) return _valueCapitalized;
+    if (_badgeLabel == 'topic') return getTopicLabel(_badgeValue);
+    if (_badgeLabel == 'content_type') return getContentTypeLabel(_badgeValue);
     
     // Default fallback
-    return '$_labelCapitalized: $_valueCapitalized';
+    return _valueCapitalized;
   }
 
   String? get _badgeDescription {
@@ -904,7 +903,6 @@ class _FeedBadgeChip extends StatelessWidget {
     if (_badgeLabel == 'scholars') return Colors.deepPurple;
     if (_badgeLabel == 'madhhab') return Colors.indigo;
     if (_badgeLabel == 'image') return Colors.cyan;
-    if (_badgeLabel == 'content_type') return Colors.blue;
     if (_badgeLabel == 'coverage') return Colors.teal;
 
     switch (_badgeLabel) {
@@ -934,7 +932,7 @@ class _FeedBadgeChip extends StatelessWidget {
           case 'eschatology': return Colors.blueGrey;
           case 'ethic': return Colors.blue;
           case 'family': return Colors.purple;
-          case 'fasting': return Colors.yellow;
+          case 'fasting': return Colors.lime;
           case 'fiqh': return Colors.indigo;
           case 'hadith': return Colors.teal;
           case 'history': return Colors.orange;

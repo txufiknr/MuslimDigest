@@ -46,36 +46,13 @@ Future<bool> doesAssetExist(String assetPath) async {
   }
 }
 
-/// Request Android 13+ (API 33+) media permissions for images
-Future<bool> requestAndroid13StoragePermission() async {
-  if (!Platform.isAndroid) return false;
-  
-  try {
-    // Request READ_MEDIA_IMAGES permission for Android 13+
-    final mediaPermission = await Permission.photos.request();
-    return mediaPermission.isGranted;
-  } catch (e) {
-    // Fallback for older permission_handler versions
-    final storagePermission = await Permission.storage.request();
-    return storagePermission.isGranted;
+Future<bool> requestStoragePermission() async {
+  if (Platform.isAndroid) {
+    try {
+      // Request Android 13+ (API 33+) media permissions for images
+      return await Permission.photos.request().isGranted;
+    } catch (_) {}
   }
-}
-
-/// Request legacy storage permissions for older Android versions
-Future<bool> requestLegacyStoragePermission() async {
-  if (!Platform.isAndroid) return false;
-  
-  try {
-    // Request write external storage permission
-    final writePermission = await Permission.storage.request();
-    if (writePermission.isGranted) {
-      return true;
-    }
-    
-    // If write permission denied, try read permission
-    final readPermission = await Permission.photos.request();
-    return readPermission.isGranted;
-  } catch (e) {
-    return false;
-  }
+  // For iOS and other platforms, use storage permission
+  return await Permission.storage.request().isGranted;
 }

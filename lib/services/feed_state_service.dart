@@ -12,25 +12,6 @@ import 'package:muslimdigest/variables/feed.dart';
 
 /// Utility functions for feed state management
 class FeedStateService {
-  /// Execute an operation on all feed type notifiers
-  static Future<void> executeOnAllFeedTypes(
-    WidgetRef ref,
-    Future<void> Function(BaseFeedNotifier notifier) operation,
-  ) async {
-    for (final feedType in FeedType.values) {
-      await operation(feedType.getNotifier(ref));
-    }
-  }
-
-  /// Execute an operation on all feed type notifiers (Ref version)
-  static Future<void> executeOnAllFeedTypesWithRef(
-    Ref ref,
-    Future<void> Function(BaseFeedNotifier notifier) operation,
-  ) async {
-    for (final feedType in FeedType.values) {
-      await operation(feedType.getNotifierWithRef(ref));
-    }
-  }
 
   /// Mark feed as not interested across all feed types
   static Future<void> markNotInterestedEverywhere(
@@ -39,9 +20,14 @@ class FeedStateService {
     FeedbackCategory? reason,
   }) async {
     final feedId = feedItem.id;
-    await executeOnAllFeedTypes(ref, (notifier) {
-      return notifier.markAsNotInterested(feedId, reason: reason);
-    });
+    
+    for (final feedType in FeedType.values) {
+      // Skip notInterested feed type to avoid circular dependency
+      if (feedType == FeedType.notInterested) continue;
+      
+      final notifier = feedType.getNotifier(ref);
+      await notifier.markAsNotInterested(feedId, reason: reason);
+    }
 
     // Prepend feed item to the not interested feed
     final notInterestedNotifier = ref.read(feedNotInterestedProvider.notifier);
@@ -53,35 +39,27 @@ class FeedStateService {
     WidgetRef ref,
     String feedId,
   ) async {
-    // TODO: error
-    // E/flutter ( 8137): [ERROR:flutter/runtime/dart_vm_initializer.cc(40)] Unhandled Exception: Bad state: Using "ref" when a widget is about to or has been unmounted is unsafe.
-    // E/flutter ( 8137): Ref relies on BuildContext, and BuildContext is unsafe to use when the widget is deactivated.
-    // E/flutter ( 8137): To safely refer to the state of providers inside State.dispose(), save the provider state in a field of your State class.
-    // E/flutter ( 8137): #0      ConsumerStatefulElement._assertNotDisposed (package:flutter_riverpod/src/core/consumer.dart:456:7)
-    // consumer.dart:456
-    // E/flutter ( 8137): #1      ConsumerStatefulElement.read (package:flutter_riverpod/src/core/consumer.dart:542:5)
-    // consumer.dart:542
-    // E/flutter ( 8137): #2      FeedType.getNotifier (package:muslimdigest/variables/feed.dart:113:33)
-    // feed.dart:113
-    // E/flutter ( 8137): #3      FeedStateService.executeOnAllFeedTypes (package:muslimdigest/services/feed_state_service.dart:21:32)
-    // feed_state_service.dart:21
-    // E/flutter ( 8137): <asynchronous suspension>
-    // E/flutter ( 8137): #4      FeedStateService.unmarkNotInterestedEverywhere (package:muslimdigest/services/feed_state_service.dart:56:5)
-    // feed_state_service.dart:56
-    // E/flutter ( 8137): <asynchronous suspension>
-    // E/flutter ( 8137): #5      _NotInterestedPlaceholder._undo (package:muslimdigest/widgets/home/feed_card.dart:252:7)
-    // feed_card.dart:252
-    // E/flutter ( 8137): <asynchronous suspension>
-    // E/flutter ( 8137): 
-    await executeOnAllFeedTypes(ref, (notifier) {
-      return notifier.unmarkAsNotInterested(feedId);
-    });
+    try {
+      for (final feedType in FeedType.values) {
+        // Skip notInterested feed type to avoid circular dependency
+        if (feedType == FeedType.notInterested) continue;
+        
+        final notifier = feedType.getNotifier(ref);
+        await notifier.unmarkAsNotInterested(feedId);
+      }
 
-    // Remove feed item from the not interested feed
-    final notInterestedNotifier = ref.read(feedNotInterestedProvider.notifier);
-    await notInterestedNotifier.removeItem(feedId);
+      // Remove feed item from the not interested feed
+      final notInterestedNotifier = ref.read(feedNotInterestedProvider.notifier);
+      await notInterestedNotifier.removeItem(feedId);
+    } catch (e) {
+      // Silently ignore errors related to unmounted widgets
+      if (!e.toString().contains('unmounted')) {
+        rethrow;
+      }
+    }
   }
 
+  
   /// Check if feed should be hidden (SSOT logic)
   static bool shouldHideFeed(
     WidgetRef ref,
