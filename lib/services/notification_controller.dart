@@ -68,9 +68,7 @@ class NotificationController {
         ShareParams(
           title: title,
           subject: body,
-          text:
-            'Check out $APP_NAME and level up your Islamic knowledge with daily high-quality digests:'
-            '$APP_URL_PLAYSTORE',
+          text: SHARE_MESSAGE,
         ),
       );
       debugPrint('✅ Content shared successfully');

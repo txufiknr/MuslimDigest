@@ -25,6 +25,7 @@ class FeedStateService {
       // Skip notInterested feed type to avoid circular dependency
       if (feedType == FeedType.notInterested) continue;
       
+      // Mark feed item as not interested
       final notifier = feedType.getNotifier(ref);
       await notifier.markAsNotInterested(feedId, reason: reason);
     }

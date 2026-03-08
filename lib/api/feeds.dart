@@ -32,6 +32,7 @@ Future<bool> deleteHistory(String clusterId) async {
 }
 
 Future<bool> markNotInterested(String clusterId) async {
+  log("[markNotInterested] 🔥 called for: $clusterId");
   final response = await ApiService.post('feed/not_interested', {'clusterId': clusterId});
   return response.success;
 }

@@ -106,9 +106,8 @@ class _FeedCardState extends ConsumerState<FeedCard> with AutomaticKeepAliveClie
         subject: '${isShareReading ? 'Read "${widget.feedItem!.title}"' : 'I got my daily streak'} on $APP_NAME',
         files: [XFile(imagePath)],
         text:
-          'Hi, I wanted to share with you my latest ${isShareReading ? 'read' : 'achievement'} on $APP_NAME.'
-          'Check out $APP_NAME and level up your Islamic knowledge with daily high-quality digests:'
-          '$APP_URL_PLAYSTORE',
+          'Hi, I wanted to share with you my latest ${isShareReading ? 'read' : 'achievement'} on $APP_NAME.\n'
+          '$SHARE_MESSAGE',
       ),
     );
   }
@@ -202,7 +201,7 @@ class _FeedCardState extends ConsumerState<FeedCard> with AutomaticKeepAliveClie
             MyDivider(),
             Row(
               children: _isTakingScreenshot ? [
-                Text('Check out $APP_NAME and level up your Islamic knowledge').expand(),
+                Text(PROMO_MESSAGE).expand(),
                 Logo(size: 100,),
               ] : [
                 Text("Do you want to share it?", style: h.currentTextTheme.bodySmall?.copyWith(fontSize: 16)).expand(),
@@ -635,22 +634,38 @@ class _FeedFooter extends ConsumerWidget {
       confirmButtonText: "Not Interested",
       cancelButtonText: "I've changed my mind",
     ) ?? false;
+
+    log("[_notInterested] 🔥 1");
     if (!context.mounted || !confirm) return;
+    log("[_notInterested] 🔥 2");
     
     try {
+      // Capture all notifiers before async operations to avoid ref issues
+      final userNotifier = ref.read(userProvider.notifier);
+      final notifiers = <FeedType, BaseFeedNotifier>{};
+      for (final feedType in FeedType.values) {
+        if (feedType != FeedType.notInterested) {
+          notifiers[feedType] = feedType.getNotifier(ref);
+        }
+      }
+      
       // Mark as not interested across all feed types
       if (context.mounted) {
+        log("[_notInterested] 🔥 3");
         await FeedStateService.markNotInterestedEverywhere(ref, feedItem);
       }
+      log("[_notInterested] 🔥 4");
 
       // Increment user's not interested count
       if (context.mounted) {
-        await ref.read(userProvider.notifier).incrementNotInterested();
+        await userNotifier.incrementNotInterested();
       }
+      log("[_notInterested] 🔥 5");
 
       // Call API to mark as not interested
       // TODO: this not fired
       fireAndForget(() async {
+        log("[_notInterested] 🔥 6");
         final success = await markNotInterested(feedItem.id);
 
         if (!context.mounted) return;
@@ -661,6 +676,7 @@ class _FeedFooter extends ConsumerWidget {
         }
       });
     } catch (e) {
+      log("[_notInterested] 🔥 ERROR! $e");
       if (context.mounted) {
         showSnackBarError(context, "Network error: $e");
       }

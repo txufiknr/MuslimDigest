@@ -30,6 +30,9 @@ const APP_FONT_FAMILY = "SourceSans3";
 // App languages
 const APP_LOCALE = Locale('en', 'US');
 const APP_LANGUAGE = 'en';
+
+const PROMO_MESSAGE = 'Check out $APP_NAME and level up your Islamic knowledge';
+const SHARE_MESSAGE = '$PROMO_MESSAGE with daily high-quality digests:\n$APP_URL_PLAYSTORE';
 const GREETINGS = "As-salamu alaykum";
 const MESSAGES = [
   "May this knowledge benefit you.",
