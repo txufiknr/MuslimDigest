@@ -94,6 +94,7 @@ enum FeedType {
   String get endpoint {
     switch (this) {
       case digest: return 'feed';
+      case notInterested: return 'feed/not_interested';
       default: return 'feed/$name';
     }
   }

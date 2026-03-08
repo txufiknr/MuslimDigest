@@ -615,7 +615,7 @@ class _FeedFooter extends ConsumerWidget {
           // Action buttons
           if (isTakingScreenshot) Logo(size: 50,) else ...<Widget>[
             if (likeCount > 0) Text(formatNumber(likeCount), textAlign: TextAlign.right, style: h.currentTextTheme.bodySmall,).withPadding(right: 4),
-            MyIconButton(icon: isLiked ? CupertinoIcons.heart_fill : CupertinoIcons.heart, size: 50, outlined: true, onPressed: onLike, iconColor: isLiked ? AppColors.primary : null),
+            MyIconButton(icon: isLiked ? CupertinoIcons.heart_fill : CupertinoIcons.heart, size: 50, outlined: true, onPressed: onLike, iconColor: isLiked ? Colors.red : null),
             MyIconButton(icon: isSaved ? CupertinoIcons.bookmark_fill : CupertinoIcons.bookmark, size: 50, outlined: true, onPressed: onSave, iconColor: isSaved ? AppColors.primary : null),
             MyIconButton(icon: CupertinoIcons.share, size: 50, outlined: true, onPressed: onShare,),
           ].addItemInBetween(SizedBox(width: 8)),
@@ -635,37 +635,18 @@ class _FeedFooter extends ConsumerWidget {
       cancelButtonText: "I've changed my mind",
     ) ?? false;
 
-    log("[_notInterested] 🔥 1");
     if (!context.mounted || !confirm) return;
-    log("[_notInterested] 🔥 2");
     
     try {
       // Capture all notifiers before async operations to avoid ref issues
       final userNotifier = ref.read(userProvider.notifier);
-      final notifiers = <FeedType, BaseFeedNotifier>{};
-      for (final feedType in FeedType.values) {
-        if (feedType != FeedType.notInterested) {
-          notifiers[feedType] = feedType.getNotifier(ref);
-        }
-      }
-      
-      // Mark as not interested across all feed types
-      if (context.mounted) {
-        log("[_notInterested] 🔥 3");
-        await FeedStateService.markNotInterestedEverywhere(ref, feedItem);
-      }
-      log("[_notInterested] 🔥 4");
-
       // Increment user's not interested count
       if (context.mounted) {
         await userNotifier.incrementNotInterested();
       }
-      log("[_notInterested] 🔥 5");
 
       // Call API to mark as not interested
-      // TODO: this not fired
       fireAndForget(() async {
-        log("[_notInterested] 🔥 6");
         final success = await markNotInterested(feedItem.id);
 
         if (!context.mounted) return;
@@ -675,11 +656,13 @@ class _FeedFooter extends ConsumerWidget {
           showSnackBarError(context, "Failed to mark as not interested");
         }
       });
+
+      // Mark as not interested across all feed types
+      if (context.mounted) {
+        await FeedStateService.markNotInterestedEverywhere(ref, feedItem);
+      }
     } catch (e) {
       log("[_notInterested] 🔥 ERROR! $e");
-      if (context.mounted) {
-        showSnackBarError(context, "Network error: $e");
-      }
     }
   }
 

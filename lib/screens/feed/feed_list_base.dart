@@ -1,27 +1,22 @@
 import 'dart:developer' show log;
-import 'dart:math' show max;
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:muslimdigest/models/feed.dart';
+import 'package:muslimdigest/strategies/feed_action_strategies.dart';
+import 'package:muslimdigest/utils/dialogs.dart';
+import 'package:muslimdigest/variables/feed.dart';
+import 'package:muslimdigest/providers/feed/base_feed_notifier.dart';
+import 'package:muslimdigest/utils/app_repository.dart';
 import 'package:go_router/go_router.dart';
-import 'package:muslimdigest/api/feeds.dart';
-import 'package:muslimdigest/utils/format.dart';
-import 'package:muslimdigest/widgets/components/logo.dart';
 import 'package:pull_to_refresh/pull_to_refresh.dart';
 import 'package:muslimdigest/config/colors.dart';
 import 'package:muslimdigest/config/themes.dart';
-import 'package:muslimdigest/models/feed.dart';
-import 'package:muslimdigest/providers/feed/base_feed_notifier.dart';
-import 'package:muslimdigest/providers/user/user.dart';
-import 'package:muslimdigest/services/dio.dart';
-import 'package:muslimdigest/services/feed_state_service.dart';
-import 'package:muslimdigest/utils/app_repository.dart';
-import 'package:muslimdigest/utils/dialogs.dart';
+import 'package:muslimdigest/utils/format.dart';
+import 'package:muslimdigest/widgets/components/logo.dart';
 import 'package:muslimdigest/utils/extensions.dart';
-import 'package:muslimdigest/utils/functions.dart';
 import 'package:muslimdigest/utils/helpers.dart';
-import 'package:muslimdigest/variables/feed.dart';
 import 'package:muslimdigest/widgets/animations/loader.dart';
 import 'package:muslimdigest/widgets/components/app_bar.dart';
 import 'package:muslimdigest/widgets/components/cached_image.dart';
@@ -142,62 +137,87 @@ class _FeedListBasePageState extends ConsumerState<FeedListBasePage> {
   }
 
   Future<void> _onActionPressed(FeedItem feed) async {
-    if (widget.feedType == FeedType.history) {
-      // Remove from current provider state immediately
-      final notifier = ref.read(widget.provider.notifier);
-      final currentState = ref.read(widget.provider);
-      final currentItems = currentState.items ?? [];
-      final updatedItems = currentItems.where((item) => item.id != feed.id).toList();
-      await notifier.setValue(updatedItems);
+    // Get the appropriate strategy for this feed type
+    final strategy = FeedActionStrategyFactory.getStrategy(widget.feedType);
+    
+    if (strategy == null) {
+      log('[FeedListBase] No action strategy found for feed type: ${widget.feedType.name}');
+      return;
+    }
+    
+    try {
+      // Execute the strategy
+      await strategy.execute(ref, feed);
       
-      // Fire and forget API call
-      fireAndForget(() => deleteHistory(feed.id));
-    } else {
-      // Unlike/Unsave the feed (for liked and saved feeds) - UI-first approach
-      final isLikedFeed = widget.feedType.endpoint.contains('liked');
-      
-      // Update UI immediately (optimistic update)
-      if (isLikedFeed) {
-        // Update user liked count immediately
-        final currentUser = ref.read(userProvider);
-        final newLikedCount = max(0, currentUser.totalLiked - 1);
-        await ref.read(userProvider.notifier).setValue(
-          currentUser.copyWith(totalLiked: newLikedCount)
-        );
-        
-        // Update like status across all feed types immediately
-        await FeedStateService.updateLikeStatusEverywhere(
-          ref, 
-          feed.id, 
-          false, 
-          likeCount: max(0, feed.likeCount - 1),
-        );
-      } else {
-        // Update save status across all feed types immediately
-        await FeedStateService.updateSaveStatusEverywhere(
-          ref, 
-          feed.id, 
-          false,
-        );
-        
-        // Update user saved count immediately
-        final currentUser = ref.read(userProvider);
-        final newSavedCount = max(0, currentUser.totalSaved - 1);
-        await ref.read(userProvider.notifier).setValue(
-          currentUser.copyWith(totalSaved: newSavedCount)
-        );
+      // For history feed type, also remove from current provider state
+      if (widget.feedType == FeedType.history) {
+        await _removeFromCurrentFeed(feed);
       }
       
-      // Remove from current provider state immediately
-      final notifier = ref.read(widget.provider.notifier);
-      final currentState = ref.read(widget.provider);
-      final currentItems = currentState.items ?? [];
-      final updatedItems = currentItems.where((item) => item.id != feed.id).toList();
-      await notifier.setValue(updatedItems);
+      // For other feed types, remove from current provider state after strategy execution
+      if (widget.feedType != FeedType.notInterested) {
+        await _removeFromCurrentFeed(feed);
+      }
       
-      // Fire and forget API call
-      final actionEndpoint = isLikedFeed ? 'feed/like' : 'feed/save';
-      fireAndForget(() => ApiService.post(actionEndpoint, { 'clusterId': feed.id, 'value': false }));
+    } catch (e) {
+      log('[FeedListBase] Error executing action strategy: $e');
+      // Show error message to user
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to ${strategy.actionLabel.toLowerCase()} feed'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+  
+  /// Helper method to remove feed from current provider state
+  Future<void> _removeFromCurrentFeed(FeedItem feed) async {
+    final notifier = ref.read(widget.provider.notifier);
+    final currentState = ref.read(widget.provider);
+    final currentItems = currentState.items ?? [];
+    final updatedItems = currentItems.where((item) => item.id != feed.id).toList();
+    await notifier.setValue(updatedItems);
+  }
+  
+  /// Build action button using strategy pattern
+  Widget _buildActionButton(FeedItem feed) {
+    final strategy = FeedActionStrategyFactory.getStrategy(widget.feedType);
+    
+    // Fallback to default action if no strategy found
+    if (strategy == null) {
+      return MyIconButton(
+        icon: widget.actionIcon,
+        onPressed: () => _onActionPressed(feed),
+        tooltip: widget.actionTooltip,
+        backgroundColor: AppColors.primary.withValues(alpha: 0.1),
+        iconColor: AppColors.primary,
+        iconSize: 18,
+        size: 40,
+      );
+    }
+    
+    // Use strategy-based action button
+    final iconColor = _getActionButtonIconColor(widget.feedType);
+    return MyIconButton(
+      icon: strategy.actionIcon,
+      onPressed: () => _onActionPressed(feed),
+      tooltip: strategy.actionTooltip,
+      backgroundColor: iconColor.withValues(alpha: .1),
+      iconColor: iconColor,
+      iconSize: 18,
+      size: 40,
+    );
+  }
+  
+  /// Get action button icon color based on feed type
+  Color _getActionButtonIconColor(FeedType feedType) {
+    switch (feedType) {
+      case FeedType.liked: return Colors.red;
+      case FeedType.notInterested: return Colors.green;
+      default: return AppColors.primary;
     }
   }
 
@@ -367,15 +387,7 @@ class _FeedListBasePageState extends ConsumerState<FeedListBasePage> {
           const SizedBox(width: 12),
           
           // Right: Action Button
-          MyIconButton(
-            icon: widget.actionIcon,
-            onPressed: () => _onActionPressed(feed),
-            tooltip: widget.actionTooltip,
-            backgroundColor: AppColors.primary.withValues(alpha: 0.1),
-            iconColor: AppColors.primary,
-            iconSize: 18,
-            size: 40,
-          ),
+          _buildActionButton(feed),
         ],
       ),
     ).onTap(() {

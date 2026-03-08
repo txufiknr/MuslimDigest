@@ -24,15 +24,19 @@ class FeedStateService {
     for (final feedType in FeedType.values) {
       // Skip notInterested feed type to avoid circular dependency
       if (feedType == FeedType.notInterested) continue;
-      
+
       // Mark feed item as not interested
-      final notifier = feedType.getNotifier(ref);
-      await notifier.markAsNotInterested(feedId, reason: reason);
+      try {
+        final notifier = feedType.getNotifier(ref);
+        await notifier.markAsNotInterested(feedId, reason: reason);
+      } catch (_) {}
     }
 
     // Prepend feed item to the not interested feed
-    final notInterestedNotifier = ref.read(feedNotInterestedProvider.notifier);
-    await notInterestedNotifier.prependItem(feedItem);
+    try {
+      final notInterestedNotifier = ref.read(feedNotInterestedProvider.notifier);
+      await notInterestedNotifier.prependItem(feedItem);
+    } catch (_) {}
   }
 
   /// Unmark feed as not interested across all feed types
