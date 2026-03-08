@@ -4,6 +4,9 @@ import 'package:muslimdigest/config/colors.dart';
 
 /// Configuration for notification channels and settings
 class NotificationConfig {
+  /// Channel group key for Islamic reminders
+  static const String islamicRemindersGroupKey = 'islamic_reminders';
+  
   /// Channel key for daily reminders
   static const String dailyReminderChannelKey = 'daily_reminder';
   
@@ -16,12 +19,24 @@ class NotificationConfig {
   /// LED color for notifications
   static const Color ledColor = Colors.white;
 
+  static const DEFAULT_ICON_LARGE = 'resource://drawable/res_logo';
+  static const DEFAULT_ICON_SMALL = 'resource://drawable/res_favicon';
+
+  /// Get all notification channel groups
+  static List<NotificationChannelGroup> get channelGroups => [
+    NotificationChannelGroup(
+      channelGroupKey: islamicRemindersGroupKey,
+      channelGroupName: 'Islamic Reminders',
+    ),
+  ];
+
   /// Get all notification channels
   static List<NotificationChannel> get channels => [
     NotificationChannel(
       channelKey: dailyReminderChannelKey,
       channelName: 'Daily Islamic Reminders',
       channelDescription: 'Daily inspirational Islamic notifications to brighten your day',
+      channelGroupKey: islamicRemindersGroupKey,
       defaultColor: defaultColor,
       ledColor: ledColor,
       importance: NotificationImportance.High,
@@ -35,6 +50,7 @@ class NotificationConfig {
       channelKey: testChannelKey,
       channelName: 'Test Notifications',
       channelDescription: 'Notifications for testing purposes',
+      channelGroupKey: islamicRemindersGroupKey,
       defaultColor: defaultColor,
       ledColor: ledColor,
       importance: NotificationImportance.Default,
@@ -56,7 +72,7 @@ class NotificationConfig {
       channelKey: dailyReminderChannelKey,
       title: title,
       body: body,
-      notificationLayout: NotificationLayout.Default,
+      notificationLayout: NotificationLayout.BigText,
       category: NotificationCategory.Reminder,
       showWhen: true,
       autoDismissible: true,
@@ -66,10 +82,23 @@ class NotificationConfig {
       wakeUpScreen: false,
       fullScreenIntent: false,
       criticalAlert: false,
-      largeIcon: 'asset://assets/images/icons/icon.png',
-      payload: {'type': 'daily_reminder'},
+      icon: DEFAULT_ICON_SMALL,
+      largeIcon: DEFAULT_ICON_LARGE,
+      payload: {'type': 'daily_reminder', 'id': id.toString()},
     );
   }
+
+  /// Get action buttons for daily reminder
+  static List<NotificationActionButton> getDailyReminderActions() => [
+    NotificationActionButton(
+      key: 'OPEN_APP',
+      label: 'Open App',
+    ),
+    NotificationActionButton(
+      key: 'SHARE',
+      label: 'Share',
+    ),
+  ];
 
   /// Get notification content for test notification
   static NotificationContent getTestContent({
@@ -87,19 +116,37 @@ class NotificationConfig {
       showWhen: true,
       autoDismissible: true,
       backgroundColor: defaultColor,
-      largeIcon: 'asset://assets/images/icons/icon.png',
+      icon: DEFAULT_ICON_SMALL,
+      largeIcon: DEFAULT_ICON_LARGE,
       payload: {'type': 'test'},
     );
   }
 
-  /// Get notification schedule for daily 2 AM UTC
-  static NotificationCalendar getDailySchedule() {
+  /// Get notification schedule for daily at random hour (7 AM - 12 PM)
+  static NotificationCalendar getDailySchedule({int? hour}) {
+    final scheduleHour = hour ?? 8; // Default to 8 AM if not specified
     return NotificationCalendar(
-      hour: 2, // 2 AM UTC
+      hour: scheduleHour,
       minute: 0,
       second: 0,
       millisecond: 0,
       repeats: true, // Repeat daily
+      preciseAlarm: true,
+      allowWhileIdle: true,
+      timeZone: 'UTC',
+    );
+  }
+
+  /// Get notification schedule for specific date
+  static NotificationCalendar getSpecificDateSchedule(DateTime dateTime) {
+    return NotificationCalendar(
+      year: dateTime.year,
+      month: dateTime.month,
+      day: dateTime.day,
+      hour: dateTime.hour,
+      minute: dateTime.minute,
+      second: 0,
+      millisecond: 0,
       preciseAlarm: true,
       allowWhileIdle: true,
       timeZone: 'UTC',

@@ -1,5 +1,9 @@
+import 'package:flutter/material.dart';
+import 'package:muslimdigest/utils/contents.dart';
+import 'package:muslimdigest/utils/extensions.dart';
 import 'package:muslimdigest/utils/time.dart';
 import 'package:muslimdigest/variables/feed.dart';
+import 'package:muslimdigest/variables/user.dart';
 
 class FeedItem {
   final String id;
@@ -27,6 +31,7 @@ class FeedItem {
   final List<Cluster> alsoRead;
   final DateTime? createdAt;
   final FeedbackCategory? feedbackCategory; // For not interested reason
+  final IslamicEventData? relatedEvent;
 
   FeedItem({
     required this.id,
@@ -54,23 +59,25 @@ class FeedItem {
     this.likeCount = 0,
     this.alsoRead = const [],
     this.feedbackCategory,
+    this.relatedEvent,
   });
 
   bool get hasVideo => videoUrl != null;
   bool get hasYouTubeVideo => videoUrl?.contains('youtu') == true;
   bool get isNuanced => ['quran', 'hadith', 'fiqh'].contains(cluster.contentType);
+  bool get isTrending => badges.contains('engagement:trending');
+  bool get isHighlight => isTrending || isBreaking;
+  bool get isEphemeral => badges.contains('content_tier:ephemeral') || cluster.contentType == 'news';
+
+  String? get madhhab => badges.where((badge) => badge != 'madhhab:multiple').toList().firstWhereOrNull((badge) => badge.startsWith('maddhab:'));
+  double get readTimeSeconds => cluster.readTime ?? estimateReadTime(summary);
+  String get readTimeLabel => formatReadTime(readTimeSeconds);
 
   // Display labels on feed card
   String get displayTitle => hasVideo ? (videoTitle ?? title) : title;
   String get sourceLabel => source.siteName ?? source.id;
   String? get sourceLink => canonicalUrl ?? sourceUrl;
 
-  IslamicEvent? get relatedEvent => IslamicEventMatcher.findBestMatch(
-    title: title,
-    videoTitle: videoTitle,
-    summary: summary,
-    topic: topic,
-  );
   bool get isOngoing => relatedEvent?.isOngoing == true;
   String get vibeAnimationAsset => 'assets/lottie/vibes/${relatedEvent?.name}.json';
 
@@ -107,6 +114,7 @@ class FeedItem {
       isLiked: json['isLiked'] ?? false,
       isSaved: json['isSaved'] ?? false,
       feedbackCategory: FeedbackCategory.fromString(json['feedbackCategory']),
+      relatedEvent: json['relatedEvent'] == null ? null : IslamicEventData.fromJson(json['relatedEvent']),
     );
   }
 
@@ -136,7 +144,8 @@ class FeedItem {
       'isLiked': isLiked,
       'isSaved': isSaved,
       'likeCount': likeCount,
-      'feedbackCategory': feedbackCategory,
+      'feedbackCategory': feedbackCategory?.name,
+      'relatedEvent': relatedEvent?.toJson(),
     };
   }
 
@@ -166,6 +175,7 @@ class FeedItem {
     bool? isSaved,
     int? likeCount,
     FeedbackCategory? feedbackCategory,
+    IslamicEventData? relatedEvent,
   }) {
     return FeedItem(
       id: id ?? this.id,
@@ -193,6 +203,7 @@ class FeedItem {
       isSaved: isSaved ?? this.isSaved,
       likeCount: likeCount ?? this.likeCount,
       feedbackCategory: feedbackCategory ?? this.feedbackCategory,
+      relatedEvent: relatedEvent ?? this.relatedEvent,
     );
   }
 
@@ -206,10 +217,12 @@ FeedItem(
   summaryProvider: $summaryProvider,
   summaryStatus: $summaryStatus,
   sourceUrl: $sourceUrl,
+  canonicalUrl: $canonicalUrl,
   hook: $hook,
   topic: $topic,
   imageUrl: $imageUrl,
   videoUrl: $videoUrl,
+  videoTitle: $videoTitle,
   riskLevel: $riskLevel,
   publishedAt: $publishedAt,
   createdAt: $createdAt,
@@ -222,6 +235,8 @@ FeedItem(
   isLiked: $isLiked,
   isSaved: $isSaved,
   likeCount: $likeCount,
+  feedbackCategory: $feedbackCategory,
+  relatedEvent: $relatedEvent,
 )''';
   }
   
@@ -239,7 +254,9 @@ FeedItem(
     other.isLiked == isLiked &&
     other.isSaved == isSaved &&
     other.likeCount == likeCount &&
-    other.createdAt == createdAt
+    other.createdAt == createdAt &&
+    other.feedbackCategory == feedbackCategory &&
+    other.relatedEvent == relatedEvent
   );
 }
 
@@ -248,6 +265,7 @@ class Cluster {
   final String? displayTitle;
   final int articleCount;
   final String? contentType;
+  final double? readTime;
   final Map<String, int> topicDistribution;
   final double trendingScore;
   final String? trustLevel;
@@ -262,6 +280,7 @@ class Cluster {
     this.displayTitle,
     this.articleCount = 1,
     this.contentType,
+    this.readTime,
     this.topicDistribution = const {},
     this.trendingScore = 0.0,
     this.trustLevel,
@@ -272,11 +291,14 @@ class Cluster {
     this.lastPublishedAt,
   });
 
+  Color get contentTypeColor => getContentTypeColor(contentType);
+
   factory Cluster.fromJson(Map<String, dynamic> json) {
     return Cluster(
       id: json['id'],
       articleCount: json['articleCount'] ?? 1,
       contentType: json['contentType'],
+      readTime: json['readTime']?.toDouble(),
       topicDistribution: Map<String, int>.from(json['topicDistribution'] ?? {}),
       trendingScore: json['trendingScore']?.toDouble() ?? 0.0,
       trustLevel: json['trustLevel'],
@@ -294,6 +316,7 @@ class Cluster {
       'displayTitle': displayTitle,
       'articleCount': articleCount,
       'contentType': contentType,
+      'readTime': readTime,
       'topicDistribution': topicDistribution,
       'trendingScore': trendingScore,
       'trustLevel': trustLevel,
@@ -313,6 +336,7 @@ Cluster(
   displayTitle: $displayTitle,
   articleCount: $articleCount,
   contentType: $contentType,
+  readTime: $readTime,
   topicDistribution: $topicDistribution,
   trendingScore: $trendingScore,
   trustLevel: $trustLevel,
@@ -343,6 +367,9 @@ class Source {
   final String? siteName;
   final String? siteIcon;
   final String? ogImage;
+  final int? targetAgeMin;
+  final int? targetAgeMax;
+  final Gender? targetGender;
 
   Source({
     required this.id,
@@ -351,6 +378,9 @@ class Source {
     this.siteName,
     this.siteIcon,
     this.ogImage,
+    this.targetAgeMin,
+    this.targetAgeMax,
+    this.targetGender,
   });
 
   factory Source.fromJson(Map<String, dynamic> json) {
@@ -361,6 +391,9 @@ class Source {
       siteName: json['siteName'],
       siteIcon: json['siteIcon'],
       ogImage: json['ogImage'],
+      targetAgeMin: json['targetAgeMin'],
+      targetAgeMax: json['targetAgeMax'],
+      targetGender: Gender.fromString(json['targetGender']),
     );
   }
 
@@ -372,6 +405,9 @@ class Source {
       'siteName': siteName,
       'siteIcon': siteIcon,
       'ogImage': ogImage,
+      'targetAgeMin': targetAgeMin,
+      'targetAgeMax': targetAgeMax,
+      'targetGender': targetGender,
     };
   }
 
@@ -384,7 +420,10 @@ Source(
   trustLevel: $trustLevel,
   siteName: $siteName,
   siteIcon: $siteIcon,
-  ogImage: $ogImage
+  ogImage: $ogImage,
+  targetAgeMin: $targetAgeMin,
+  targetAgeMax: $targetAgeMax,
+  targetGender: $targetGender
 )''';
   }
 
@@ -400,6 +439,170 @@ Source(
     other.trustLevel == trustLevel &&
     other.siteName == siteName &&
     other.siteIcon == siteIcon &&
-    other.ogImage == ogImage
+    other.ogImage == ogImage &&
+    other.targetAgeMin == targetAgeMin &&
+    other.targetAgeMax == targetAgeMax &&
+    other.targetGender == targetGender
   );
+}
+
+class HijriEventDate {
+  final int month; // 1-indexed Hijri month
+  final int day;   // Day of month
+  final int? duration; // Duration in days (for multi-day events)
+
+  HijriEventDate({
+    required this.month,
+    required this.day,
+    this.duration,
+  });
+
+  factory HijriEventDate.fromJson(Map<String, dynamic> json) {
+    return HijriEventDate(
+      month: json['month']?.toInt() ?? 1,
+      day: json['day']?.toInt() ?? 1,
+      duration: json['duration']?.toInt(),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'month': month,
+      'day': day,
+      'duration': duration,
+    };
+  }
+
+  @override
+  String toString() {
+    return '''
+HijriEventDate(
+  month: $month,
+  day: $day,
+  duration: $duration
+)''';
+  }
+
+  @override
+  int get hashCode => Object.hash(month, day, duration);
+
+  @override
+  bool operator ==(Object other) => identical(this, other) || (
+    other is HijriEventDate &&
+    runtimeType == other.runtimeType &&
+    other.month == month &&
+    other.day == day &&
+    other.duration == duration
+  );
+}
+
+class IslamicEventData {
+  final IslamicEvent name;
+  final String title;
+  final bool isOngoing;
+  final String? startDate;
+  final String? endDate;
+  final HijriEventDate? hijriDate;
+  final List<String>? libraryEventNames;
+
+  IslamicEventData({
+    required this.name,
+    required this.title,
+    required this.isOngoing,
+    this.startDate,
+    this.endDate,
+    this.hijriDate,
+    this.libraryEventNames,
+  });
+
+  factory IslamicEventData.fromJson(Map<String, dynamic> json) {
+    return IslamicEventData(
+      name: IslamicEvent.values.firstWhere(
+        (e) => e.name == json['name'],
+        orElse: () => throw ArgumentError('Invalid IslamicEvent: ${json['name']}'),
+      ),
+      title: json['title'] ?? '',
+      isOngoing: json['isOngoing'] ?? false,
+      startDate: json['startDate'],
+      endDate: json['endDate'],
+      hijriDate: json['hijriDate'] == null ? null : HijriEventDate.fromJson(json['hijriDate']),
+      libraryEventNames: json['libraryEventNames'] == null 
+        ? null 
+        : List<String>.from(json['libraryEventNames']),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'name': name.name,
+      'title': title,
+      'isOngoing': isOngoing,
+      'startDate': startDate,
+      'endDate': endDate,
+      'hijriDate': hijriDate?.toJson(),
+      'libraryEventNames': libraryEventNames,
+    };
+  }
+
+  IslamicEventData copyWith({
+    IslamicEvent? name,
+    String? title,
+    bool? isOngoing,
+    String? startDate,
+    String? endDate,
+    HijriEventDate? hijriDate,
+    List<String>? libraryEventNames,
+  }) {
+    return IslamicEventData(
+      name: name ?? this.name,
+      title: title ?? this.title,
+      isOngoing: isOngoing ?? this.isOngoing,
+      startDate: startDate ?? this.startDate,
+      endDate: endDate ?? this.endDate,
+      hijriDate: hijriDate ?? this.hijriDate,
+      libraryEventNames: libraryEventNames ?? this.libraryEventNames,
+    );
+  }
+
+  @override
+  String toString() {
+    return '''
+IslamicEventData(
+  name: $name,
+  title: $title,
+  isOngoing: $isOngoing,
+  startDate: $startDate,
+  endDate: $endDate,
+  hijriDate: $hijriDate,
+  libraryEventNames: $libraryEventNames
+)''';
+  }
+
+  @override
+  int get hashCode => Object.hash(name, title, isOngoing, startDate, endDate, hijriDate, libraryEventNames);
+
+  @override
+  bool operator ==(Object other) => identical(this, other) || (
+    other is IslamicEventData &&
+    runtimeType == other.runtimeType &&
+    other.name == name &&
+    other.title == title &&
+    other.isOngoing == isOngoing &&
+    other.startDate == startDate &&
+    other.endDate == endDate &&
+    other.hijriDate == hijriDate &&
+    other.libraryEventNames == libraryEventNames
+  );
+}
+
+class Vibe {
+  final String title;
+  final String? description;
+  final MaterialColor? color;
+ 
+  Vibe({
+    required this.title,
+    this.description,
+    this.color,
+  });
 }

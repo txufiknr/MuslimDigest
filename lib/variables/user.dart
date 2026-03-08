@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/material.dart';
 import 'package:muslimdigest/models/user.dart';
 import 'package:muslimdigest/utils/extensions.dart';
 import 'package:muslimdigest/variables/app.dart';
@@ -20,7 +21,14 @@ enum Gender {
     }
   }
 
-  static Gender? fromString(String name) {
+  MaterialColor get color {
+    switch (this) {
+      case male: return Colors.blue;
+      case female: return Colors.pink;
+    }
+  }
+
+  static Gender? fromString(String? name) {
     return values.firstWhereOrNull((e) => e.name == name);
   }
 }

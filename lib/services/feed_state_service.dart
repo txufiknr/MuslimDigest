@@ -53,6 +53,26 @@ class FeedStateService {
     WidgetRef ref,
     String feedId,
   ) async {
+    // TODO: error
+    // E/flutter ( 8137): [ERROR:flutter/runtime/dart_vm_initializer.cc(40)] Unhandled Exception: Bad state: Using "ref" when a widget is about to or has been unmounted is unsafe.
+    // E/flutter ( 8137): Ref relies on BuildContext, and BuildContext is unsafe to use when the widget is deactivated.
+    // E/flutter ( 8137): To safely refer to the state of providers inside State.dispose(), save the provider state in a field of your State class.
+    // E/flutter ( 8137): #0      ConsumerStatefulElement._assertNotDisposed (package:flutter_riverpod/src/core/consumer.dart:456:7)
+    // consumer.dart:456
+    // E/flutter ( 8137): #1      ConsumerStatefulElement.read (package:flutter_riverpod/src/core/consumer.dart:542:5)
+    // consumer.dart:542
+    // E/flutter ( 8137): #2      FeedType.getNotifier (package:muslimdigest/variables/feed.dart:113:33)
+    // feed.dart:113
+    // E/flutter ( 8137): #3      FeedStateService.executeOnAllFeedTypes (package:muslimdigest/services/feed_state_service.dart:21:32)
+    // feed_state_service.dart:21
+    // E/flutter ( 8137): <asynchronous suspension>
+    // E/flutter ( 8137): #4      FeedStateService.unmarkNotInterestedEverywhere (package:muslimdigest/services/feed_state_service.dart:56:5)
+    // feed_state_service.dart:56
+    // E/flutter ( 8137): <asynchronous suspension>
+    // E/flutter ( 8137): #5      _NotInterestedPlaceholder._undo (package:muslimdigest/widgets/home/feed_card.dart:252:7)
+    // feed_card.dart:252
+    // E/flutter ( 8137): <asynchronous suspension>
+    // E/flutter ( 8137): 
     await executeOnAllFeedTypes(ref, (notifier) {
       return notifier.unmarkAsNotInterested(feedId);
     });

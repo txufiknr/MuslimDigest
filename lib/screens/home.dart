@@ -1,23 +1,28 @@
 import 'dart:async';
 import 'dart:developer';
 
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:muslimdigest/api/user.dart';
 import 'package:muslimdigest/models/user.dart';
+import 'package:muslimdigest/providers/feed/feed.dart';
 import 'package:muslimdigest/providers/feed_type.dart';
 import 'package:muslimdigest/providers/read_count_states.dart';
 import 'package:muslimdigest/providers/topic.dart';
 import 'package:muslimdigest/providers/user/preferences.dart';
 import 'package:muslimdigest/utils/app.dart';
 import 'package:muslimdigest/utils/app_repository.dart';
+import 'package:muslimdigest/utils/helpers.dart';
 import 'package:muslimdigest/utils/notification_scheduler.dart';
-// import 'package:muslimdigest/utils/debounce.dart';
 import 'package:muslimdigest/utils/dialogs.dart';
 import 'package:muslimdigest/utils/extensions.dart';
 import 'package:muslimdigest/utils/functions.dart';
 import 'package:muslimdigest/variables/app.dart';
 import 'package:muslimdigest/variables/feed.dart';
+import 'package:muslimdigest/variables/user.dart';
+import 'package:muslimdigest/widgets/components/tour.dart';
 import '../widgets/home/home_header.dart';
 import '../widgets/home/feed_swiper.dart';
 import '../widgets/home/reading_streak_footer.dart';
@@ -42,12 +47,72 @@ class _HomePageState extends ConsumerState<HomePage> with RouteAware {
   static int _requestCounter = 0;
 
   /// Init feed loading
-  void _initFeed() {
+  void _initFeed() async {
     final feedType = ref.read(feedTypeProvider);
     final isNone = feedType.read(ref).isNone;
     if (isNone) {
       log('🧾 Feed is empty and need loading...');
-      r.loadUserFeed(force: true);
+      await r.loadUserFeed(force: true);
+      if (mounted && r.newDigestFeedAvailable) {
+        final h = MyHelper(context);
+        final feedItems = ref.read(feedProvider).items ?? [];
+        final totalStories = feedItems.length;
+        final totalMinutes = feedItems.fold(0.0, (sum, item) => sum + (item.readTimeSeconds));
+        showBottomModalSheetContent(
+          context,
+          title: "Today's Digest",
+          widgets: [
+            Row(
+              children: [
+                Icon(CupertinoIcons.book, size: 20, color: Theme.of(context).colorScheme.primary),
+                const SizedBox(width: 8),
+                Text(
+                  "$totalStories ${totalStories == 1 ? 'story' : 'stories'} for you",
+                  style: h.currentTextTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Icon(CupertinoIcons.clock, size: 20, color: Theme.of(context).colorScheme.primary),
+                const SizedBox(width: 8),
+                Text(
+                  "${totalMinutes.round()} ${totalMinutes.round() == 1 ? 'minute' : 'minutes'} read",
+                  style: h.currentTextTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                children: [
+                  Icon(CupertinoIcons.lightbulb, size: 16, color: Theme.of(context).colorScheme.primary),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      "Curated content tailored to your interests",
+                      style: h.currentTextTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).colorScheme.onPrimaryContainer,
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ]
+        );
+      }
     }
   }
 
@@ -60,11 +125,24 @@ class _HomePageState extends ConsumerState<HomePage> with RouteAware {
     lastUserPreferences = ref.read(preferencesProvider);
   }
 
-  void _compareUserPreferences() {
+  void _compareUserPreferences() async {
     if (lastUserPreferences == null) return;
     final userPreferences = ref.read(preferencesProvider);
-    if (userPreferences != lastUserPreferences) {
-      r.loadUserFeed(force: true);
+    
+    // Check if topic preferences have changed
+    final topicsChanged = !setEquals(userPreferences.topics, lastUserPreferences!.topics);
+    final avoidedTopicsChanged = !setEquals(userPreferences.avoidedTopics, lastUserPreferences!.avoidedTopics);
+    
+    if (topicsChanged || avoidedTopicsChanged) {
+      final reload = await showBottomModalConfirm(
+        context,
+        title: "Preferences Updated",
+        message: "Your topic preferences have changed. Would you like to refresh your feed with the new recommendations?",
+        confirmButtonText: "Yes, please refresh",
+        confirmButtonIcon: const Icon(CupertinoIcons.refresh),
+        cancelButtonText: "No, keep current feed",
+      );
+      if (mounted && reload == true) r.loadUserFeed(force: true);
     }
     lastUserPreferences = null;
     _saveAllData();
@@ -227,24 +305,34 @@ class _HomePageState extends ConsumerState<HomePage> with RouteAware {
         }
       },
       child: Scaffold(
-        body: SafeArea(
-          child: Column(
-            children: [
-              // Feed type and topic tabs
-              HomeHeader(
-                onSeeTrending: _openFeedTrending,
-                onSeeHome: _openFeed,
+        body: Stack(
+          children: [
+            // Main content
+            SafeArea(
+              child: Column(
+                children: [
+                  // Feed type and topic tabs
+                  HomeHeader(
+                    onSeeTrending: _openFeedTrending,
+                    onSeeHome: _openFeed,
+                  ),
+                  // Main feed swiper
+                  FeedSwiper(
+                    onReload: () => _loadFeed(force: true),
+                    onSeeLatest: () => _openFeedLatest(force: true),
+                    onSeeHome: _openFeed,
+                  ).expand(),
+                  // Loader or reading streak progressbar
+                  ReadingStreakFooter(),
+                ],
               ),
-              // Main feed swiper
-              FeedSwiper(
-                onReload: () => _loadFeed(force: true),
-                onSeeLatest: () => _openFeedLatest(force: true),
-                onSeeHome: _openFeed,
-              ).expand(),
-              // Loader or reading streak progressbar
-              ReadingStreakFooter(),
-            ],
-          ),
+            ),
+
+            // Tour animation
+            // TODO: temp
+            if (isFirstRun)
+            Tour()
+          ],
         ),
       ),
     );

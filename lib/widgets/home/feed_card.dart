@@ -1,9 +1,11 @@
 import 'dart:developer' show log;
+import 'dart:io';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lottie/lottie.dart';
+import 'package:muslimdigest/utils/contents.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:muslimdigest/config/colors.dart';
 import 'package:muslimdigest/config/constants.dart';
@@ -13,6 +15,7 @@ import 'package:muslimdigest/providers/feed/base_feed_notifier.dart';
 import 'package:muslimdigest/providers/user/settings.dart';
 import 'package:muslimdigest/providers/user/streaks.dart';
 import 'package:muslimdigest/providers/user/user.dart';
+import 'package:muslimdigest/utils/timeago/timeago.dart';
 import 'package:muslimdigest/utils/app.dart';
 import 'package:muslimdigest/utils/dialogs.dart';
 import 'package:muslimdigest/utils/extensions.dart';
@@ -115,9 +118,22 @@ class _FeedCardState extends ConsumerState<FeedCard> with AutomaticKeepAliveClie
 
   Future<String?> _screenshot() async {
     try {
-      // Request storage permission first
-      final storagePermission = await Permission.storage.request();
-      if (!storagePermission.isGranted) {
+      // Request appropriate storage permissions based on Android version
+      bool hasPermission = false;
+      
+      if (Platform.isAndroid) {
+        hasPermission = 
+        // For Android 13+ (API 33+), use READ_MEDIA_IMAGES
+        await requestAndroid13StoragePermission() ||
+        // For older Android versions, fallback to storage permissions
+        await requestLegacyStoragePermission();
+      } else {
+        // For iOS and other platforms, use storage permission
+        final storagePermission = await Permission.storage.request();
+        hasPermission = storagePermission.isGranted;
+      }
+      
+      if (!hasPermission) {
         if (mounted) {
           showSnackBarError(context, "Storage permission is required to save screenshots. Please enable it in settings.");
         }
@@ -299,6 +315,58 @@ class _FeedHeader extends ConsumerWidget {
     final settings = ref.watch(settingsProvider);
     final textSize = settings.textSize.toDouble();
 
+    final vibe = (() {
+      if (feedItem.madhhab != null) {
+        return Vibe(
+          title: "${feedItem.madhhab!.unslugTitleCase()} Fiqh",
+          color: Colors.indigo,
+        );
+      }
+      if (feedItem.badges.contains('scholars:single')) {
+        return Vibe(
+          title: "Scholarly Reference",
+          description: "Mentions a recognized Islamic scholar",
+          color: Colors.deepPurple,
+        );
+      }
+      if (feedItem.isOngoing) {
+        final event = feedItem.relatedEvent!.name;
+        return Vibe(
+          title: "${event.emoji} ${event.title}",
+          description: event.subtitle,
+          color: Colors.green,
+        );
+      }
+      if (feedItem.isHighlight) {
+        return Vibe(
+          title: "Today's Highlight",
+          color: Colors.orange,
+        );
+      }
+      if (feedItem.source.targetGender != null) {
+        return Vibe(
+          title: "For ${feedItem.source.targetGender!.label}",
+          color: feedItem.source.targetGender!.color,
+        );
+      }
+      if (feedItem.isNuanced) {
+        return Vibe(
+          title: "Key Insight",
+          color: Colors.teal,
+        );
+      }
+      if (feedItem.cluster.contentType != null) {
+        return Vibe(
+          title: feedItem.cluster.contentType!.unslugTitleCase(),
+          color: Colors.blue,
+        );
+      }
+      return Vibe(
+        title: feedItem.readTimeLabel,
+        color: Colors.blue,
+      );
+    })();
+
     return ClipRRect(
       borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
       child: Stack(
@@ -318,7 +386,7 @@ class _FeedHeader extends ConsumerWidget {
             Image.asset('assets/images/youtube-play.png', width: 64).center().fill(),
 
           // Vibe animation overlay during Islamic event
-          if (feedItem.isOngoing && feedItem.relatedEvent != null)
+          if (feedItem.isOngoing)
             FutureBuilder<bool>(
               future: doesAssetExist(feedItem.vibeAnimationAsset),
               builder: (context, snapshot) {
@@ -347,18 +415,26 @@ class _FeedHeader extends ConsumerWidget {
                   end: Alignment.bottomCenter,
                   colors: [
                     Colors.transparent,
-                    Colors.black.withValues(alpha: 0.7),
+                    Colors.black.withValues(alpha: 0.75),
                   ],
                 ),
               ),
-              child: Text(
-                feedItem.displayTitle,
-                style: h.currentTextTheme.titleMedium?.copyWith(
-                  fontSize: textSize * TITLE_TEXT_SIZE_MULTIPLIER,
-                  color: Colors.white,
-                ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  MyBadge(text: vibe.title, description: vibe.description, color: vibe.color),
+                  SizedBox(height: 8,),
+                  Text(
+                    feedItem.displayTitle,
+                    style: h.currentTextTheme.titleMedium?.copyWith(
+                      fontSize: textSize * TITLE_TEXT_SIZE_MULTIPLIER,
+                      color: Colors.white,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
               ),
             ),
           ),
@@ -570,6 +646,7 @@ class _FeedFooter extends ConsumerWidget {
       }
 
       // Call API to mark as not interested
+      // TODO: this not fired
       fireAndForget(() async {
         final success = await markNotInterested(feedItem.id);
 
@@ -707,9 +784,20 @@ class _FeedFooterSource extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
               softWrap: false,
             ).flexible(),
+
+            if (feedItem.sources.length > 1) MyBadge(text: "+${feedItem.sources.length - 1}", color: Colors.blueGrey,).withPadding(left: 4),
     
             const SizedBox(width: 6),
             Icon(Icons.open_in_new, size: 14, color: h.currentTheme.colorScheme.tertiary),
+
+            if (feedItem.isEphemeral && feedItem.publishedAt != null) ...[
+              TimeagoCompact(
+                dateTime: feedItem.publishedAt!,
+                explicit: true,
+                color: h.currentTheme.colorScheme.tertiary,
+                fontSize: 12,
+              ),
+            ],
           ],
         ).withPadding(horizontal: 8, vertical: 4),
       ),
@@ -731,10 +819,6 @@ class _FeedBadgeChip extends StatelessWidget {
   String get _valueCapitalized => _badgeValue == "qna" ? "Q&A" : _badgeValue.unslugTitleCase();
 
   static const Map<String, String> _badgeMappings = {
-    'topic:quran': 'Qur’an',
-    'topic:dua': 'Duʿa',
-    'topic:news': 'Muslim world',
-    'topic:muslimworld': 'Muslim world',
     // Trust & Source Credibility
     'trust_level:high': 'Trusted source',
     'trust_level:medium': 'Reputable source', 
@@ -795,6 +879,9 @@ class _FeedBadgeChip extends StatelessWidget {
 
     // Handle dynamic patterns
     if (_badgeLabel == 'madhhab') return '$_valueCapitalized Fiqh';
+    if (_badgeValue == 'quran') return 'Qur’an';
+    if (_badgeValue == 'dua') return 'Duʿa';
+    if (_badgeValue == 'news' || _badgeValue == 'muslimworld') return 'Muslim world';
     if (['content_type', 'content_tier', 'topic', 'engagement'].contains(_badgeLabel)) return _valueCapitalized;
     
     // Default fallback
@@ -829,22 +916,34 @@ class _FeedBadgeChip extends StatelessWidget {
           case 'unverified': return Colors.blueGrey;
         }
 
+      case 'content_type':
+        return getContentTypeColor(_badgeValue);
+        
       case 'content_tier':
         switch (_badgeValue) {
           case 'evergreen': return Colors.green;
+          case 'semi_evergreen': return Colors.cyan;
           case 'ephemeral': return Colors.amber;
         }
         
       case 'topic':
         // Topic-specific colors
         switch (_badgeValue) {
-          case 'quran': return Colors.teal;
+          case 'aqeedah': return Colors.deepOrange;
           case 'dua': return Colors.lightGreen;
-          case 'news': case 'muslimworld': return Colors.cyan;
+          case 'eschatology': return Colors.blueGrey;
+          case 'ethic': return Colors.blue;
+          case 'family': return Colors.purple;
+          case 'fasting': return Colors.yellow;
           case 'fiqh': return Colors.indigo;
           case 'hadith': return Colors.teal;
+          case 'history': return Colors.orange;
+          case 'news': case 'muslimworld': return Colors.cyan;
+          case 'opinion': return Colors.amber;
+          case 'quran': return Colors.teal;
           case 'seerah': return Colors.brown;
-          case 'history': return Colors.brown;
+          case 'social': return Colors.green;
+          case 'worship': return Colors.deepPurple;
         }
         
       default:

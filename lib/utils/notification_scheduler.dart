@@ -4,6 +4,8 @@ import 'package:muslimdigest/services/notification_service.dart';
 import 'package:muslimdigest/services/notification_controller.dart';
 import 'package:muslimdigest/variables/user.dart';
 import 'package:muslimdigest/variables/settings.dart';
+import 'package:muslimdigest/config/notification_config.dart';
+import 'package:muslimdigest/config/constants.dart';
 
 /// Helper class for managing notification scheduling and lifecycle
 class NotificationScheduler {
@@ -24,6 +26,21 @@ class NotificationScheduler {
       debugPrint('📅 Notification system initialized (permissions not requested yet)');
     } catch (e) {
       debugPrint('❌ Error initializing notification system: $e');
+      // Add retry logic for initialization
+      if (e.toString().contains('MediaSource.Resource')) {
+        debugPrint('🔄 Icon asset issue detected, continuing without custom icon');
+        // Retry with default icon
+        try {
+          await AwesomeNotifications().initialize(
+            null, // Use default app icon
+            NotificationConfig.channels,
+            debug: APP_IS_DEVELOPMENT,
+          );
+          debugPrint('✅ Notification system initialized with default icon');
+        } catch (retryError) {
+          debugPrint('❌ Initialization retry failed: $retryError');
+        }
+      }
     }
   }
 
@@ -53,13 +70,36 @@ class NotificationScheduler {
       
       if (notificationType != NotificationType.none) {
         // Schedule the daily notification for 'all' or 'digest' types
-        await NotificationService.scheduleDailyNotification();
+        await _scheduleWithRetry();
         debugPrint('📅 Daily notification scheduled for 2 AM UTC');
       } else {
         debugPrint('📅 Notifications disabled by user preference');
       }
     } catch (e) {
       debugPrint('❌ Error scheduling daily notification: $e');
+      // Retry with delay if it's a channel issue
+      if (e.toString().contains('channel')) {
+        debugPrint('🔄 Retrying notification scheduling after delay...');
+        await Future.delayed(const Duration(seconds: 2));
+        try {
+          await _scheduleWithRetry();
+          debugPrint('✅ Retry successful - daily notification scheduled');
+        } catch (retryError) {
+          debugPrint('❌ Retry failed: $retryError');
+        }
+      }
+    }
+  }
+
+  /// Schedule notification with retry logic
+  static Future<void> _scheduleWithRetry() async {
+    try {
+      await NotificationService.scheduleDailyNotification();
+    } catch (e) {
+      debugPrint('❌ First attempt failed: $e');
+      // Wait a moment and try again
+      await Future.delayed(const Duration(milliseconds: 500));
+      await NotificationService.scheduleDailyNotification();
     }
   }
 

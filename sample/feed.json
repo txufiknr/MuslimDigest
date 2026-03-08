@@ -1,0 +1,979 @@
+{
+	"items": [
+		{
+			"id": "019cc64c-1a32-70fe-a132-8832639dc877",
+			"title": "Understanding Suffering with Quranic Wisdom",
+			"hook": "Suffering directed towards Allah",
+			"summary": "This series, a collaboration between Dr. Ali and MuslimMatters, addresses adolescent grief by drawing on Quranic wisdom. It highlights that adolescent grief differs neurologically and developmentally from adult grief, impacting emotional regulation and worldview construction. The text uses the Quranic narratives of Prophet Yaqub ﷺ and Prophet Musa ﷺ with Khidr ﷺ to illustrate how to direct suffering toward Allah, not away from Him. It emphasizes that patience (sabr) involves turning to Allah at the first strike of calamity, not suppressing emotions. The series also outlines warning signs for professional support and offers guidance on what to say and not say to grieving teenagers.",
+			"summaryProvider": "gemini",
+			"summaryStatus": "verified",
+			"topic": "ethics",
+			"sourceUrl": "https://muslimmatters.org/2026/03/06/why-do-bad-things-happen-to-good-people-night-18-with-the-quran/?utm_source=rss&utm_medium=rss&utm_campaign=why-do-bad-things-happen-to-good-people-night-18-with-the-quran",
+			"canonicalUrl": null,
+			"imageUrl": "https://c7c8edde.delivery.rocketcdn.me/wp-content/uploads/Ramadan-Article-Images-19-1000x600.png",
+			"videoUrl": null,
+			"videoTitle": null,
+			"riskLevel": "low",
+			"publishedAt": "2026-03-07T03:00:57.000Z",
+			"createdAt": "2026-03-07T03:16:42.969Z",
+			"sources": [
+				"muslimmatters.org"
+			],
+			"likeCount": 0,
+			"cluster": {
+				"id": "019cc64c-1a32-70fe-a132-8832639dc877",
+				"articleCount": 1,
+				"contentType": "knowledge",
+				"topicDistribution": {
+					"ethics": 1
+				},
+				"trendingScore": 2.1381214,
+				"trustLevel": "medium",
+				"heroImageUrl": "https://c7c8edde.delivery.rocketcdn.me/wp-content/uploads/Ramadan-Article-Images-19-1000x600.png",
+				"readTime": null,
+				"madhahib": [],
+				"scholars": [],
+				"firstPublishedAt": "2026-03-07T03:00:57.000Z",
+				"lastPublishedAt": "2026-03-07T03:00:57.000Z"
+			},
+			"badges": [
+				"topic:ethics",
+				"trust_level:medium",
+				"summary_status:verified",
+				"content_risk:low",
+				"content_type:knowledge",
+				"content_tier:semi_evergreen"
+			],
+			"source": {
+				"id": "muslimmatters.org",
+				"name": "MuslimMatters.org",
+				"trustLevel": "medium",
+				"siteName": "MuslimMatters.org",
+				"siteIcon": "https://muslimmatters.org/wp-content/uploads/cropped-MM-Logo-500-px-white-bg-32x32.png",
+				"ogImage": "http://muslimmatters.org/wp-content/uploads/m-1.jpg",
+				"targetAgeMin": null,
+				"targetAgeMax": null,
+				"targetGender": null
+			},
+			"isSaved": false,
+			"isLiked": false,
+			"relatedEvent": {
+				"name": "mawlid",
+				"title": "Mawlid",
+				"isOngoing": false,
+				"startDate": "2026-05-11",
+				"endDate": "2026-05-11"
+			}
+		},
+		{
+			"id": "019cc64c-5471-7301-991a-16e16fa21d5a",
+			"title": "Understanding Depression in Islamic Context",
+			"hook": "Suffering does not equate to spiritual failure",
+			"summary": "Depression is a medical condition involving neurological changes, not a lack of faith, and requires professional treatment. The Islamic tradition, as taught by the Prophet Muhammad ﷺ, explicitly encourages seeking medical treatment for all illnesses, including mental health conditions. Prophet Ayyub's ﷺ story illustrates that suffering does not equate to spiritual failure, as Allah tested him despite his righteousness. Differentiating between spiritual struggle and clinical depression is crucial, as the latter necessitates clinical evaluation and support alongside spiritual care.",
+			"summaryProvider": "gemini",
+			"summaryStatus": "verified",
+			"topic": "aqeedah",
+			"sourceUrl": "https://muslimmatters.org/2026/03/06/is-depression-a-lack-of-faith-a-guide-for-muslim-parents-night-17-with-the-quran/?utm_source=rss&utm_medium=rss&utm_campaign=is-depression-a-lack-of-faith-a-guide-for-muslim-parents-night-17-with-the-quran",
+			"canonicalUrl": null,
+			"imageUrl": "https://c7c8edde.delivery.rocketcdn.me/wp-content/uploads/Ramadan-Article-Images-18-1000x600.png",
+			"videoUrl": null,
+			"videoTitle": null,
+			"riskLevel": "low",
+			"publishedAt": "2026-03-06T05:55:18.000Z",
+			"createdAt": "2026-03-07T03:16:57.892Z",
+			"sources": [
+				"muslimmatters.org"
+			],
+			"likeCount": 0,
+			"cluster": {
+				"id": "019cc64c-5471-7301-991a-16e16fa21d5a",
+				"articleCount": 1,
+				"contentType": "virtue",
+				"topicDistribution": {
+					"aqeedah": 1
+				},
+				"trendingScore": 0.1665586,
+				"trustLevel": "medium",
+				"heroImageUrl": "https://c7c8edde.delivery.rocketcdn.me/wp-content/uploads/Ramadan-Article-Images-18-1000x600.png",
+				"readTime": null,
+				"madhahib": [],
+				"scholars": [],
+				"firstPublishedAt": "2026-03-06T05:55:18.000Z",
+				"lastPublishedAt": "2026-03-06T05:55:18.000Z"
+			},
+			"badges": [
+				"topic:aqeedah",
+				"trust_level:medium",
+				"summary_status:verified",
+				"content_risk:low",
+				"content_type:virtue",
+				"content_tier:semi_evergreen"
+			],
+			"source": {
+				"id": "muslimmatters.org",
+				"name": "MuslimMatters.org",
+				"trustLevel": "medium",
+				"siteName": "MuslimMatters.org",
+				"siteIcon": "https://muslimmatters.org/wp-content/uploads/cropped-MM-Logo-500-px-white-bg-32x32.png",
+				"ogImage": "http://muslimmatters.org/wp-content/uploads/m-1.jpg",
+				"targetAgeMin": null,
+				"targetAgeMax": null,
+				"targetGender": null
+			},
+			"isSaved": false,
+			"isLiked": false,
+			"relatedEvent": {
+				"name": "mawlid",
+				"title": "Mawlid",
+				"isOngoing": false,
+				"startDate": "2026-05-11",
+				"endDate": "2026-05-11"
+			}
+		},
+		{
+			"id": "019cc132-0570-735b-9ece-274b6f916cb0",
+			"title": "Ramadan Brings Mercy and Healing",
+			"hook": "Healing for what is in the breasts",
+			"summary": "Ramadan arrives as a mercy, offering ease and healing for those experiencing life's hardships. The Qur'an, described as healing for what is in the breasts, descends into the cracks of life during this month. Believers are encouraged to show up, even when weary or hurting, as Allah sees and counts sincere efforts. The du'ā' of prophets who felt isolated serves as an example for those overwhelmed. Ramadan reminds individuals they are not forsaken, offering a divine pause for hearts to be gently restored through closeness to Allah.",
+			"summaryProvider": "gemini",
+			"summaryStatus": "verified",
+			"topic": "fasting",
+			"sourceUrl": "https://muslimmatters.org/2026/03/05/when-ramadan-arrives-to-heal-what-life-has-broken/?utm_source=rss&utm_medium=rss&utm_campaign=when-ramadan-arrives-to-heal-what-life-has-broken",
+			"canonicalUrl": null,
+			"imageUrl": "https://c7c8edde.delivery.rocketcdn.me/wp-content/uploads/ramadan_dua_header_16x9-1000x600.jpg",
+			"videoUrl": null,
+			"videoTitle": null,
+			"riskLevel": "low",
+			"publishedAt": "2026-03-06T01:17:35.000Z",
+			"createdAt": "2026-03-06T03:30:07.690Z",
+			"sources": [
+				"muslimmatters.org"
+			],
+			"likeCount": 0,
+			"cluster": {
+				"id": "019cc132-0570-735b-9ece-274b6f916cb0",
+				"articleCount": 1,
+				"contentType": "quran",
+				"topicDistribution": {
+					"fasting": 1
+				},
+				"trendingScore": 0.01,
+				"trustLevel": "medium",
+				"heroImageUrl": "https://c7c8edde.delivery.rocketcdn.me/wp-content/uploads/ramadan_dua_header_16x9-1000x600.jpg",
+				"readTime": null,
+				"madhahib": [],
+				"scholars": [],
+				"firstPublishedAt": "2026-03-06T01:17:35.000Z",
+				"lastPublishedAt": "2026-03-06T01:17:35.000Z"
+			},
+			"badges": [
+				"topic:fasting",
+				"trust_level:medium",
+				"summary_status:verified",
+				"content_risk:low",
+				"content_type:quran",
+				"content_tier:evergreen"
+			],
+			"source": {
+				"id": "muslimmatters.org",
+				"name": "MuslimMatters.org",
+				"trustLevel": "medium",
+				"siteName": "MuslimMatters.org",
+				"siteIcon": "https://muslimmatters.org/wp-content/uploads/cropped-MM-Logo-500-px-white-bg-32x32.png",
+				"ogImage": "http://muslimmatters.org/wp-content/uploads/m-1.jpg",
+				"targetAgeMin": null,
+				"targetAgeMax": null,
+				"targetGender": null
+			},
+			"isSaved": false,
+			"isLiked": false,
+			"relatedEvent": {
+				"name": "ramadan",
+				"title": "Ramadan",
+				"isOngoing": true,
+				"startDate": "2027-07-31",
+				"endDate": "2027-08-29"
+			}
+		},
+		{
+			"id": "019cc133-f0ac-767e-a4bd-92692e799a59",
+			"title": "Ramadan fundraising efforts",
+			"hook": "The reward is in every generous act",
+			"summary": "In the lead up to Ramadan last year, a charity which exclusively works and supports our brothers and sisters in Gaza approached a number of masājid for a tarawīh fundraising slot. The year before, they had been granted a respectable 38 slots. This year, only three have confirmed. In the wake of a genocide where the death toll is beyond a statistic, where the majority of homes, public buildings, and infrastructure have been razed to the ground, for the charity to receive such a poor response is concerning to say the least.",
+			"summaryProvider": "huggingface",
+			"summaryStatus": "verified",
+			"topic": "ethics",
+			"sourceUrl": "https://www.islam21c.com/culture/market-logic-reshaping-muslim-institutions/",
+			"canonicalUrl": null,
+			"imageUrl": "https://www.islam21c.com/wp-content/uploads/Market-logic-is-reshaping-Muslim-institutions.jpg",
+			"videoUrl": null,
+			"videoTitle": null,
+			"riskLevel": "low",
+			"publishedAt": "2026-03-05T14:07:45.000Z",
+			"createdAt": "2026-03-06T03:32:13.591Z",
+			"sources": [
+				"islam21c.com"
+			],
+			"likeCount": 0,
+			"cluster": {
+				"id": "019cc133-f0ac-767e-a4bd-92692e799a59",
+				"articleCount": 1,
+				"contentType": "virtue",
+				"topicDistribution": {
+					"ethics": 1
+				},
+				"trendingScore": 0.01,
+				"trustLevel": "basic",
+				"heroImageUrl": "https://www.islam21c.com/wp-content/uploads/Market-logic-is-reshaping-Muslim-institutions.jpg",
+				"readTime": null,
+				"madhahib": [],
+				"scholars": [],
+				"firstPublishedAt": "2026-03-05T14:07:45.000Z",
+				"lastPublishedAt": "2026-03-05T14:07:45.000Z"
+			},
+			"badges": [
+				"topic:ethics",
+				"trust_level:basic",
+				"summary_status:verified",
+				"content_risk:low",
+				"content_type:virtue",
+				"content_tier:semi_evergreen"
+			],
+			"source": {
+				"id": "islam21c.com",
+				"name": "Islam21c",
+				"trustLevel": "basic",
+				"siteName": "Islam21c",
+				"siteIcon": "https://www.islam21c.com/wp-content/uploads/cropped-i21c-logo-square-01-32x32.png",
+				"ogImage": "https://www.islam21c.com/wp-content/uploads/SM-Profile-Photo-01-website-1.png",
+				"targetAgeMin": null,
+				"targetAgeMax": null,
+				"targetGender": null
+			},
+			"isSaved": false,
+			"isLiked": false,
+			"relatedEvent": {
+				"name": "ramadan",
+				"title": "Ramadan",
+				"isOngoing": true,
+				"startDate": "2027-07-31",
+				"endDate": "2027-08-29"
+			}
+		},
+		{
+			"id": "019cc132-3e47-71f6-8c05-bb39770f4bac",
+			"title": "Understanding Spiritual Dryness in Worship",
+			"hook": "Consistency is highly valued by Allah",
+			"summary": "Spiritual dryness, the absence of feeling during worship, is a common human experience, not a sign of weak faith. The Prophet Muhammad ﷺ addressed this, explaining that spiritual highs and lows are natural. He ﷺ told Handhalah that while intense spiritual states are possible, \"there is a time for this and a time for that.\" This means consistency in worship, even without feeling, is highly valued by Allah. Parents are advised to offer support and understanding rather than increasing religious demands, which can be counterproductive.",
+			"summaryProvider": "gemini",
+			"summaryStatus": "verified",
+			"topic": "worship",
+			"sourceUrl": "https://muslimmatters.org/2026/03/04/i-cant-feel-anything-in-prayer-understanding-spiritual-dryness-night-16-with-the-quran/?utm_source=rss&utm_medium=rss&utm_campaign=i-cant-feel-anything-in-prayer-understanding-spiritual-dryness-night-16-with-the-quran",
+			"canonicalUrl": null,
+			"imageUrl": "https://c7c8edde.delivery.rocketcdn.me/wp-content/uploads/Ramadan-Article-Images-17-1000x600.png",
+			"videoUrl": null,
+			"videoTitle": null,
+			"riskLevel": "low",
+			"publishedAt": "2026-03-05T03:39:18.000Z",
+			"createdAt": "2026-03-06T03:30:22.115Z",
+			"sources": [
+				"muslimmatters.org"
+			],
+			"likeCount": 0,
+			"cluster": {
+				"id": "019cc132-3e47-71f6-8c05-bb39770f4bac",
+				"articleCount": 1,
+				"contentType": "hadith",
+				"topicDistribution": {
+					"worship": 1
+				},
+				"trendingScore": 0.01,
+				"trustLevel": "medium",
+				"heroImageUrl": "https://c7c8edde.delivery.rocketcdn.me/wp-content/uploads/Ramadan-Article-Images-17-1000x600.png",
+				"readTime": null,
+				"madhahib": [],
+				"scholars": [],
+				"firstPublishedAt": "2026-03-05T03:39:18.000Z",
+				"lastPublishedAt": "2026-03-05T03:39:18.000Z"
+			},
+			"badges": [
+				"topic:worship",
+				"trust_level:medium",
+				"summary_status:verified",
+				"content_risk:low",
+				"content_type:hadith",
+				"content_tier:evergreen"
+			],
+			"source": {
+				"id": "muslimmatters.org",
+				"name": "MuslimMatters.org",
+				"trustLevel": "medium",
+				"siteName": "MuslimMatters.org",
+				"siteIcon": "https://muslimmatters.org/wp-content/uploads/cropped-MM-Logo-500-px-white-bg-32x32.png",
+				"ogImage": "http://muslimmatters.org/wp-content/uploads/m-1.jpg",
+				"targetAgeMin": null,
+				"targetAgeMax": null,
+				"targetGender": null
+			},
+			"isSaved": false,
+			"isLiked": false,
+			"relatedEvent": {
+				"name": "day_of_arafah",
+				"title": "Day of Arafah",
+				"isOngoing": false,
+				"startDate": "2028-03-08",
+				"endDate": "2028-03-08"
+			}
+		},
+		{
+			"id": "019cc131-c2cf-73e1-80e5-bc21145b30f7",
+			"title": "Ramadan in Canada: Community Outreach",
+			"hook": "Knowing one another through shared iftar",
+			"summary": "Ramadan in Canada, where Muslims are a minority, offers a unique opportunity for community outreach. The Qur'an states, \"O mankind, We created you from a male and a female and made you peoples and tribes so that you may know one another\" (49:13). This principle is exemplified through various iftars: a hospital event fostering spiritual care understanding, a Parliament Hill gathering bridging political divides, a City Hall initiative with public Ramadan lights, and an intimate living room gathering supporting women escaping domestic abuse. These occasions highlight how sharing iftar allows for mutual understanding and living Islamic values within Canadian society.",
+			"summaryProvider": "gemini",
+			"summaryStatus": "verified",
+			"topic": null,
+			"sourceUrl": "https://aboutislam.net/muslim-issues/n-america/ramadan-in-canada-living-the-quranic-call-to-know-one-another/",
+			"canonicalUrl": null,
+			"imageUrl": "https://aboutislam.net/wp-content/uploads/2026/03/IMG_3874.jpeg",
+			"videoUrl": null,
+			"videoTitle": null,
+			"riskLevel": "low",
+			"publishedAt": "2026-03-04T13:57:38.000Z",
+			"createdAt": "2026-03-06T03:29:51.097Z",
+			"sources": [
+				"aboutislam.net"
+			],
+			"likeCount": 0,
+			"cluster": {
+				"id": "019cc131-c2cf-73e1-80e5-bc21145b30f7",
+				"articleCount": 1,
+				"contentType": "quran",
+				"topicDistribution": {},
+				"trendingScore": 0.01,
+				"trustLevel": "medium",
+				"heroImageUrl": "https://aboutislam.net/wp-content/uploads/2026/03/IMG_3874.jpeg",
+				"readTime": null,
+				"madhahib": [],
+				"scholars": [],
+				"firstPublishedAt": "2026-03-04T13:57:38.000Z",
+				"lastPublishedAt": "2026-03-04T13:57:38.000Z"
+			},
+			"badges": [
+				"trust_level:medium",
+				"summary_status:verified",
+				"content_risk:low",
+				"content_type:quran",
+				"content_tier:evergreen"
+			],
+			"source": {
+				"id": "aboutislam.net",
+				"name": "About Islam",
+				"trustLevel": "medium",
+				"siteName": "About Islam",
+				"siteIcon": "https://aboutislam.net/wp-content/uploads/2020/02/favorite-icon.png?x99650",
+				"ogImage": null,
+				"targetAgeMin": null,
+				"targetAgeMax": null,
+				"targetGender": null
+			},
+			"isSaved": false,
+			"isLiked": false,
+			"relatedEvent": {
+				"name": "ramadan",
+				"title": "Ramadan",
+				"isOngoing": true,
+				"startDate": "2027-07-31",
+				"endDate": "2027-08-29"
+			}
+		},
+		{
+			"id": "019cc12e-fdcd-701f-9f76-300ddfb04a17",
+			"title": "Talaq Said In Anger",
+			"hook": "Talaq in anger is still valid",
+			"summary": "Q: Does a divorce said in anger count as a valid divorce if a husband says it three times without intending divorce? A: According to Islamic scholars, including Ibn 'Abidin in Radd al-Muhtar, if a husband says divorce three times while sane and aware, the divorce is valid, regardless of his emotional state or intent, unless he was unconscious or had medical issues, and it would be considered sinful to stay with him, thus consulting with knowledgeable scholars is recommended for guidance.",
+			"summaryProvider": "groq",
+			"summaryStatus": "verified",
+			"topic": "family",
+			"sourceUrl": "https://seekersguidance.org/answers/hanafi-fiqh/does-divorce-said-in-anger-still-count-as-a-valid-divorce/",
+			"canonicalUrl": null,
+			"imageUrl": "https://seekersguidance.org/wp-content/uploads/2026/03/shutterstock_2318213089-2.jpg",
+			"videoUrl": null,
+			"videoTitle": null,
+			"riskLevel": "low",
+			"publishedAt": "2026-03-04T10:49:28.000Z",
+			"createdAt": "2026-03-06T03:26:49.181Z",
+			"sources": [
+				"seekersguidance.org"
+			],
+			"likeCount": 0,
+			"cluster": {
+				"id": "019cc12e-fdcd-701f-9f76-300ddfb04a17",
+				"articleCount": 1,
+				"contentType": "qna",
+				"topicDistribution": {
+					"family": 1
+				},
+				"trendingScore": 0.01,
+				"trustLevel": "high",
+				"heroImageUrl": "https://seekersguidance.org/wp-content/uploads/2026/03/shutterstock_2318213089-2.jpg",
+				"readTime": null,
+				"madhahib": [
+					"hanafi"
+				],
+				"scholars": [],
+				"firstPublishedAt": "2026-03-04T10:49:28.000Z",
+				"lastPublishedAt": "2026-03-04T10:49:28.000Z"
+			},
+			"badges": [
+				"madhhab:hanafi"
+			],
+			"source": {
+				"id": "seekersguidance.org",
+				"name": "SeekersGuidance",
+				"trustLevel": "high",
+				"siteName": "SeekersGuidance",
+				"siteIcon": "https://cdn-ilejeel.nitrocdn.com/xLnVYddYcrehmWgSnEBLHqpnAehzfCNW/assets/images/optimized/rev-ec3b97e/seekersguidance.org/wp-content/uploads/2021/01/favicon.png",
+				"ogImage": "https://seekersguidance.org/wp-content/uploads/2024/08/SG-Icon.png",
+				"targetAgeMin": null,
+				"targetAgeMax": null,
+				"targetGender": null
+			},
+			"isSaved": false,
+			"isLiked": false,
+			"relatedEvent": {
+				"name": "mawlid",
+				"title": "Mawlid",
+				"isOngoing": false,
+				"startDate": "2026-05-11",
+				"endDate": "2026-05-11"
+			}
+		},
+		{
+			"id": "019cc132-ac4c-75f9-8f63-0979b8343a6c",
+			"title": "Ramadan's Gentle Lessons",
+			"hook": "Ramadan as a mirror to self",
+			"summary": "As a child, I barrelled through its gates headfirst, shrieking with laughter at my big brother's suhoor antics. As a teen, I entered its gates more mindfully, resolving to read a juz a day, along with the English translation. In my twenties, I saw Ramadan as a mirror that showed me where I was and where I needed to go. Then, just like that, Ramadan came upon me as a new wife in a new land. Another Ramadan taught me hard lessons on moderation, intuition, and respecting my body's limits.",
+			"summaryProvider": "huggingface",
+			"summaryStatus": "verified",
+			"topic": "family",
+			"sourceUrl": "https://muslimmatters.org/2026/03/04/the-many-faces-of-ramadan/?utm_source=rss&utm_medium=rss&utm_campaign=the-many-faces-of-ramadan",
+			"canonicalUrl": null,
+			"imageUrl": "https://c7c8edde.delivery.rocketcdn.me/wp-content/uploads/Alexandria_Ramadan_Header-1000x600.jpg",
+			"videoUrl": null,
+			"videoTitle": null,
+			"riskLevel": "low",
+			"publishedAt": "2026-03-04T07:41:26.000Z",
+			"createdAt": "2026-03-06T03:30:50.467Z",
+			"sources": [
+				"muslimmatters.org"
+			],
+			"likeCount": 0,
+			"cluster": {
+				"id": "019cc132-ac4c-75f9-8f63-0979b8343a6c",
+				"articleCount": 1,
+				"contentType": "quran",
+				"topicDistribution": {
+					"family": 1
+				},
+				"trendingScore": 0.01,
+				"trustLevel": "medium",
+				"heroImageUrl": "https://c7c8edde.delivery.rocketcdn.me/wp-content/uploads/Alexandria_Ramadan_Header-1000x600.jpg",
+				"readTime": null,
+				"madhahib": [],
+				"scholars": [],
+				"firstPublishedAt": "2026-03-04T07:41:26.000Z",
+				"lastPublishedAt": "2026-03-04T07:41:26.000Z"
+			},
+			"badges": [
+				"topic:family",
+				"trust_level:medium",
+				"summary_status:verified",
+				"content_risk:low",
+				"content_type:quran",
+				"content_tier:evergreen"
+			],
+			"source": {
+				"id": "muslimmatters.org",
+				"name": "MuslimMatters.org",
+				"trustLevel": "medium",
+				"siteName": "MuslimMatters.org",
+				"siteIcon": "https://muslimmatters.org/wp-content/uploads/cropped-MM-Logo-500-px-white-bg-32x32.png",
+				"ogImage": "http://muslimmatters.org/wp-content/uploads/m-1.jpg",
+				"targetAgeMin": null,
+				"targetAgeMax": null,
+				"targetGender": null
+			},
+			"isSaved": false,
+			"isLiked": false,
+			"relatedEvent": {
+				"name": "ramadan",
+				"title": "Ramadan",
+				"isOngoing": true,
+				"startDate": "2027-07-31",
+				"endDate": "2027-08-29"
+			}
+		},
+		{
+			"id": "019cbc17-b7df-77d4-85b4-35d1c77c5393",
+			"title": "When You Have Doubts About Allah | Night 15 with the Qur’an",
+			"hook": null,
+			"summary": "This series, \"30 Nights with the Quran: Stories for the Seeking Soul,\" addresses parental concerns about adolescent faith questioning. Dr. Ali explains that questioning inherited beliefs is a normal developmental stage, not a sign of rejection. Classical Islamic scholarship distinguishes between seeking (talab) and turning away (i'raad). Parents are advised to foster open inquiry, acknowledging their own potential doubts. The series is part of Night 15, with Night 16 focusing on prayer feeling empty.",
+			"summaryProvider": "gemini",
+			"summaryStatus": "verified",
+			"topic": "ethics",
+			"sourceUrl": "https://muslimmatters.org/2026/03/03/when-you-have-doubts-about-allah-night-15-with-the-quran/?utm_source=rss&utm_medium=rss&utm_campaign=when-you-have-doubts-about-allah-night-15-with-the-quran",
+			"canonicalUrl": null,
+			"imageUrl": "https://c7c8edde.delivery.rocketcdn.me/wp-content/uploads/Ramadan-Article-Images-16-1000x600.png",
+			"videoUrl": null,
+			"videoTitle": null,
+			"riskLevel": "low",
+			"publishedAt": "2026-03-04T03:59:50.000Z",
+			"createdAt": "2026-03-05T03:43:21.374Z",
+			"sources": [
+				"muslimmatters.org"
+			],
+			"likeCount": 0,
+			"cluster": {
+				"id": "019cbc17-b7df-77d4-85b4-35d1c77c5393",
+				"articleCount": 1,
+				"contentType": "knowledge",
+				"topicDistribution": {
+					"ethics": 1
+				},
+				"trendingScore": 0.01,
+				"trustLevel": "medium",
+				"heroImageUrl": "https://c7c8edde.delivery.rocketcdn.me/wp-content/uploads/Ramadan-Article-Images-16-1000x600.png",
+				"readTime": null,
+				"madhahib": [],
+				"scholars": [
+					"hamza-yusuf",
+					"ibn-al-qayyim"
+				],
+				"firstPublishedAt": "2026-03-04T03:59:50.000Z",
+				"lastPublishedAt": "2026-03-04T03:59:50.000Z"
+			},
+			"badges": [
+				"topic:ethics",
+				"trust_level:medium",
+				"summary_status:verified",
+				"content_risk:low",
+				"scholars:multiple",
+				"content_type:knowledge",
+				"content_tier:semi_evergreen"
+			],
+			"source": {
+				"id": "muslimmatters.org",
+				"name": "MuslimMatters.org",
+				"trustLevel": "medium",
+				"siteName": "MuslimMatters.org",
+				"siteIcon": "https://muslimmatters.org/wp-content/uploads/cropped-MM-Logo-500-px-white-bg-32x32.png",
+				"ogImage": "http://muslimmatters.org/wp-content/uploads/m-1.jpg",
+				"targetAgeMin": null,
+				"targetAgeMax": null,
+				"targetGender": null
+			},
+			"isSaved": false,
+			"isLiked": false,
+			"relatedEvent": {
+				"name": "laylat_al_qadr",
+				"title": "Laylat al-Qadr",
+				"isOngoing": false,
+				"startDate": "2027-08-20",
+				"endDate": "2027-08-28"
+			}
+		},
+		{
+			"id": "019cb6e2-2d7e-7795-8771-aaae825d176a",
+			"title": "Ramadan Stories of Spiritual Growth",
+			"hook": "Drawing near to Allah in Ramadan",
+			"summary": "Several individuals shared their experiences of spiritual growth during Ramadan. Stephanie Siam, a new Muslim, found her first Ramadan to be a transformative period, where she began wearing hijab and felt a sense of comfort and community at the mosque. Jessica Ozalp described Ramadan as a time of inner beauty and peace. Yusuf Abdul recounted his first Ramadan as a time of drawing near to Allah, where he spent his nights in prayer and felt a sense of peacefulness and contentment, citing a hadith from Al-Bukhari that reflects the closeness to Allah he felt during that time.",
+			"summaryProvider": "groq",
+			"summaryStatus": "verified",
+			"topic": "fasting",
+			"sourceUrl": "https://aboutislam.net/reading-islam/living-islam/stories-of-converts-in-ramadan/",
+			"canonicalUrl": null,
+			"imageUrl": "https://aboutislam.net/wp-content/uploads/2019/06/Stories-of-Converts-in-Ramadan.jpg",
+			"videoUrl": null,
+			"videoTitle": null,
+			"riskLevel": "low",
+			"publishedAt": "2026-03-03T16:59:00.000Z",
+			"createdAt": "2026-03-04T03:26:43.208Z",
+			"sources": [
+				"aboutislam.net"
+			],
+			"likeCount": 0,
+			"cluster": {
+				"id": "019cb6e2-2d7e-7795-8771-aaae825d176a",
+				"articleCount": 1,
+				"contentType": "virtue",
+				"topicDistribution": {
+					"fasting": 1
+				},
+				"trendingScore": 0.01,
+				"trustLevel": "medium",
+				"heroImageUrl": "https://aboutislam.net/wp-content/uploads/2019/06/Stories-of-Converts-in-Ramadan.jpg",
+				"readTime": null,
+				"madhahib": [],
+				"scholars": [],
+				"firstPublishedAt": "2026-03-03T16:59:00.000Z",
+				"lastPublishedAt": "2026-03-03T16:59:00.000Z"
+			},
+			"badges": [
+				"topic:fasting",
+				"trust_level:medium",
+				"summary_status:verified",
+				"content_risk:low",
+				"content_type:virtue",
+				"content_tier:semi_evergreen"
+			],
+			"source": {
+				"id": "aboutislam.net",
+				"name": "About Islam",
+				"trustLevel": "medium",
+				"siteName": "About Islam",
+				"siteIcon": "https://aboutislam.net/wp-content/uploads/2020/02/favorite-icon.png?x99650",
+				"ogImage": null,
+				"targetAgeMin": null,
+				"targetAgeMax": null,
+				"targetGender": null
+			},
+			"isSaved": false,
+			"isLiked": false,
+			"relatedEvent": {
+				"name": "ramadan",
+				"title": "Ramadan",
+				"isOngoing": true,
+				"startDate": "2027-07-31",
+				"endDate": "2027-08-29"
+			}
+		},
+		{
+			"id": "019cb6e2-470a-771b-bae7-4d3c3e8ad811",
+			"title": "Staying Healthy During Ramadan",
+			"hook": "Fasting and weakened immune systems",
+			"summary": "During Ramadan, individuals may be more susceptible to cold and flu viruses due to weakened immune systems from fasting. Colds and flu can be debilitating, causing symptoms such as a runny nose, headaches, and coughs. The influenza virus causes flu, while over 200 different viruses can cause colds, spreading through coughed and sneezed globules. Doctors often rely on the body's natural mechanisms to fight these infections, as antiviral medication may not be effective in treating them.",
+			"summaryProvider": "groq",
+			"summaryStatus": "verified",
+			"topic": "fasting",
+			"sourceUrl": "https://aboutislam.net/muslim-issues/science-muslim-issues/falling-cold-flu-viruses-fasting/",
+			"canonicalUrl": null,
+			"imageUrl": "https://aboutislam.net/wp-content/uploads/2022/04/117666215_virusnosegraphic.jpg",
+			"videoUrl": null,
+			"videoTitle": null,
+			"riskLevel": "low",
+			"publishedAt": "2026-03-03T14:20:55.000Z",
+			"createdAt": "2026-03-04T03:26:54.621Z",
+			"sources": [
+				"aboutislam.net"
+			],
+			"likeCount": 0,
+			"cluster": {
+				"id": "019cb6e2-470a-771b-bae7-4d3c3e8ad811",
+				"articleCount": 1,
+				"contentType": "article",
+				"topicDistribution": {
+					"fasting": 1
+				},
+				"trendingScore": 0.01,
+				"trustLevel": "medium",
+				"heroImageUrl": "https://aboutislam.net/wp-content/uploads/2022/04/117666215_virusnosegraphic.jpg",
+				"readTime": null,
+				"madhahib": [],
+				"scholars": [],
+				"firstPublishedAt": "2026-03-03T14:20:55.000Z",
+				"lastPublishedAt": "2026-03-03T14:20:55.000Z"
+			},
+			"badges": [
+				"topic:fasting",
+				"trust_level:medium",
+				"summary_status:verified",
+				"content_risk:low",
+				"content_type:article",
+				"content_tier:semi_evergreen"
+			],
+			"source": {
+				"id": "aboutislam.net",
+				"name": "About Islam",
+				"trustLevel": "medium",
+				"siteName": "About Islam",
+				"siteIcon": "https://aboutislam.net/wp-content/uploads/2020/02/favorite-icon.png?x99650",
+				"ogImage": null,
+				"targetAgeMin": null,
+				"targetAgeMax": null,
+				"targetGender": null
+			},
+			"isSaved": false,
+			"isLiked": false,
+			"relatedEvent": {
+				"name": "ramadan",
+				"title": "Ramadan",
+				"isOngoing": true,
+				"startDate": "2027-07-31",
+				"endDate": "2027-08-29"
+			}
+		},
+		{
+			"id": "019cc64a-8d11-7643-adc1-a9707f4baa3a",
+			"title": "Ramadan's Last 10 Nights",
+			"hook": "The reward is more than a thousand months",
+			"summary": "Allah ﷻ says in the Quran: The Night of Decree is better than a thousand months. Muhammad ﷺ used to tighten his waist belt and pray the whole night during the last ten days of Ramadan. Abu Hurayrah relates that Muhammad ﷺ said: \"Whoever spends the night of Lailat Al-Qadr in prayer out of faith and in the hope of reward, his previous sins will be forgiven.\" To maximize the last 10 nights of Ramadan, consider remaining in I'tikaf, worshiping all nights, giving charity, and eating light. A possible worship routine includes praying Maghrib, Isha', and Taraweeh, reciting the Quran, and making dua, with the goal of catching the blessed night of Laylatul Qadr, which can bring rewards equivalent to over 83 years of worship.",
+			"summaryProvider": "groq",
+			"summaryStatus": "verified",
+			"topic": "worship",
+			"sourceUrl": "https://hadithoftheday.com/laylatul-qadr-worship-plan-to-maximise-the-last-10-nights-of-ramadan/",
+			"canonicalUrl": null,
+			"imageUrl": null,
+			"videoUrl": null,
+			"videoTitle": null,
+			"riskLevel": "low",
+			"publishedAt": "2026-03-02T06:47:49.000Z",
+			"createdAt": "2026-03-07T03:15:01.535Z",
+			"sources": [
+				"hadithoftheday.com"
+			],
+			"likeCount": 0,
+			"cluster": {
+				"id": "019cc64a-8d11-7643-adc1-a9707f4baa3a",
+				"articleCount": 1,
+				"contentType": "hadith",
+				"topicDistribution": {
+					"worship": 1
+				},
+				"trendingScore": 0.01,
+				"trustLevel": "basic",
+				"heroImageUrl": null,
+				"readTime": null,
+				"madhahib": [],
+				"scholars": [],
+				"firstPublishedAt": "2026-03-02T06:47:49.000Z",
+				"lastPublishedAt": "2026-03-02T06:47:49.000Z"
+			},
+			"badges": [
+				"topic:worship",
+				"trust_level:basic",
+				"summary_status:verified",
+				"content_risk:low",
+				"content_type:hadith",
+				"content_tier:evergreen"
+			],
+			"source": {
+				"id": "hadithoftheday.com",
+				"name": "Hadith of the Day",
+				"trustLevel": "basic",
+				"siteName": "Hadith of the Day",
+				"siteIcon": "https://hadithoftheday.com/wp-content/uploads/2026/01/cropped-HOTD-Logo-CMYK-white-32x32.png",
+				"ogImage": null,
+				"targetAgeMin": null,
+				"targetAgeMax": null,
+				"targetGender": null
+			},
+			"isSaved": false,
+			"isLiked": false,
+			"relatedEvent": {
+				"name": "laylat_al_qadr",
+				"title": "Laylat al-Qadr",
+				"isOngoing": false,
+				"startDate": "2027-08-20",
+				"endDate": "2027-08-28"
+			}
+		},
+		{
+			"id": "019cb6e3-7a6d-75a0-a860-b6806d7287f9",
+			"title": "Islamic Forgiveness in the Quran",
+			"hook": "Yusuf's decades-long path to forgiveness",
+			"summary": "Islamic forgiveness is a process, not an event, as seen in Yusuf's story, where he took decades to forgive his brothers after they threw him in a well. Forgiveness requires evidence of genuine remorse, changed behavior, and a willingness to sacrifice, as Yusuf tested his brothers before forgiving them. The Quran establishes justice before recommending forgiveness, as stated in Surat An-Nahl, 16:126, and acknowledges the wound before mentioning forgiveness.",
+			"summaryProvider": "groq",
+			"summaryStatus": "verified",
+			"topic": "aqeedah",
+			"sourceUrl": "https://muslimmatters.org/2026/03/01/when-its-hard-to-forgive-what-parents-need-to-know-about-islamic-forgiveness-night-13-with-the-quran/?utm_source=rss&utm_medium=rss&utm_campaign=when-its-hard-to-forgive-what-parents-need-to-know-about-islamic-forgiveness-night-13-with-the-quran",
+			"canonicalUrl": null,
+			"imageUrl": "https://c7c8edde.delivery.rocketcdn.me/wp-content/uploads/Ramadan-Article-Images-15-1000x600.png",
+			"videoUrl": null,
+			"videoTitle": null,
+			"riskLevel": "low",
+			"publishedAt": "2026-03-02T04:37:02.000Z",
+			"createdAt": "2026-03-04T03:28:12.561Z",
+			"sources": [
+				"muslimmatters.org"
+			],
+			"likeCount": 0,
+			"cluster": {
+				"id": "019cb6e3-7a6d-75a0-a860-b6806d7287f9",
+				"articleCount": 1,
+				"contentType": "quran",
+				"topicDistribution": {
+					"aqeedah": 1
+				},
+				"trendingScore": 0.01,
+				"trustLevel": "medium",
+				"heroImageUrl": "https://c7c8edde.delivery.rocketcdn.me/wp-content/uploads/Ramadan-Article-Images-15-1000x600.png",
+				"readTime": null,
+				"madhahib": [],
+				"scholars": [],
+				"firstPublishedAt": "2026-03-02T04:37:02.000Z",
+				"lastPublishedAt": "2026-03-02T04:37:02.000Z"
+			},
+			"badges": [
+				"topic:aqeedah",
+				"trust_level:medium",
+				"summary_status:verified",
+				"content_risk:low",
+				"content_type:quran",
+				"content_tier:evergreen"
+			],
+			"source": {
+				"id": "muslimmatters.org",
+				"name": "MuslimMatters.org",
+				"trustLevel": "medium",
+				"siteName": "MuslimMatters.org",
+				"siteIcon": "https://muslimmatters.org/wp-content/uploads/cropped-MM-Logo-500-px-white-bg-32x32.png",
+				"ogImage": "http://muslimmatters.org/wp-content/uploads/m-1.jpg",
+				"targetAgeMin": null,
+				"targetAgeMax": null,
+				"targetGender": null
+			},
+			"isSaved": false,
+			"isLiked": false,
+			"relatedEvent": {
+				"name": "day_of_arafah",
+				"title": "Day of Arafah",
+				"isOngoing": false,
+				"startDate": "2028-03-08",
+				"endDate": "2028-03-08"
+			}
+		},
+		{
+			"id": "019cb6e0-b9a1-723b-ac9f-d3467fe97aa4",
+			"title": "Dua for Protection from Affliction",
+			"hook": "Seeking refuge from evil judgment",
+			"summary": "Muhammad ﷺ taught a supplication for protection from affliction, hardship, evil judgment, and enemies' malicious rejoicing. The dua, \"Oh Allah, I seek refuge in You from the difficulty of affliction, from the burden of hardship, from evil judgment, and from the enemy's malicious rejoicing,\" has a broad application, including protection from Muslims who harbor ill feelings. The term \"enemy\" refers to anyone who holds ill will or delights in another's misfortune, regardless of their religion. This supplication is a way to seek Allah's protection, maintaining dignity and focusing on His refuge rather than judging others' intentions.",
+			"summaryProvider": "groq",
+			"summaryStatus": "verified",
+			"topic": "dua",
+			"sourceUrl": "https://seekersguidance.org/answers/hadith/does-this-dua-protect-against-harm-from-fellow-muslims/",
+			"canonicalUrl": null,
+			"imageUrl": "https://seekersguidance.org/wp-content/uploads/2026/03/shutterstock_2684488131.jpg",
+			"videoUrl": null,
+			"videoTitle": null,
+			"riskLevel": "low",
+			"publishedAt": "2026-03-02T00:05:06.000Z",
+			"createdAt": "2026-03-04T03:25:07.433Z",
+			"sources": [
+				"seekersguidance.org"
+			],
+			"likeCount": 0,
+			"cluster": {
+				"id": "019cb6e0-b9a1-723b-ac9f-d3467fe97aa4",
+				"articleCount": 1,
+				"contentType": "hadith",
+				"topicDistribution": {
+					"dua": 1
+				},
+				"trendingScore": 0.01,
+				"trustLevel": "high",
+				"heroImageUrl": "https://seekersguidance.org/wp-content/uploads/2026/03/shutterstock_2684488131.jpg",
+				"readTime": null,
+				"madhahib": [],
+				"scholars": [],
+				"firstPublishedAt": "2026-03-02T00:05:06.000Z",
+				"lastPublishedAt": "2026-03-02T00:05:06.000Z"
+			},
+			"badges": [
+				"topic:dua",
+				"trust_level:high",
+				"summary_status:verified",
+				"content_risk:low",
+				"content_type:hadith",
+				"content_tier:evergreen"
+			],
+			"source": {
+				"id": "seekersguidance.org",
+				"name": "SeekersGuidance",
+				"trustLevel": "high",
+				"siteName": "SeekersGuidance",
+				"siteIcon": "https://cdn-ilejeel.nitrocdn.com/xLnVYddYcrehmWgSnEBLHqpnAehzfCNW/assets/images/optimized/rev-ec3b97e/seekersguidance.org/wp-content/uploads/2021/01/favicon.png",
+				"ogImage": "https://seekersguidance.org/wp-content/uploads/2024/08/SG-Icon.png",
+				"targetAgeMin": null,
+				"targetAgeMax": null,
+				"targetGender": null
+			},
+			"isSaved": false,
+			"isLiked": false,
+			"relatedEvent": {
+				"name": "mawlid",
+				"title": "Mawlid",
+				"isOngoing": false,
+				"startDate": "2026-05-11",
+				"endDate": "2026-05-11"
+			}
+		},
+		{
+			"id": "019cb6e3-bc0f-7468-950e-aacc24a109fd",
+			"title": "Toxic Relationships in the Quran",
+			"hook": "Nuh's son refused the ark",
+			"summary": "The Quran addresses toxic relationships through the story of Nuh and his son. Nuh ﷺ preached for 950 years, but his greatest pain was his son's refusal to board the ark, prompting Allah to say, \"He is not of your family. He is of unrighteous conduct\" (Surat Hud 11:46). This teaches that even the purest love has limits and one cannot force someone to be saved. Warning signs of toxic relationships include isolation, mood changes tied to one person, changed values, excessive guilt and self-blame, and fear of ending the relationship.",
+			"summaryProvider": "groq",
+			"summaryStatus": "verified",
+			"topic": "muslimworld",
+			"sourceUrl": "https://muslimmatters.org/2026/02/28/when-love-hurts-what-you-need-to-know-about-toxic-relationships-night-11-with-the-quran/?utm_source=rss&utm_medium=rss&utm_campaign=when-love-hurts-what-you-need-to-know-about-toxic-relationships-night-11-with-the-quran",
+			"canonicalUrl": null,
+			"imageUrl": "https://c7c8edde.delivery.rocketcdn.me/wp-content/uploads/Ramadan-Article-Images-13-1000x600.png",
+			"videoUrl": null,
+			"videoTitle": null,
+			"riskLevel": "low",
+			"publishedAt": "2026-02-28T09:07:41.000Z",
+			"createdAt": "2026-03-04T03:28:29.398Z",
+			"sources": [
+				"muslimmatters.org"
+			],
+			"likeCount": 0,
+			"cluster": {
+				"id": "019cb6e3-bc0f-7468-950e-aacc24a109fd",
+				"articleCount": 1,
+				"contentType": "quran",
+				"topicDistribution": {
+					"muslimworld": 1
+				},
+				"trendingScore": 0.01,
+				"trustLevel": "medium",
+				"heroImageUrl": "https://c7c8edde.delivery.rocketcdn.me/wp-content/uploads/Ramadan-Article-Images-13-1000x600.png",
+				"readTime": null,
+				"madhahib": [],
+				"scholars": [],
+				"firstPublishedAt": "2026-02-28T09:07:41.000Z",
+				"lastPublishedAt": "2026-02-28T09:07:41.000Z"
+			},
+			"badges": [
+				"topic:muslimworld",
+				"trust_level:medium",
+				"summary_status:verified",
+				"content_risk:low",
+				"content_type:quran",
+				"content_tier:evergreen"
+			],
+			"source": {
+				"id": "muslimmatters.org",
+				"name": "MuslimMatters.org",
+				"trustLevel": "medium",
+				"siteName": "MuslimMatters.org",
+				"siteIcon": "https://muslimmatters.org/wp-content/uploads/cropped-MM-Logo-500-px-white-bg-32x32.png",
+				"ogImage": "http://muslimmatters.org/wp-content/uploads/m-1.jpg",
+				"targetAgeMin": null,
+				"targetAgeMax": null,
+				"targetGender": null
+			},
+			"isSaved": false,
+			"isLiked": false,
+			"relatedEvent": {
+				"name": "mawlid",
+				"title": "Mawlid",
+				"isOngoing": false,
+				"startDate": "2026-05-11",
+				"endDate": "2026-05-11"
+			}
+		}
+	],
+	"nextCursor": "2026-02-28T09:07:41.000Z|019cb6e3-bc0f-7468-950e-aacc24a109fd",
+	"hasMore": true
+}

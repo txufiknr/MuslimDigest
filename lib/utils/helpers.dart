@@ -25,6 +25,8 @@ class MyHelper {
   TextStyle? get hintStyle => inputStyle?.copyWith(color: currentTheme.hintColor);
   TextStyle? get hintStyleLarge => inputStyleLarge?.copyWith(color: currentTheme.hintColor);
   Color get textColor => currentTextTheme.bodyMedium?.color ?? pickColor(AppColors.textSecondaryLight, AppColors.textSecondaryDark);
+  Color get contrastColor => pickColor(Colors.white, Colors.black);
+  Color get invertColor => pickColor(Colors.black, Colors.white);
 
   // Theme helpers
   int pickShade(int lightShade) {

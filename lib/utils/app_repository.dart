@@ -4,8 +4,6 @@ import 'dart:developer' show log;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:muslimdigest/models/user.dart';
 import 'package:muslimdigest/providers/feed/feed.dart';
-// import 'package:muslimdigest/providers/feed/feed_liked.dart';
-// import 'package:muslimdigest/providers/feed/feed_saved.dart';
 import 'package:muslimdigest/providers/feed/feed_trending.dart';
 import 'package:muslimdigest/providers/feed_type.dart';
 import 'package:muslimdigest/providers/ingest_last_date.dart';
@@ -68,6 +66,14 @@ class AppRepository {
         _ref.read(readCountProvider.notifier).setValue(0),
         _ref.read(readLastDateProvider.notifier).setValue(ingestLastDate),
       ]);
+      // showBottomModalSheetContent(
+      //   _ref.context!,
+      //   title: "Today's Digest",
+      //   widgets: [
+      //     Text("• 5 stories", style: _ref.read(currentTextThemeProvider).bodyMedium),
+      //     Text("• 3 minute read", style: _ref.read(currentTextThemeProvider).bodyMedium),
+      //   ]
+      // );
       return true;
     } else {
       log("[home] 👋 Welcome back, it's still the same daily digest");

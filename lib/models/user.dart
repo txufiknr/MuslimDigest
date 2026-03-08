@@ -69,7 +69,7 @@ class User {
     return User(
       userId: json['userId'],
       name: json['name'],
-      gender: json['gender'] == null ? null : Gender.fromString(json['gender']),
+      gender: Gender.fromString(json['gender']),
       ageGroup: json['ageGroup'],
       totalLiked: json['totalLiked'] ?? 0,
       totalSaved: json['totalSaved'] ?? 0,

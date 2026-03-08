@@ -24,9 +24,12 @@ final APP_USER_AGENT = dotenv.env['APP_USER_AGENT'] ?? "MuslimDigestApp";
 // App assets
 const APP_ASSETS_LOGO = "assets/images/icons/logo.png";
 const APP_FONT_FAMILY = "SourceSans3";
+// const APP_FONT_FAMILY = "Outfit";
+// const APP_FONT_FAMILY = "LeagueSpartan";
 
 // App languages
 const APP_LOCALE = Locale('en', 'US');
+const APP_LANGUAGE = 'en';
 const GREETINGS = "As-salamu alaykum";
 const MESSAGES = [
   "May this knowledge benefit you.",
