@@ -329,9 +329,7 @@ class _HomePageState extends ConsumerState<HomePage> with RouteAware {
             ),
 
             // Tour animation
-            // TODO: temp
-            if (isFirstRun)
-            Tour()
+            if (isFirstRun) Tour()
           ],
         ),
       ),

@@ -53,6 +53,7 @@ class Tour extends ConsumerWidget {
             ? Alignment.centerRight
             : Alignment.centerLeft,
           child: Row(
+            mainAxisAlignment: shouldNext ? MainAxisAlignment.end : MainAxisAlignment.start,
             children: (shouldNext ? [
               textWidget.flexible(),
               iconWidget

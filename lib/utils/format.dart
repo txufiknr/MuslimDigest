@@ -26,6 +26,11 @@ final _kHadithPattern = RegExp(
   dotAll: true,
 );
 
+// Matches comma quote pattern: ", "quoted text" (reference)"
+final _kCommaQuotePattern = RegExp(
+  r',\s*"([^"]+)"\s*\([^)]*\)',
+);
+
 /// Parsed result of a raw text string.
 ///
 /// - [header] is the optional leading text before the first bullet (e.g. a
@@ -38,6 +43,8 @@ final _kHadithPattern = RegExp(
 /// - [prophetStatement] is the prophet statement part when hadith format is detected.
 /// - [quote] is the quoted text part when hadith format is detected.
 /// - [reference] is the reference part when hadith format is detected.
+/// - [commaQuote] is the quoted text part when comma quote pattern is detected.
+/// - [commaQuoteText] is the full text before the comma quote pattern.
 @immutable
 class _ParseResult {
   const _ParseResult({
@@ -49,6 +56,8 @@ class _ParseResult {
     this.prophetStatement,
     this.quote,
     this.reference,
+    this.commaQuote,
+    this.commaQuoteText,
   });
 
   final String? header;
@@ -59,10 +68,13 @@ class _ParseResult {
   final String? prophetStatement;
   final String? quote;
   final String? reference;
+  final String? commaQuote;
+  final String? commaQuoteText;
 
   bool get hasBullets => lines.isNotEmpty;
   bool get isQA => question != null && answer != null;
   bool get isHadith => narrator != null && quote != null;
+  bool get hasCommaQuote => commaQuote != null;
 }
 
 /// Strips the leading bullet character from [line] and returns the trimmed
@@ -134,6 +146,19 @@ _ParseResult _parseText(String rawText) {
     return _ParseResult(
       question: qaMatch.group(1)?.trim(),
       answer: qaMatch.group(2)?.trim(),
+    );
+  }
+
+  // ── Strategy 2.5: Comma quote detection ─────────────────────────────────────
+  final commaQuoteMatch = _kCommaQuotePattern.firstMatch(normalizedText);
+  if (commaQuoteMatch != null) {
+    final matchStart = commaQuoteMatch.start;
+    final beforeQuote = normalizedText.substring(0, matchStart).trim();
+    final quoteText = commaQuoteMatch.group(1)?.trim();
+    
+    return _ParseResult(
+      commaQuoteText: beforeQuote.isNotEmpty ? beforeQuote : null,
+      commaQuote: quoteText,
     );
   }
 
@@ -270,6 +295,44 @@ Widget qaPair(String question, String answer, {
   );
 }
 
+/// Renders text with comma quote pattern using Text.rich for bold and italic styling.
+///
+/// The text is displayed with the quoted portion styled as bold and italic.
+/// [beforeText] is the text before the comma quote pattern.
+/// [quoteText] is the quoted text to be styled.
+Widget commaQuoteText(String? beforeText, String quoteText, {
+  TextStyle? style,
+}) {
+  final quoteStyle = style?.copyWith(
+    fontWeight: FontWeight.bold,
+    fontStyle: FontStyle.italic,
+  ) ?? TextStyle(
+    fontWeight: FontWeight.bold,
+    fontStyle: FontStyle.italic,
+  );
+
+  final textSpans = <TextSpan>[];
+  
+  // Add text before the quote if it exists
+  if (beforeText != null && beforeText.isNotEmpty) {
+    textSpans.add(TextSpan(text: beforeText));
+    textSpans.add(TextSpan(text: ', '));
+  }
+  
+  // Add the styled quote
+  textSpans.add(TextSpan(
+    text: '"$quoteText"',
+    style: quoteStyle,
+  ));
+
+  return Text.rich(
+    TextSpan(
+      children: textSpans,
+      style: style,
+    ),
+  );
+}
+
 /// Formats [rawText] into either a plain [Text] widget, [qaPair] widget,
 /// [bulletedList] widget, or [hadithNarration] widget based on content detection.
 ///
@@ -299,6 +362,14 @@ Widget formatText(BuildContext context, String rawText, {TextStyle? style}) {
     return qaPair(
       result.question!,
       result.answer!,
+      style: style,
+    );
+  }
+
+  if (result.hasCommaQuote) {
+    return commaQuoteText(
+      result.commaQuoteText,
+      result.commaQuote!,
       style: style,
     );
   }
