@@ -51,9 +51,8 @@ class _HiddenContentPageState extends ConsumerState<HiddenContentPage> with Sing
           labelColor: AppColors.primary,
           unselectedLabelColor: h.currentTheme.colorScheme.onSurface.withValues(alpha: 0.6),
           tabs: const [
-            // TODO: add number badge
             Tab(text: 'Avoided Sources'), // ref.read(preferencesProvider).avoidedSources.length
-            Tab(text: 'Hidden Feeds'), // ref.read(userProvider).totalNotInterested
+            Tab(text: 'Hidden Feeds'), // ref.read(feedNotInterestedProvider).total
           ],
         ),
       ),

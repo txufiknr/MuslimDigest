@@ -83,7 +83,6 @@ class NotificationController {
       // This would typically use your navigation system (like GoRouter)
       // For now, we'll just log the navigation intent
       debugPrint('🧭 Navigating to main content');
-      // TODO: Implement actual navigation using your app's router
       // Example: context.go('/home');
     } catch (e) {
       debugPrint('❌ Error navigating to main content: $e');

@@ -10,18 +10,23 @@ import 'package:muslimdigest/models/user.dart';
 import 'package:muslimdigest/providers/feed/feed.dart';
 import 'package:muslimdigest/providers/feed_type.dart';
 import 'package:muslimdigest/providers/read_count_states.dart';
+import 'package:muslimdigest/providers/read_last_date.dart';
 import 'package:muslimdigest/providers/topic.dart';
 import 'package:muslimdigest/providers/user/preferences.dart';
 import 'package:muslimdigest/utils/app.dart';
 import 'package:muslimdigest/utils/app_repository.dart';
+import 'package:muslimdigest/utils/debounce.dart';
 import 'package:muslimdigest/utils/helpers.dart';
 import 'package:muslimdigest/utils/notification_scheduler.dart';
 import 'package:muslimdigest/utils/dialogs.dart';
 import 'package:muslimdigest/utils/extensions.dart';
 import 'package:muslimdigest/utils/functions.dart';
+import 'package:muslimdigest/utils/time.dart';
 import 'package:muslimdigest/variables/app.dart';
 import 'package:muslimdigest/variables/feed.dart';
 import 'package:muslimdigest/variables/user.dart';
+import 'package:muslimdigest/widgets/components/button.dart';
+import 'package:muslimdigest/widgets/components/card.dart';
 import 'package:muslimdigest/widgets/components/tour.dart';
 import '../widgets/home/home_header.dart';
 import '../widgets/home/feed_swiper.dart';
@@ -37,7 +42,7 @@ class HomePage extends ConsumerStatefulWidget {
 class _HomePageState extends ConsumerState<HomePage> with RouteAware {
   AppRepository get r => ref.read(appRepositoryProvider);
 
-  // late final Debounce _topicChangeDebounce = const Duration(milliseconds: 500).debounce;
+  late final Debounce _digestLoadDebounce = const Duration(milliseconds: 500).debounce;
   late final AppLifecycleListener _lifeCycleListener;
   UserPreferences? lastUserPreferences;
   var _isWillExit = false;
@@ -47,73 +52,68 @@ class _HomePageState extends ConsumerState<HomePage> with RouteAware {
   static int _requestCounter = 0;
 
   /// Init feed loading
-  void _initFeed() async {
+  void _initFeed() {
     final feedType = ref.read(feedTypeProvider);
     final isNone = feedType.read(ref).isNone;
     if (isNone) {
       log('🧾 Feed is empty and need loading...');
-      await r.loadUserFeed(force: true);
-      if (mounted && r.newDigestFeedAvailable) {
-        final h = MyHelper(context);
-        final feedItems = ref.read(feedProvider).items ?? [];
-        final totalStories = feedItems.length;
-        final totalMinutes = feedItems.fold(0.0, (sum, item) => sum + (item.readTimeSeconds));
-        showBottomModalSheetContent(
-          context,
-          title: "Today's Digest",
-          widgets: [
-            Row(
-              children: [
-                Icon(CupertinoIcons.book, size: 20, color: Theme.of(context).colorScheme.primary),
-                const SizedBox(width: 8),
-                Text(
-                  "$totalStories ${totalStories == 1 ? 'story' : 'stories'} for you",
-                  style: h.currentTextTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Icon(CupertinoIcons.clock, size: 20, color: Theme.of(context).colorScheme.primary),
-                const SizedBox(width: 8),
-                Text(
-                  "${totalMinutes.round()} ${totalMinutes.round() == 1 ? 'minute' : 'minutes'} read",
-                  style: h.currentTextTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.3),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Row(
-                children: [
-                  Icon(CupertinoIcons.lightbulb, size: 16, color: Theme.of(context).colorScheme.primary),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      "Curated content tailored to your interests",
-                      style: h.currentTextTheme.bodySmall?.copyWith(
-                        color: Theme.of(context).colorScheme.onPrimaryContainer,
-                        fontStyle: FontStyle.italic,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ]
-        );
-      }
+      r.loadUserFeed(force: true);
+      // await r.loadUserFeed(force: true);
+      // if (mounted && r.newDigestFeedAvailable) {
+      //   _showDigestSummary();
+      // }
     }
+  }
+
+  void _showDigestSummary() {
+    if (!mounted) return;
+
+    final h = MyHelper(context);
+    final feedItems = ref.read(feedProvider).items ?? [];
+    final totalStories = feedItems.length;
+    final totalSeconds = feedItems.fold(0.0, (sum, item) => sum + (item.readTimeSeconds));
+    final totalMinutes = (totalSeconds / 60).floor();
+
+    showBottomModalSheetContent(
+      context,
+      title: "Today's Digest",
+      widgets: <Widget>[
+        ContextCard("Curated content tailored based on your interests", caption: "Daily Digest Ready!", icon: FeedType.digest.icon),
+        MyCard(
+          margin: 0,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(CupertinoIcons.book, size: 24, color: Theme.of(context).colorScheme.primary),
+              const SizedBox(width: 8),
+              Text(
+                "$totalStories ${totalStories == 1 ? 'story' : 'stories'} for you",
+                style: h.currentTextTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ),
+        MyCard(
+          margin: 0,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(CupertinoIcons.clock, size: 24, color: Theme.of(context).colorScheme.primary),
+              const SizedBox(width: 8),
+              Text(
+                "${totalMinutes.round()} ${totalMinutes.round() == 1 ? 'minute' : 'minutes'} read",
+                style: h.currentTextTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ),
+        MyButton(text: "Read My Digest", icon: Icon(CupertinoIcons.book), onPressed: Navigator.of(context).pop),
+      ].addItemInBetween(SizedBox(height: 16,))
+    );
   }
 
   /// Save all user data
@@ -217,7 +217,7 @@ class _HomePageState extends ConsumerState<HomePage> with RouteAware {
   @override
   void dispose() {
     routeObserver.unsubscribe(this);
-    // _topicChangeDebounce.dispose();
+    _digestLoadDebounce.dispose();
     _lifeCycleListener.dispose();
     super.dispose();
   }
@@ -294,13 +294,22 @@ class _HomePageState extends ConsumerState<HomePage> with RouteAware {
 
       ref.read(feedTypeProvider.notifier).setValue(FeedType.latest);
 
-      // Debounce rapid topic tab switching to prevent excessive API calls
-      // _topicChangeDebounce.run(() {
-        // if (!mounted) return;
-        // Cancel previous feed request and start new one
-        log('[HomePage] Topic changed from $previous to $next, cancelling previous request');
-        _loadFeed(feedType: FeedType.latest, topic: next);
-      // });
+      // Cancel previous API call and start new one
+      log('[HomePage] Topic changed from $previous to $next, cancelling previous request');
+      _loadFeed(feedType: FeedType.latest, topic: next);
+    });
+
+    // Listen for digest load and show digest summary
+    ref.listen<FeedState>(feedProvider, (previous, next) {
+      if (!mounted || previous == next) return;
+      if (next.isLoading) return;
+      if (next.isEmpty) return;
+
+      final readLastDate = ref.read(readLastDateProvider);
+      final isNewDay = readLastDate == null || !isToday(readLastDate);
+      if (!isNewDay) return;
+
+      _digestLoadDebounce.run(_showDigestSummary);
     });
 
     return PopScope(
@@ -312,6 +321,7 @@ class _HomePageState extends ConsumerState<HomePage> with RouteAware {
           _saveAllData();
           _isWillExit = true;
           showSnackBar(context, 'Press back again to exit');
+          // _showDigestSummary(); // TODO: temp
           delay(2000, () {
             _isWillExit = false;
             hideSnackBar(context);

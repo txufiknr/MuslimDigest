@@ -120,7 +120,8 @@ class ContextCard extends StatelessWidget {
   final double? fontSize;
   final TextStyle? textStyle;
   final MaterialColor color;
-  const ContextCard(this.text, {this.caption, this.color = Colors.teal, this.textStyle, this.fontSize, super.key});
+  final IconData? icon;
+  const ContextCard(this.text, {this.icon, this.caption, this.color = Colors.teal, this.textStyle, this.fontSize, super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -142,7 +143,7 @@ class ContextCard extends StatelessWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Icon(CupertinoIcons.lightbulb, color: color, size: 16,),
+              Icon(icon ?? CupertinoIcons.lightbulb, color: color, size: 16,),
               SizedBox(width: 4,),
               Text(caption ?? "Context", style: h.currentTextTheme.titleSmall?.copyWith(fontSize: 15),).expand(),
             ],
