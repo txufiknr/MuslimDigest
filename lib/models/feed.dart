@@ -13,12 +13,10 @@ class FeedItem {
   final String? summaryStatus;
   final String? sourceUrl;
   final String? canonicalUrl;
-  final String? hook;
   final String? topic;
   final String? imageUrl;
   final String? videoUrl;
   final String? videoTitle;
-  final String? riskLevel;
   final DateTime? publishedAt;
   final List<String> sources;
   final Cluster cluster;
@@ -41,15 +39,13 @@ class FeedItem {
     this.summaryStatus,
     this.sourceUrl,
     this.canonicalUrl,
-    this.hook,
     this.topic,
     this.imageUrl,
     this.videoUrl,
     this.videoTitle,
-    this.riskLevel,
     this.publishedAt,
-    this.createdAt,
     this.sources = const [],
+    this.createdAt,
     required this.cluster,
     this.badges = const [],
     required this.source,
@@ -72,6 +68,11 @@ class FeedItem {
   String? get madhhab => badges.where((badge) => badge != 'madhhab:multiple').toList().firstWhereOrNull((badge) => badge.startsWith('maddhab:'));
   double get readTimeSeconds => cluster.readTime ?? estimateReadTime(summary);
   String get readTimeLabel => formatReadTime(readTimeSeconds);
+  String? get hook => cluster.hook;
+  String? get context => cluster.context;
+  List<String> get keywords => cluster.keywords;
+  List<String> get _badgeValuesToDisplay => badgeToDisplay.map((b) => b.split(':').last).toList();
+  List<String> get keywordsToDisplay => keywords.where((k) => !_badgeValuesToDisplay.contains(k)).toList();
 
   // Display labels on feed card
   String get displayTitle => hasVideo ? (videoTitle ?? title) : title;
@@ -79,13 +80,29 @@ class FeedItem {
   String? get sourceLink => canonicalUrl ?? sourceUrl;
 
   bool get isOngoing => relatedEvent?.isOngoing == true;
-  String get vibeAnimationAsset => 'assets/lottie/vibes/${relatedEvent?.name}.json';
+  String get vibeAnimationAsset => 'assets/lottie/vibes/${relatedEvent?.name.name}.json';
 
-  List<String> get badgeToDisplay => badges.where((badge) => 
-    !badge.startsWith('trust_level:') &&
-    !badge.startsWith('summary_status:') &&
-    (badge != 'content_risk:high' ? !badge.startsWith('content_risk:') : true)
-  ).toList();
+  List<String> get badgeToDisplay {
+    final filteredBadges = badges.where((badge) => 
+      // Hide all trust level badges
+      !badge.startsWith('trust_level:') &&
+      // Hide all summary status badges
+      !badge.startsWith('summary_status:') &&
+      // Hide all content risk badges except 'content_risk:high'
+      (badge.startsWith('content_risk:') ? badge == 'content_risk:high' : true) &&
+      // Hide all content tier badges except 'content_tier:evergreen'
+      (badge.startsWith('content_tier:') ? badge == 'content_tier:evergreen' : true)
+    ).toList();
+    
+    // Remove duplicate suffixes, keep first occurrence
+    final seenSuffixes = <String>{};
+    return filteredBadges.where((badge) {
+      final suffix = badge.split(':').last;
+      if (seenSuffixes.contains(suffix)) return false;
+      seenSuffixes.add(suffix);
+      return true;
+    }).toList();
+  }
 
   factory FeedItem.fromJson(Map<String, dynamic> json) {
     return FeedItem(
@@ -96,12 +113,10 @@ class FeedItem {
       summaryStatus: json['summaryStatus'],
       sourceUrl: json['sourceUrl'],
       canonicalUrl: json['canonicalUrl'],
-      hook: json['hook'],
       topic: json['topic'],
       imageUrl: json['imageUrl'],
       videoUrl: json['videoUrl'],
       videoTitle: json['videoTitle'],
-      riskLevel: json['riskLevel'],
       publishedAt: json['publishedAt'] == null ? null : DateTime.parse(json['publishedAt']),
       createdAt: json['createdAt'] == null ? null : DateTime.parse(json['createdAt']),
       sources: List<String>.from(json['sources'] ?? []),
@@ -127,12 +142,10 @@ class FeedItem {
       'summaryStatus': summaryStatus,
       'sourceUrl': sourceUrl,
       'canonicalUrl': canonicalUrl,
-      'hook': hook,
       'topic': topic,
       'imageUrl': imageUrl,
       'videoUrl': videoUrl,
       'videoTitle': videoTitle,
-      'riskLevel': riskLevel,
       'publishedAt': publishedAt?.toIso8601String(),
       'createdAt': createdAt?.toIso8601String(),
       'sources': sources,
@@ -157,14 +170,11 @@ class FeedItem {
     String? summaryStatus,
     String? sourceUrl,
     String? canonicalUrl,
-    String? hook,
     String? topic,
     String? imageUrl,
     String? videoUrl,
     String? videoTitle,
-    String? riskLevel,
     DateTime? publishedAt,
-    DateTime? createdAt,
     List<String>? sources,
     Cluster? cluster,
     List<String>? badges,
@@ -185,14 +195,11 @@ class FeedItem {
       summaryStatus: summaryStatus ?? this.summaryStatus,
       sourceUrl: sourceUrl ?? this.sourceUrl,
       canonicalUrl: canonicalUrl ?? this.canonicalUrl,
-      hook: hook ?? this.hook,
       topic: topic ?? this.topic,
       imageUrl: imageUrl ?? this.imageUrl,
       videoUrl: videoUrl ?? this.videoUrl,
       videoTitle: videoTitle ?? this.videoTitle,
-      riskLevel: riskLevel ?? this.riskLevel,
       publishedAt: publishedAt ?? this.publishedAt,
-      createdAt: createdAt ?? this.createdAt,
       sources: sources ?? this.sources,
       cluster: cluster ?? this.cluster,
       badges: badges ?? this.badges,
@@ -218,12 +225,10 @@ FeedItem(
   summaryStatus: $summaryStatus,
   sourceUrl: $sourceUrl,
   canonicalUrl: $canonicalUrl,
-  hook: $hook,
   topic: $topic,
   imageUrl: $imageUrl,
   videoUrl: $videoUrl,
   videoTitle: $videoTitle,
-  riskLevel: $riskLevel,
   publishedAt: $publishedAt,
   createdAt: $createdAt,
   sources: $sources,
@@ -250,7 +255,6 @@ FeedItem(
     other.id == id &&
     other.title == title &&
     other.cluster == cluster &&
-    other.isBreaking == isBreaking &&
     other.isLiked == isLiked &&
     other.isSaved == isSaved &&
     other.likeCount == likeCount &&
@@ -263,13 +267,19 @@ FeedItem(
 class Cluster {
   final String id;
   final String? displayTitle;
+  final String? topicPrimary;
   final int articleCount;
   final String? contentType;
   final double? readTime;
   final Map<String, int> topicDistribution;
   final double trendingScore;
   final String? trustLevel;
+  final String? riskLevel;
   final String? heroImageUrl;
+  final String? heroImageSource;
+  final String? hook;
+  final String? context;
+  final List<String> keywords;
   final List<String> madhahib;
   final List<String> scholars;
   final DateTime? firstPublishedAt;
@@ -278,13 +288,19 @@ class Cluster {
   Cluster({
     required this.id,
     this.displayTitle,
+    this.topicPrimary,
     this.articleCount = 1,
     this.contentType,
     this.readTime,
     this.topicDistribution = const {},
     this.trendingScore = 0.0,
     this.trustLevel,
+    this.riskLevel,
     this.heroImageUrl,
+    this.heroImageSource,
+    this.hook,
+    this.context,
+    this.keywords = const [],
     this.madhahib = const [],
     this.scholars = const [],
     this.firstPublishedAt,
@@ -296,13 +312,20 @@ class Cluster {
   factory Cluster.fromJson(Map<String, dynamic> json) {
     return Cluster(
       id: json['id'],
+      displayTitle: json['displayTitle'],
+      topicPrimary: json['topicPrimary'],
       articleCount: json['articleCount'] ?? 1,
       contentType: json['contentType'],
       readTime: json['readTime']?.toDouble(),
       topicDistribution: Map<String, int>.from(json['topicDistribution'] ?? {}),
       trendingScore: json['trendingScore']?.toDouble() ?? 0.0,
       trustLevel: json['trustLevel'],
+      riskLevel: json['riskLevel'],
       heroImageUrl: json['heroImageUrl'],
+      heroImageSource: json['heroImageSource'],
+      hook: json['hook'],
+      context: json['context'],
+      keywords: List<String>.from(json['keywords'] ?? []),
       madhahib: List<String>.from(json['madhahib'] ?? []),
       scholars: List<String>.from(json['scholars'] ?? []),
       firstPublishedAt: json['firstPublishedAt'] == null ? null : DateTime.parse(json['firstPublishedAt']),
@@ -314,13 +337,19 @@ class Cluster {
     return {
       'id': id,
       'displayTitle': displayTitle,
+      'topicPrimary': topicPrimary,
       'articleCount': articleCount,
       'contentType': contentType,
       'readTime': readTime,
       'topicDistribution': topicDistribution,
       'trendingScore': trendingScore,
       'trustLevel': trustLevel,
+      'riskLevel': riskLevel,
       'heroImageUrl': heroImageUrl,
+      'heroImageSource': heroImageSource,
+      'hook': hook,
+      'context': context,
+      'keywords': keywords,
       'madhahib': madhahib,
       'scholars': scholars,
       'firstPublishedAt': firstPublishedAt?.toIso8601String(),
@@ -334,13 +363,19 @@ class Cluster {
 Cluster(
   id: $id,
   displayTitle: $displayTitle,
+  topicPrimary: $topicPrimary,
   articleCount: $articleCount,
   contentType: $contentType,
   readTime: $readTime,
   topicDistribution: $topicDistribution,
   trendingScore: $trendingScore,
   trustLevel: $trustLevel,
+  riskLevel: $riskLevel,
   heroImageUrl: $heroImageUrl,
+  heroImageSource: $heroImageSource,
+  hook: $hook,
+  context: $context,
+  keywords: $keywords,
   madhahib: $madhahib,
   scholars: $scholars,
   firstPublishedAt: $firstPublishedAt,

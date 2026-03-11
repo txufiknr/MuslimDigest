@@ -5,7 +5,7 @@ v2 features:
 [x] remove event detection
 [x] add relatedevent in feeditem model
 [x] tour swipe animasi
+[x] debug share screenshot
+[x] test page feed/not_interested
 [ ] tambah tab QnA
-[ ] test page feed/not_interested
-[ ] debug share screenshot
 [ ] more app by us

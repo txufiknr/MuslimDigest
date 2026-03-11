@@ -1,7 +1,10 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:muslimdigest/config/colors.dart';
+import 'package:muslimdigest/config/constants.dart';
 import 'package:muslimdigest/config/themes.dart';
 import 'package:muslimdigest/utils/extensions.dart';
+import 'package:muslimdigest/utils/functions.dart';
 
 enum MyButtonVariant {
   primary,
@@ -185,6 +188,21 @@ class MyButton extends StatelessWidget {
     ).withOpacity(isDisabled ? 0.75 : 1.0).sized(
       width: width ?? double.infinity,
       height: buttonHeight,
+    );
+  }
+}
+
+class DonateButton extends StatelessWidget {
+  const DonateButton({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MyButton(
+      text: 'Donate',
+      onPressed: () => openUrl(APP_URL_DONATE),
+      outlined: true,
+      icon: Icon(CupertinoIcons.gift),
+      variant: MyButtonVariant.success,
     );
   }
 }

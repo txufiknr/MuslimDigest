@@ -125,6 +125,12 @@ class _HomePageState extends ConsumerState<HomePage> with RouteAware {
     lastUserPreferences = ref.read(preferencesProvider);
   }
 
+  void _reloadFeed() {
+    final feedType = ref.read(feedTypeProvider);
+    final topic = ref.read(topicProvider);
+    _loadFeed(feedType: feedType, topic: topic, force: true);
+  }
+
   void _compareUserPreferences() async {
     if (lastUserPreferences == null) return;
     final userPreferences = ref.read(preferencesProvider);
@@ -132,20 +138,30 @@ class _HomePageState extends ConsumerState<HomePage> with RouteAware {
     // Check if topic preferences have changed
     final topicsChanged = !setEquals(userPreferences.topics, lastUserPreferences!.topics);
     final avoidedTopicsChanged = !setEquals(userPreferences.avoidedTopics, lastUserPreferences!.avoidedTopics);
+    final isChanged = topicsChanged || avoidedTopicsChanged;
+
+    log('[_compareUserPreferences] topicsChanged = $topicsChanged');
+    log('[_compareUserPreferences] avoidedTopicsChanged = $avoidedTopicsChanged');
     
-    if (topicsChanged || avoidedTopicsChanged) {
+    lastUserPreferences = null;
+
+    if (!isChanged) return;
+    _saveAllData();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
       final reload = await showBottomModalConfirm(
         context,
         title: "Preferences Updated",
-        message: "Your topic preferences have changed. Would you like to refresh your feed with the new recommendations?",
+        message: "Would you like to refresh your feed with the new recommendations?",
         confirmButtonText: "Yes, please refresh",
-        confirmButtonIcon: const Icon(CupertinoIcons.refresh),
-        cancelButtonText: "No, keep current feed",
+        confirmButtonIcon: Icon(CupertinoIcons.refresh),
+        cancelButtonText: "Continue reading",
+        cancelButtonIcon: Icon(CupertinoIcons.book),
       );
-      if (mounted && reload == true) r.loadUserFeed(force: true);
-    }
-    lastUserPreferences = null;
-    _saveAllData();
+      if (mounted && reload == true) {
+        _reloadFeed();
+      }
+    });
   }
 
   @override

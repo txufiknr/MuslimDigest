@@ -1,0 +1,70 @@
+{
+	"id": "019cdaa2-5816-7783-bc50-53ab12915f9c",
+	"title": "Quran and Hadith on Creation's Obedience",
+	"summary": "Q: How does Quran 55:6, stating \"The stars and the trees bow down,\" reconcile with hadith about trees speaking at the end of times? A: The verse refers to plants that grow without stalks (\"najm\") and trees with stalks (\"shajar\") submitting to Allah. This submission is their inherent obedience to His decree, not literal prostration. All creation glorifies Allah, possessing cognition suited to them. Hadith about trees speaking before the Day of Judgment do not contradict this, as Allah can grant them articulation, similar to how body parts will speak on that Day, as mentioned in Quran 41:21.",
+	"summaryProvider": "gemini",
+	"summaryStatus": "verified",
+	"topic": "quran",
+	"riskLevel": "low",
+	"sources": [
+		"https://seekersguidance.org/answers/general-answers-feeds/how-does-quran-556-reconcile-with-speaking-tree-hadith/"
+	],
+	"source": {
+		"id": "seekersguidance.org",
+		"name": "SeekersGuidance",
+		"trustLevel": "high",
+		"siteName": "SeekersGuidance",
+		"siteIcon": "https://cdn-ilejeel.nitrocdn.com/xLnVYddYcrehmWgSnEBLHqpnAehzfCNW/assets/images/optimized/rev-ec3b97e/seekersguidance.org/wp-content/uploads/2021/01/favicon.png",
+		"ogImage": "https://seekersguidance.org/wp-content/uploads/2024/08/SG-Icon.png",
+		"targetAgeMin": null,
+		"targetAgeMax": null,
+		"targetGender": null
+	},
+	"sourceUrl": "https://seekersguidance.org/answers/general-answers-feeds/how-does-quran-556-reconcile-with-speaking-tree-hadith/",
+	"canonicalUrl": null,
+	"imageUrl": null,
+	"videoUrl": null,
+	"videoTitle": null,
+	"likeCount": 0,
+	"cluster": {
+		"id": "019cdaa2-5816-7783-bc50-53ab12915f9c",
+		"displayTitle": "Quran and Hadith on Creation's Obedience",
+		"topicPrimary": "quran",
+		"topicDistribution": {
+			"quran": 1
+		},
+		"contentType": "qna",
+		"articleCount": 1,
+		"trendingScore": 0.15700485,
+		"trustLevel": "high",
+		"riskLevel": "low",
+		"heroImageUrl": null,
+		"heroImageSource": null,
+		"readTime": 36,
+		"hook": "Stars and trees bow down in submission",
+		"context": "The question relates to the interpretation of Quran 55:6 and a hadith about trees speaking at the end of times.",
+		"keywords": [
+			"quran",
+			"hadith",
+			"creation",
+			"obedience"
+		],
+		"madhahib": [],
+		"scholars": [],
+		"firstPublishedAt": "2026-03-10T01:41:02.000Z",
+		"lastPublishedAt": "2026-03-10T01:41:02.000Z"
+	},
+	"badges": [
+		"topic:quran",
+		"trust_level:high",
+		"summary_status:verified",
+		"content_risk:low",
+		"content_type:qna",
+		"content_tier:semi_evergreen"
+	],
+	"isSaved": false,
+	"isLiked": false,
+	"relatedEvent": null,
+	"publishedAt": "2026-03-10T01:41:02.000Z",
+	"createdAt": "2026-03-11T02:03:20.498Z"
+}

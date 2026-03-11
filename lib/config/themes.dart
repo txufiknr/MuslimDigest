@@ -303,6 +303,9 @@ class AppThemes {
       useMaterial3: true,
       fontFamily: APP_FONT_FAMILY,
     );
+    // ..textTheme.apply(
+    //   fontSizeFactor: .8,
+    // );
   }
 
   // Complete Themes

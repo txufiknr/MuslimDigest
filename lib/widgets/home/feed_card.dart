@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lottie/lottie.dart';
+import 'package:muslimdigest/config/feeds.dart';
 import 'package:muslimdigest/utils/contents.dart';
 import 'package:muslimdigest/config/colors.dart';
 import 'package:muslimdigest/config/constants.dart';
@@ -20,7 +21,6 @@ import 'package:muslimdigest/utils/extensions.dart';
 import 'package:muslimdigest/utils/format.dart';
 import 'package:muslimdigest/utils/functions.dart';
 import 'package:muslimdigest/utils/helpers.dart';
-import 'package:muslimdigest/utils/time.dart';
 import 'package:muslimdigest/variables/app.dart';
 import 'package:muslimdigest/variables/feed.dart';
 import 'package:muslimdigest/widgets/components/badge.dart';
@@ -196,7 +196,8 @@ class _FeedCardState extends ConsumerState<FeedCard> with AutomaticKeepAliveClie
             Text("Another day of beneficial knowledge.", textAlign: TextAlign.center, style: h.currentTextTheme.titleLarge),
             Text(MESSAGES[(currentStreak - 1) % MESSAGES.length], textAlign: TextAlign.center, style: h.currentTextTheme.bodyMedium),
             StreaksCard(),
-            Lottie.asset('assets/lottie/streak.json'),
+            Lottie.asset('assets/lottie/streak.json').expand(),
+            if (!_isTakingScreenshot) DonateButton(),
             MyButton(text: "Continue reading", icon: Icon(CupertinoIcons.book), onPressed: widget.onSeeLatest,),
             MyDivider(),
             Row(
@@ -363,6 +364,12 @@ class _FeedHeader extends ConsumerWidget {
           color: getContentTypeColor(feedItem.cluster.contentType!),
         );
       }
+      if (feedItem.cluster.topicPrimary != null) {
+        return Vibe(
+          title: getTopicLabel(feedItem.cluster.topicPrimary!),
+          color: getTopicColor(feedItem.cluster.topicPrimary!),
+        );
+      }
       return Vibe(
         title: feedItem.readTimeLabel,
         color: Colors.blue,
@@ -436,51 +443,53 @@ class _FeedHeader extends ConsumerWidget {
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
+                  SizedBox(height: 4,),
+                  Text(feedItem.readTimeLabel, style: h.currentTextTheme.bodySmall?.copyWith(fontSize: textSize * .6, color: Colors.white70)),
                 ],
               ),
             ),
           ),
 
           // Image URL overlay
-          if (feedItem.relatedEvent != null) Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            child: Container(
-              padding: EdgeInsets.all(AppThemes.contentPadding),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Colors.transparent,
-                    Colors.black.withValues(alpha: 0.7),
-                  ],
-                ),
-              ),
-              child: Text(
-                feedItem.relatedEvent!.title,
-                style: h.currentTextTheme.titleSmall?.copyWith(
-                  color: Colors.white,
-                ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ).onTap(() {
-              debugPrint('🧾 Feed info:');
-              debugPrint('🧾 title: ${feedItem.title}');
-              debugPrint('🧾 video title: ${feedItem.videoTitle}');
-              debugPrint('🧾 summary: ${feedItem.summary}');
-              debugPrint('🧾 topic: ${feedItem.topic}');
+          // if (APP_IS_DEVELOPMENT && feedItem.relatedEvent != null) Positioned(
+          //   top: 0,
+          //   left: 0,
+          //   right: 0,
+          //   child: Container(
+          //     padding: EdgeInsets.all(AppThemes.contentPadding),
+          //     decoration: BoxDecoration(
+          //       gradient: LinearGradient(
+          //         begin: Alignment.topCenter,
+          //         end: Alignment.bottomCenter,
+          //         colors: [
+          //           Colors.transparent,
+          //           Colors.black.withValues(alpha: 0.7),
+          //         ],
+          //       ),
+          //     ),
+          //     child: Text(
+          //       feedItem.relatedEvent!.title,
+          //       style: h.currentTextTheme.titleSmall?.copyWith(
+          //         color: Colors.white,
+          //       ),
+          //       maxLines: 2,
+          //       overflow: TextOverflow.ellipsis,
+          //     ),
+          //   ).onTap(() {
+          //     debugPrint('🧾 Feed info:');
+          //     debugPrint('🧾 title: ${feedItem.title}');
+          //     debugPrint('🧾 video title: ${feedItem.videoTitle}');
+          //     debugPrint('🧾 summary: ${feedItem.summary}');
+          //     debugPrint('🧾 topic: ${feedItem.topic}');
 
-              debugPrint('🧾 Event info:');
-              debugPrint('📅 event title: ${feedItem.relatedEvent!.title}');
-              debugPrint('📅 isOngoing: ${feedItem.relatedEvent!.isOngoing}');
-              debugPrint('📅 feedItem.isOngoing: ${feedItem.isOngoing}');
-              debugPrint('📅 feedItem.vibeAnimationAsset: ${feedItem.vibeAnimationAsset}');
-              debugPrint('📅 isRamadan: $isRamadan');
-            }),
-          ),
+          //     debugPrint('🧾 Event info:');
+          //     debugPrint('📅 event title: ${feedItem.relatedEvent!.title}');
+          //     debugPrint('📅 isOngoing backend: ${feedItem.relatedEvent!.isOngoing}');
+          //     debugPrint('📅 isOngoing frontend: ${feedItem.relatedEvent!.name.isOngoing}');
+          //     debugPrint('📅 feedItem.isOngoing: ${feedItem.isOngoing}');
+          //     debugPrint('📅 feedItem.vibeAnimationAsset: ${feedItem.vibeAnimationAsset}');
+          //   }),
+          // ),
         ],
       ).onTap(() {
         if (hasYouTubeVideo) openUrl(feedItem.videoUrl!);
@@ -500,6 +509,8 @@ class _FeedContent extends ConsumerWidget {
     final h = MyHelper(context);
     final settings = ref.watch(settingsProvider);
     final textSize = settings.textSize.toDouble();
+    final badges = feedItem.badgeToDisplay.map<Widget>((badge) => _FeedBadgeChip(badge, feedItem.isNuanced));
+    final keywords = feedItem.keywordsToDisplay.map<Widget>((keyword) => ChipBadge(keyword.toTitleCase()));
     
     return SingleChildScrollView(
       padding: EdgeInsets.all(AppThemes.contentPadding),
@@ -524,11 +535,16 @@ class _FeedContent extends ConsumerWidget {
             Wrap(
               spacing: 6,
               runSpacing: 6,
-              children: feedItem.badgeToDisplay.map((badge) {
-                return _FeedBadgeChip(badge, feedItem.isNuanced);
-              }).toList(),
+              children: [
+                ...badges,
+                ...(badges.length < MAX_BADGES_TO_DISPLAY ? keywords.take(MAX_BADGES_TO_DISPLAY - badges.length) : [])
+              ],
             ),
           ],
+          const SizedBox(height: 24),
+
+          // Context text
+          if (feedItem.context != null) ContextCard(feedItem.context!),
 
           // Also read chips
           if (feedItem.alsoRead.isNotEmpty) Wrap(
@@ -924,24 +940,7 @@ class _FeedBadgeChip extends StatelessWidget {
         }
         
       case 'topic':
-        // Topic-specific colors
-        switch (_badgeValue) {
-          case 'aqeedah': return Colors.deepOrange;
-          case 'dua': return Colors.lightGreen;
-          case 'eschatology': return Colors.blueGrey;
-          case 'ethic': return Colors.blue;
-          case 'family': return Colors.purple;
-          case 'fasting': return Colors.lime;
-          case 'fiqh': return Colors.indigo;
-          case 'hadith': return Colors.teal;
-          case 'history': return Colors.orange;
-          case 'news': case 'muslimworld': return Colors.cyan;
-          case 'opinion': return Colors.amber;
-          case 'quran': return Colors.teal;
-          case 'seerah': return Colors.brown;
-          case 'social': return Colors.green;
-          case 'worship': return Colors.deepPurple;
-        }
+        return getTopicColor(_badgeValue);
         
       default:
         // Fallback colors based on value
@@ -957,38 +956,7 @@ class _FeedBadgeChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final h = MyHelper(context);
-
-    return Semantics(
-      label: _badgeDescription,
-      tooltip: _badgeDescription,
-      child: Container(
-        padding: const EdgeInsets.symmetric(
-          horizontal: 8,
-          vertical: 4,
-        ),
-        decoration: BoxDecoration(
-          color: h.useColor(_badgeColor, 50),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: h.useColor(_badgeColor, 200)!),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            if (_badgeIcon != null) Icon(_badgeIcon, size: 14, color: h.useColor(_badgeColor, 800),).withPadding(right: 4),
-            Text(
-              _badgeText,
-              style: TextStyle(
-                fontSize: 12,
-                color: h.useColor(_badgeColor, 700),
-                fontWeight: FontWeight.w400,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
+    return ChipBadge(_badgeText, color: _badgeColor, icon: _badgeIcon, description: _badgeDescription);
   }
 }
 

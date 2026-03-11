@@ -82,6 +82,8 @@ enum FeedType {
   }
 
   bool get isHomeFeed => [digest, latest].contains(this);
+  bool get isDigest => this == digest;
+  bool get isLatest => this == latest;
 
   String get label {
     switch (this) {
@@ -221,4 +223,8 @@ enum SwipeDirection {
   static SwipeDirection fromString(String name) {
     return values.firstWhere((e) => e.name == name);
   }
+
+  SwipeDirection get opposite => this == left ? right: left;
+  bool get isLeft => this == left;
+  bool get isRight => this == right;
 }

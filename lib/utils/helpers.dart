@@ -27,6 +27,7 @@ class MyHelper {
   Color get textColor => currentTextTheme.bodyMedium?.color ?? pickColor(AppColors.textSecondaryLight, AppColors.textSecondaryDark);
   Color get contrastColor => pickColor(Colors.white, Colors.black);
   Color get invertColor => pickColor(Colors.black, Colors.white);
+  Color get accentColor => pickColor(AppColors.accentLight, AppColors.accentDark);
 
   // Theme helpers
   int pickShade(int lightShade) {

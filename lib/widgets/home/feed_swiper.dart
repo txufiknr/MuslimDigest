@@ -140,7 +140,7 @@ class FeedSwiperState extends ConsumerState<FeedSwiper> {
     super.dispose();
   }
 
-  Future<void> _incrementReadCount(FeedItem previousItem) async {
+  Future<void> _incrementReadCount(FeedItem? previousItem) async {
     if (_isDigestFeed) {
       final readCount = ref.read(readCountProvider);
       final newCount = (readCount + 1).clamp(0, _feedItems.length);
@@ -194,7 +194,7 @@ class FeedSwiperState extends ConsumerState<FeedSwiper> {
     }
   }
 
-  Future<void> _decreaseReadCount(FeedItem previousItem) async {
+  Future<void> _decreaseReadCount(FeedItem? previousItem) async {
     if (_isDigestFeed) {
       final readCount = ref.read(readCountProvider);
       if (readCount == 0) return;
@@ -208,8 +208,9 @@ class FeedSwiperState extends ConsumerState<FeedSwiper> {
     await _logHistory(previousItem);
   }
 
-  Future<void> _logHistory(FeedItem previousItem, [bool addTotalReads = false]) async {
-    // No need to log history when viewing history feed
+  Future<void> _logHistory(FeedItem? previousItem, [bool addTotalReads = false]) async {
+    // No need to log history when on streak card or viewing history feed
+    if (previousItem == null) return;
     if (widget.feedType == FeedType.history) return;
 
     // Update user total read
@@ -315,7 +316,7 @@ class FeedSwiperState extends ConsumerState<FeedSwiper> {
       isLoop: false,
       onEnd: requestReview,
       onSwipe: (previousIndex, currentIndex, direction) async {
-        final previousItem = _feedItems[previousIndex];
+        final previousItem = previousIndex == _feedItems.length ? null : _feedItems[previousIndex];
         // log('[feed] Swipe direction: $direction, previousItem: ${previousItem.title}');
         // log('[feed] Swiped item: ${previousItem.title}');
 

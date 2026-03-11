@@ -50,3 +50,4 @@ app.*.map.json
 # More files
 *.txt
 *.bak.*
+/assets/fonts

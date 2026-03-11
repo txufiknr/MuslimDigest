@@ -99,7 +99,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                   const SizedBox(height: 24),
                   
                   // Donate Button
-                  SettingsDonateButton(),
+                  DonateButton(),
                   const SizedBox(height: 32),
                   
                   // Footer
@@ -448,21 +448,6 @@ class SettingsDivider extends StatelessWidget {
     return Divider(
       height: 1,
       color: Colors.white.withValues(alpha: 0.2),
-    );
-  }
-}
-
-class SettingsDonateButton extends StatelessWidget {
-  const SettingsDonateButton({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return MyButton(
-      text: 'Donate',
-      onPressed: () => openUrl(APP_URL_DONATE),
-      brightness: Brightness.dark,
-      icon: Icon(CupertinoIcons.gift),
-      variant: MyButtonVariant.success,
     );
   }
 }

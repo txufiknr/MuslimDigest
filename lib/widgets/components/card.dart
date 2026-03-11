@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:muslimdigest/config/themes.dart';
@@ -86,7 +87,8 @@ class HookCard extends StatelessWidget {
   final String text;
   final double? fontSize;
   final TextStyle? textStyle;
-  const HookCard(this.text, {this.textStyle, this.fontSize, super.key});
+  final MaterialColor color;
+  const HookCard(this.text, {this.color = Colors.teal, this.textStyle, this.fontSize, super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -94,9 +96,9 @@ class HookCard extends StatelessWidget {
     return Container(
       margin: EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: h.useColor(Colors.teal, 50),
+        color: h.useColor(color, 50),
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: h.useColor(Colors.teal, 100)!, width: 1),
+        border: Border.all(color: h.useColor(color, 100)!, width: 1),
       ),
       padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Text(
@@ -104,9 +106,53 @@ class HookCard extends StatelessWidget {
         style: textStyle ?? h.currentTextTheme.bodyMedium?.copyWith(
           fontWeight: FontWeight.w500,
           fontStyle: FontStyle.italic,
-          color: h.useColor(Colors.teal, 800),
+          color: h.useColor(color, 800),
           fontSize: fontSize,
         ),
+      ),
+    );
+  }
+}
+
+class ContextCard extends StatelessWidget {
+  final String text;
+  final String? caption;
+  final double? fontSize;
+  final TextStyle? textStyle;
+  final MaterialColor color;
+  const ContextCard(this.text, {this.caption, this.color = Colors.teal, this.textStyle, this.fontSize, super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final h = MyHelper(context);
+    return Container(
+      margin: EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: h.useColor(color, 50),
+        borderRadius: BorderRadius.circular(10),
+        border: Border(
+          left: BorderSide(color: h.useColor(color, 200)!, width: 4),
+        ),
+      ),
+      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Icon(CupertinoIcons.lightbulb, color: color, size: 16,),
+              SizedBox(width: 4,),
+              Text(caption ?? "Context", style: h.currentTextTheme.titleSmall?.copyWith(fontSize: 15),).expand(),
+            ],
+          ),
+          SizedBox(height: 4,),
+          Text(
+            text,
+            style: textStyle ?? h.currentTextTheme.bodySmall,
+          ),
+        ],
       ),
     );
   }

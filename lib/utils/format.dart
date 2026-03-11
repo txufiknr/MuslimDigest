@@ -25,10 +25,26 @@ final _kHadithPattern = RegExp(
   r'^\s*Narrated\s+([^:]+):\s*(.*?),\s*"([^"]*)"[.]?\s*(\([^)]+\)[.]?)?\s*$',
   dotAll: true,
 );
-
 // Matches comma quote pattern: ", "quoted text" (reference)"
 final _kCommaQuotePattern = RegExp(
-  r',\s*"([^"]+)"\s*\([^)]*\)',
+  r',\s*"([^"]+)"\s*\(([^)]+)\)',
+);
+
+// Matches general quote pattern: "prefix: "quoted text""
+final _kGeneralQuotePattern = RegExp(
+  r'(.+?):\s*"([^"]+)"',
+);
+
+// Matches words quote pattern: "prefix words: "quoted text""
+final _kWordsQuotePattern = RegExp(
+  r'(.*)words\s*:\s*"([^"]+)"',
+  caseSensitive: false,
+);
+
+// Matches said quote pattern: "prefix said: "quoted text""
+final _kSaidQuotePattern = RegExp(
+  r'(.*)said\s*:\s*"([^"]+)"',
+  caseSensitive: false,
 );
 
 /// Parsed result of a raw text string.
@@ -45,6 +61,14 @@ final _kCommaQuotePattern = RegExp(
 /// - [reference] is the reference part when hadith format is detected.
 /// - [commaQuote] is the quoted text part when comma quote pattern is detected.
 /// - [commaQuoteText] is the full text before the comma quote pattern.
+/// - [commaQuoteReference] is the reference part when comma quote pattern is detected.
+/// - [generalQuote] is the quoted text part when general quote pattern is detected.
+/// - [generalQuotePrefix] is the prefix text before the colon in general quote pattern.
+/// - [wordsQuote] is the quoted text part when words quote pattern is detected.
+/// - [wordsQuotePrefix] is the prefix word before the colon in words quote pattern.
+/// - [saidQuote] is the quoted text part when said quote pattern is detected.
+/// - [saidQuotePrefix] is the prefix words before the colon in said quote pattern.
+/// - [trailing] is the text after the quote pattern.
 @immutable
 class _ParseResult {
   const _ParseResult({
@@ -58,6 +82,14 @@ class _ParseResult {
     this.reference,
     this.commaQuote,
     this.commaQuoteText,
+    this.commaQuoteReference,
+    this.generalQuote,
+    this.generalQuotePrefix,
+    this.wordsQuote,
+    this.wordsQuotePrefix,
+    this.saidQuote,
+    this.saidQuotePrefix,
+    this.trailing,
   });
 
   final String? header;
@@ -70,11 +102,22 @@ class _ParseResult {
   final String? reference;
   final String? commaQuote;
   final String? commaQuoteText;
+  final String? commaQuoteReference;
+  final String? generalQuote;
+  final String? generalQuotePrefix;
+  final String? wordsQuote;
+  final String? wordsQuotePrefix;
+  final String? saidQuote;
+  final String? saidQuotePrefix;
+  final String? trailing;
 
   bool get hasBullets => lines.isNotEmpty;
   bool get isQA => question != null && answer != null;
   bool get isHadith => narrator != null && quote != null;
   bool get hasCommaQuote => commaQuote != null;
+  bool get hasGeneralQuote => generalQuote != null;
+  bool get hasWordsQuote => wordsQuote != null;
+  bool get hasSaidQuote => saidQuote != null;
 }
 
 /// Strips the leading bullet character from [line] and returns the trimmed
@@ -125,9 +168,7 @@ _ParseResult _parseText(String rawText) {
       .replaceAll('\u201D', '"')  // Right double quotation mark
       .replaceAll('\u2018', "'")  // Left single quotation mark
       .replaceAll('\u2019', "'")  // Right single quotation mark
-      .replaceAll('\u2026', '...') // Horizontal ellipsis
-      .replaceAll('\u2013', '-')  // En dash
-      .replaceAll('\u2014', '--'); // Em dash
+      .replaceAll('\u2026', '...'); // Horizontal ellipsis
 
   // ── Strategy 1: Hadith detection ────────────────────────────────────────────
   final hadithMatch = _kHadithPattern.firstMatch(normalizedText);
@@ -153,12 +194,62 @@ _ParseResult _parseText(String rawText) {
   final commaQuoteMatch = _kCommaQuotePattern.firstMatch(normalizedText);
   if (commaQuoteMatch != null) {
     final matchStart = commaQuoteMatch.start;
+    final matchEnd = commaQuoteMatch.end;
     final beforeQuote = normalizedText.substring(0, matchStart).trim();
     final quoteText = commaQuoteMatch.group(1)?.trim();
+    final referenceText = commaQuoteMatch.group(2)?.trim();
+    final afterQuote = normalizedText.substring(matchEnd).trim();
     
     return _ParseResult(
       commaQuoteText: beforeQuote.isNotEmpty ? beforeQuote : null,
       commaQuote: quoteText,
+      commaQuoteReference: referenceText,
+      trailing: afterQuote.isNotEmpty ? afterQuote : null,
+    );
+  }
+
+  // ── Strategy 2.6: Words quote detection ─────────────────────────────
+  final wordsQuoteMatch = _kWordsQuotePattern.firstMatch(normalizedText);
+  if (wordsQuoteMatch != null) {
+    final prefix = wordsQuoteMatch.group(1)?.trim();
+    final quoteText = wordsQuoteMatch.group(2)?.trim();
+    final matchEnd = wordsQuoteMatch.end;
+    final afterQuote = normalizedText.substring(matchEnd).trim();
+    
+    return _ParseResult(
+      wordsQuotePrefix: prefix?.isNotEmpty == true ? prefix : 'words',
+      wordsQuote: quoteText,
+      trailing: afterQuote.isNotEmpty ? afterQuote : null,
+    );
+  }
+
+  // ── Strategy 2.7: Said quote detection ─────────────────────────────
+  final saidQuoteMatch = _kSaidQuotePattern.firstMatch(normalizedText);
+  if (saidQuoteMatch != null) {
+    final prefix = saidQuoteMatch.group(1)?.trim();
+    final quoteText = saidQuoteMatch.group(2)?.trim();
+    final matchEnd = saidQuoteMatch.end;
+    final afterQuote = normalizedText.substring(matchEnd).trim();
+    
+    return _ParseResult(
+      saidQuotePrefix: prefix?.isNotEmpty == true ? prefix : 'said',
+      saidQuote: quoteText,
+      trailing: afterQuote.isNotEmpty ? afterQuote : null,
+    );
+  }
+
+  // ── Strategy 2.8: General quote detection ─────────────────────────────
+  final generalQuoteMatch = _kGeneralQuotePattern.firstMatch(normalizedText);
+  if (generalQuoteMatch != null) {
+    final prefix = generalQuoteMatch.group(1)?.trim();
+    final quoteText = generalQuoteMatch.group(2)?.trim();
+    final matchEnd = generalQuoteMatch.end;
+    final afterQuote = normalizedText.substring(matchEnd).trim();
+    
+    return _ParseResult(
+      generalQuotePrefix: prefix,
+      generalQuote: quoteText,
+      trailing: afterQuote.isNotEmpty ? afterQuote : null,
     );
   }
 
@@ -279,7 +370,7 @@ Widget qaPair(String question, String answer, {
       Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Q: ', style: style?.copyWith(fontWeight: FontWeight.bold) ?? TextStyle(fontWeight: FontWeight.bold)),
+          Text('Q: ', style: style?.copyWith(fontWeight: FontWeight.w600) ?? TextStyle(fontWeight: FontWeight.w600)),
           Expanded(child: Text(question, style: style)),
         ],
       ),
@@ -287,7 +378,7 @@ Widget qaPair(String question, String answer, {
       Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('A: ', style: style?.copyWith(fontWeight: FontWeight.bold) ?? TextStyle(fontWeight: FontWeight.bold)),
+          Text('A: ', style: style?.copyWith(fontWeight: FontWeight.w600) ?? TextStyle(fontWeight: FontWeight.w600)),
           Expanded(child: Text(answer, style: style)),
         ],
       ),
@@ -300,14 +391,16 @@ Widget qaPair(String question, String answer, {
 /// The text is displayed with the quoted portion styled as bold and italic.
 /// [beforeText] is the text before the comma quote pattern.
 /// [quoteText] is the quoted text to be styled.
-Widget commaQuoteText(String? beforeText, String quoteText, {
+/// [referenceText] is the reference text in parentheses.
+/// [afterText] is the text after the comma quote pattern.
+Widget commaQuoteText(String? beforeText, String quoteText, String? referenceText, String? afterText, {
   TextStyle? style,
 }) {
   final quoteStyle = style?.copyWith(
-    fontWeight: FontWeight.bold,
+    fontWeight: FontWeight.w600,
     fontStyle: FontStyle.italic,
   ) ?? TextStyle(
-    fontWeight: FontWeight.bold,
+    fontWeight: FontWeight.w600,
     fontStyle: FontStyle.italic,
   );
 
@@ -324,6 +417,127 @@ Widget commaQuoteText(String? beforeText, String quoteText, {
     text: '"$quoteText"',
     style: quoteStyle,
   ));
+  
+  // Add the reference if it exists
+  if (referenceText != null && referenceText.isNotEmpty) {
+    textSpans.add(TextSpan(text: ' ($referenceText)'));
+  }
+  
+  // Add text after the quote if it exists
+  if (afterText != null && afterText.isNotEmpty) {
+    textSpans.add(TextSpan(text: afterText));
+  }
+
+  return Text.rich(
+    TextSpan(
+      children: textSpans,
+      style: style,
+    ),
+  );
+}
+
+/// Renders text with words quote pattern using Text.rich for bold and italic styling.
+///
+/// The text is displayed with the quoted portion styled as bold and italic.
+/// [prefix] is the word before the colon.
+/// [quoteText] is the quoted text to be styled.
+/// [afterText] is the text after the quote pattern.
+Widget wordsQuoteText(String prefix, String quoteText, {String? afterText, TextStyle? style}) {
+  final quoteStyle = style?.copyWith(
+    fontWeight: FontWeight.w600,
+    fontStyle: FontStyle.italic,
+  ) ?? TextStyle(
+    fontWeight: FontWeight.w600,
+    fontStyle: FontStyle.italic,
+  );
+
+  final textSpans = <TextSpan>[];
+  
+  // Add the prefix and styled quote
+  textSpans.add(TextSpan(text: '$prefix: '));
+  textSpans.add(TextSpan(
+    text: '"$quoteText"',
+    style: quoteStyle,
+  ));
+  
+  // Add text after the quote if it exists
+  if (afterText != null && afterText.isNotEmpty) {
+    textSpans.add(TextSpan(text: ' $afterText'));
+  }
+
+  return Text.rich(
+    TextSpan(
+      children: textSpans,
+      style: style,
+    ),
+  );
+}
+
+/// Renders text with said quote pattern using Text.rich for bold and italic styling.
+///
+/// The text is displayed with the quoted portion styled as bold and italic.
+/// [prefix] is the words before the colon.
+/// [quoteText] is the quoted text to be styled.
+/// [afterText] is the text after the quote pattern.
+Widget saidQuoteText(String prefix, String quoteText, {String? afterText, TextStyle? style}) {
+  final quoteStyle = style?.copyWith(
+    fontWeight: FontWeight.w600,
+    fontStyle: FontStyle.italic,
+  ) ?? TextStyle(
+    fontWeight: FontWeight.w600,
+    fontStyle: FontStyle.italic,
+  );
+
+  final textSpans = <TextSpan>[];
+  
+  // Add the prefix and styled quote
+  textSpans.add(TextSpan(text: '$prefix: '));
+  textSpans.add(TextSpan(
+    text: '"$quoteText"',
+    style: quoteStyle,
+  ));
+  
+  // Add text after the quote if it exists
+  if (afterText != null && afterText.isNotEmpty) {
+    textSpans.add(TextSpan(text: ' $afterText'));
+  }
+
+  return Text.rich(
+    TextSpan(
+      children: textSpans,
+      style: style,
+    ),
+  );
+}
+
+/// Renders text with general quote pattern using Text.rich for bold and italic styling.
+///
+/// The text is displayed with the quoted portion styled as bold and italic.
+/// [prefix] is the text before the colon.
+/// [quoteText] is the quoted text to be styled.
+/// [afterText] is the text after the quote pattern.
+Widget generalQuoteText(String prefix, String quoteText, {String? afterText, TextStyle? style}) {
+  final quoteStyle = style?.copyWith(
+    fontWeight: FontWeight.w600,
+    fontStyle: FontStyle.italic,
+  ) ?? TextStyle(
+    fontWeight: FontWeight.w600,
+    fontStyle: FontStyle.italic,
+  );
+
+  final textSpans = <TextSpan>[];
+  
+  // Add the prefix and styled quote
+  textSpans.add(TextSpan(text: '$prefix: '));
+  textSpans.add(TextSpan(
+    text: '"$quoteText"',
+    style: quoteStyle,
+  ));
+  
+  // Add text after the quote if it exists
+  if (afterText != null && afterText.isNotEmpty) {
+    textSpans.add(TextSpan(text: ' $afterText'));
+  }
 
   return Text.rich(
     TextSpan(
@@ -370,6 +584,35 @@ Widget formatText(BuildContext context, String rawText, {TextStyle? style}) {
     return commaQuoteText(
       result.commaQuoteText,
       result.commaQuote!,
+      result.commaQuoteReference,
+      result.trailing,
+      style: style,
+    );
+  }
+
+  if (result.hasGeneralQuote) {
+    return generalQuoteText(
+      result.generalQuotePrefix!,
+      result.generalQuote!,
+      afterText: result.trailing,
+      style: style,
+    );
+  }
+
+  if (result.hasWordsQuote) {
+    return wordsQuoteText(
+      result.wordsQuotePrefix!,
+      result.wordsQuote!,
+      afterText: result.trailing,
+      style: style,
+    );
+  }
+
+  if (result.hasSaidQuote) {
+    return saidQuoteText(
+      result.saidQuotePrefix!,
+      result.saidQuote!,
+      afterText: result.trailing,
       style: style,
     );
   }
