@@ -46,6 +46,7 @@ app.*.map.json
 
 # Environment files
 *.env
+*.jks
 
 # More files
 *.txt

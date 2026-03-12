@@ -47,6 +47,12 @@ final _kSaidQuotePattern = RegExp(
   caseSensitive: false,
 );
 
+// Matches stating quote pattern: "prefix stating, "quoted text""
+final _kStatingQuotePattern = RegExp(
+  r'(.*)stating\s*,\s*"([^"]+)"',
+  caseSensitive: false,
+);
+
 /// Parsed result of a raw text string.
 ///
 /// - [header] is the optional leading text before the first bullet (e.g. a
@@ -68,6 +74,8 @@ final _kSaidQuotePattern = RegExp(
 /// - [wordsQuotePrefix] is the prefix word before the colon in words quote pattern.
 /// - [saidQuote] is the quoted text part when said quote pattern is detected.
 /// - [saidQuotePrefix] is the prefix words before the colon in said quote pattern.
+/// - [statingQuote] is the quoted text part when stating quote pattern is detected.
+/// - [statingQuotePrefix] is the prefix words before the comma in stating quote pattern.
 /// - [trailing] is the text after the quote pattern.
 @immutable
 class _ParseResult {
@@ -89,6 +97,8 @@ class _ParseResult {
     this.wordsQuotePrefix,
     this.saidQuote,
     this.saidQuotePrefix,
+    this.statingQuote,
+    this.statingQuotePrefix,
     this.trailing,
   });
 
@@ -109,6 +119,8 @@ class _ParseResult {
   final String? wordsQuotePrefix;
   final String? saidQuote;
   final String? saidQuotePrefix;
+  final String? statingQuote;
+  final String? statingQuotePrefix;
   final String? trailing;
 
   bool get hasBullets => lines.isNotEmpty;
@@ -118,6 +130,7 @@ class _ParseResult {
   bool get hasGeneralQuote => generalQuote != null;
   bool get hasWordsQuote => wordsQuote != null;
   bool get hasSaidQuote => saidQuote != null;
+  bool get hasStatingQuote => statingQuote != null;
 }
 
 /// Strips the leading bullet character from [line] and returns the trimmed
@@ -249,6 +262,21 @@ _ParseResult _parseText(String rawText) {
     return _ParseResult(
       generalQuotePrefix: prefix,
       generalQuote: quoteText,
+      trailing: afterQuote.isNotEmpty ? afterQuote : null,
+    );
+  }
+
+  // ── Strategy 2.9: Stating quote detection ─────────────────────────────
+  final statingQuoteMatch = _kStatingQuotePattern.firstMatch(normalizedText);
+  if (statingQuoteMatch != null) {
+    final prefix = statingQuoteMatch.group(1)?.trim();
+    final quoteText = statingQuoteMatch.group(2)?.trim();
+    final matchEnd = statingQuoteMatch.end;
+    final afterQuote = normalizedText.substring(matchEnd).trim();
+    
+    return _ParseResult(
+      statingQuotePrefix: prefix?.isNotEmpty == true ? prefix : 'stating',
+      statingQuote: quoteText,
       trailing: afterQuote.isNotEmpty ? afterQuote : null,
     );
   }
@@ -547,6 +575,43 @@ Widget generalQuoteText(String prefix, String quoteText, {String? afterText, Tex
   );
 }
 
+/// Renders text with stating quote pattern using Text.rich for bold and italic styling.
+///
+/// The text is displayed with the quoted portion styled as bold and italic.
+/// [prefix] is the text before the comma.
+/// [quoteText] is the quoted text to be styled.
+/// [afterText] is the text after the quote pattern.
+Widget statingQuoteText(String prefix, String quoteText, {String? afterText, TextStyle? style}) {
+  final quoteStyle = style?.copyWith(
+    fontWeight: FontWeight.w600,
+    fontStyle: FontStyle.italic,
+  ) ?? TextStyle(
+    fontWeight: FontWeight.w600,
+    fontStyle: FontStyle.italic,
+  );
+
+  final textSpans = <TextSpan>[];
+  
+  // Add the prefix and styled quote
+  textSpans.add(TextSpan(text: '$prefix, '));
+  textSpans.add(TextSpan(
+    text: '"$quoteText"',
+    style: quoteStyle,
+  ));
+  
+  // Add text after the quote if it exists
+  if (afterText != null && afterText.isNotEmpty) {
+    textSpans.add(TextSpan(text: ' $afterText'));
+  }
+
+  return Text.rich(
+    TextSpan(
+      children: textSpans,
+      style: style,
+    ),
+  );
+}
+
 /// Formats [rawText] into either a plain [Text] widget, [qaPair] widget,
 /// [bulletedList] widget, or [hadithNarration] widget based on content detection.
 ///
@@ -612,6 +677,15 @@ Widget formatText(BuildContext context, String rawText, {TextStyle? style}) {
     return saidQuoteText(
       result.saidQuotePrefix!,
       result.saidQuote!,
+      afterText: result.trailing,
+      style: style,
+    );
+  }
+
+  if (result.hasStatingQuote) {
+    return statingQuoteText(
+      result.statingQuotePrefix!,
+      result.statingQuote!,
       afterText: result.trailing,
       style: style,
     );

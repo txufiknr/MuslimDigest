@@ -9,6 +9,7 @@ v2 features:
 [x] test page feed/not_interested
 [x] more app by us
 [ ] tambah tab QnA
+[ ] keystore release
 
 disclaimers:
 [ ] Summaries are AI-assisted and intended for informational purposes.

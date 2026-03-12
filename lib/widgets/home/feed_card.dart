@@ -82,12 +82,24 @@ class _FeedCardState extends ConsumerState<FeedCard> with AutomaticKeepAliveClie
 
   void _like() async {
     if (_feedId == null) return;
-    await _notifier.update(_feedId, isLiked: !_isLiked);
+    
+    try {
+      await _notifier.update(_feedId, isLiked: !_isLiked);
+    } catch (e) {
+      // Silent error handling - UI will revert automatically on state rebuild
+      log('[FeedCard] Like update failed: $e');
+    }
   }
 
   void _save() async {
     if (_feedId == null) return;
-    await _notifier.update(_feedId, isSaved: !_isSaved);
+    
+    try {
+      await _notifier.update(_feedId, isSaved: !_isSaved);
+    } catch (e) {
+      // Silent error handling - UI will revert automatically on state rebuild
+      log('[FeedCard] Save update failed: $e');
+    }
   }
 
   Future<void> _share() async {
