@@ -4,9 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:muslimdigest/config/colors.dart';
 import 'package:muslimdigest/config/themes.dart';
 import 'package:muslimdigest/models/user.dart';
-import 'package:muslimdigest/providers/feed/feed_not_interested.dart';
 import 'package:muslimdigest/providers/user/preferences.dart';
 import 'package:muslimdigest/providers/user/settings.dart';
+import 'package:muslimdigest/providers/user/user.dart';
 import 'package:muslimdigest/utils/extensions.dart';
 import 'package:muslimdigest/widgets/components/divider.dart';
 import 'package:muslimdigest/widgets/components/app_bar.dart';
@@ -161,7 +161,8 @@ class _PersonalizationPageState extends ConsumerState<PersonalizationPage> with 
   int get _avoidedSourcesCount => ref.watch(preferencesProvider).avoidedSources.length;
 
   /// Get the count of hidden feeds from all feed providers
-  int get _hiddenFeedsCount => ref.watch(feedNotInterestedProvider).total;
+  // int get _hiddenFeedsCount => ref.watch(feedNotInterestedProvider).total;
+  int get _hiddenFeedsCount => ref.watch(userProvider).totalNotInterested;
 
   /// Build a hidden content management button with count
   Widget _HiddenContentButton(MyHelper h, {

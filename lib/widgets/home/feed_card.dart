@@ -452,7 +452,7 @@ class _FeedHeader extends ConsumerWidget {
           ),
 
           // Image URL overlay
-          // if (APP_IS_DEVELOPMENT && feedItem.relatedEvent != null) Positioned(
+          // if (APP_IN_DEVELOPMENT && feedItem.relatedEvent != null) Positioned(
           //   top: 0,
           //   left: 0,
           //   right: 0,

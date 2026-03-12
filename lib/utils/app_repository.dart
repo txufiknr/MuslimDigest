@@ -16,10 +16,8 @@ import 'package:muslimdigest/providers/user/streaks.dart';
 import 'package:muslimdigest/providers/topics.dart';
 import 'package:muslimdigest/providers/user/user.dart';
 import 'package:muslimdigest/utils/app.dart';
-import 'package:muslimdigest/utils/extensions.dart';
 import 'package:muslimdigest/utils/time.dart';
 import 'package:muslimdigest/variables/feed.dart' show FeedType;
-import 'package:muslimdigest/variables/time.dart';
 import 'package:muslimdigest/variables/user.dart';
 
 /// Business-logic repository. Uses Ref, never WidgetRef.
@@ -39,7 +37,7 @@ class AppRepository {
 
   /// Whether today's digest feed fetch is done or due
   bool get isDailyDigestUpToDate => ingestLastDate != null && isToday(ingestLastDate!) && feedState.isAvailable;
-  bool get shouldFetchDailyDigest => !isDailyDigestUpToDate; // && !feedState.isLoading;
+  bool get shouldFetchDailyDigest => !isDailyDigestUpToDate;
 
   /// Digest feed is newer than last read (even though it's not today)
   bool get newDigestFeedAvailable => readLastDate == null || ingestLastDate?.isAfter(readLastDate!) == true;
@@ -71,7 +69,8 @@ class AppRepository {
   }
 
   Future<void> resetReadCount(FeedType feedType, String? topic) async {
-    if (feedType == FeedType.digest) {
+    log("[resetReadCount] 🚮 Resetting read count");
+    if (feedType.isDigest) {
       await initReadCount(force: true);
     } else {
       final newStates = _ref.read(readCountStatesProvider)..remove(topic ?? feedType.name);
@@ -80,23 +79,33 @@ class AppRepository {
   }
   
   /// Determine home feed type
-  // FeedType get homeFeedType => shouldFetchDailyDigest || !isDailyDigestCompleted ? FeedType.digest : FeedType.latest;
   FeedType get homeFeedType {
-    // if (isFirstRun || !_ref.mounted) return FeedType.digest; // always digest for first time user (BUG: after streak still true)
-    if (!_ref.mounted) return FeedType.digest;
-    log('[gomeFeedType] isStreakToday = $isStreakToday');
-    log('[gomeFeedType] shouldFetchDailyDigest = $shouldFetchDailyDigest');
-    log('[gomeFeedType] isDailyDigestCompleted = $isDailyDigestCompleted');
+    if (!_ref.mounted || isFirstRun) return FeedType.digest; // always digest for first time user
+    log('[homeFeedType] isStreakToday = $isStreakToday');
+    log('[homeFeedType] shouldFetchDailyDigest = $shouldFetchDailyDigest');
+    log('[homeFeedType] isDailyDigestCompleted = $isDailyDigestCompleted');
     return !isStreakToday && (shouldFetchDailyDigest || !isDailyDigestCompleted) ? FeedType.digest : FeedType.latest;
   }
 
   Future<bool> loadFeed({FeedType? feedType, String? topic, bool force = false, String? requestId}) async {
     feedType ??= homeFeedType;
 
-    // Check if we should load the feed
-    if (!force && feedType == FeedType.digest && isDailyDigestUpToDate) {
-      log("[loadFeed] ✅ ${feedType.name.toCapitalized()} feed is up to date");
-      return true;
+    if (feedType.isDigest) {
+      log('[loadUserFeed] ❓ isDailyDigestUpToDate = $isDailyDigestUpToDate');
+      log('[loadUserFeed] ❓ shouldFetchDailyDigest = $shouldFetchDailyDigest');
+      log('[loadUserFeed] ❓ ingestLastDate = $ingestLastDate');
+      log('[loadUserFeed] ❓ ingestLastDate today = ${ingestLastDate != null && isToday(ingestLastDate!)}');
+      log('[loadUserFeed] ❓ feedState.isAvailable = ${feedState.isAvailable}');
+      log('[loadUserFeed] ❓ isFirstRun = $isFirstRun');
+
+      // First time user: will load personalized feed after onboarding
+      if (isFirstRun) return false;
+      
+      // Daily digest is up to date
+      if (!force && isDailyDigestUpToDate) {
+        log('🧾 Digest feed is up to date, no need to refresh...');
+        return false;
+      }
     }
 
     // Check internet connectivity
@@ -105,43 +114,16 @@ class AppRepository {
       return false;
     }
 
-    // Reset swiper page index to zero
-    if (force) unawaited(resetReadCount(feedType, topic));
-
-    return feedType.loadWithRef(_ref, topic: topic, force: force, requestId: requestId);
-  }
-
-  Future<bool> loadUserFeed({bool force = false}) async {
-    // First time user: will load personalized feed after onboarding
-    if (isFirstRun) return false;
-    
-    log('[loadUserFeed] shouldFetchDailyDigest = $shouldFetchDailyDigest');
-
-    // Daily digest is up to date
-    if (!force && !shouldFetchDailyDigest) {
-      log('🧾 Digest feed is up to date, no need to refresh...');
-      return false;
+    final isFeedLoaded = await feedType.loadWithRef(_ref, topic: topic, force: force, requestId: requestId);
+    if (isFeedLoaded) {
+      if (homeFeedType.isDigest) {
+        initReadCount(force: force);
+      } else if (force) {
+        resetReadCount(feedType, topic);
+      }
     }
 
-    log('[loadUserFeed] isDailyDigestUpToDate: $isDailyDigestUpToDate');
-    log('[loadUserFeed] isDailyDigestCompleted: $isDailyDigestCompleted');
-    log('[loadUserFeed] readLastDate: $readLastDate');
-    log('[loadUserFeed] ingestLastDate: $ingestLastDate');
-    log('[loadUserFeed] today: $today');
-    log('[loadUserFeed] isToday(ingestLastDate): ${isToday(ingestLastDate!)}');
-    log('[loadUserFeed] homeFeedType: ${homeFeedType.name}');
-    log('[loadUserFeed] shouldFetchDailyDigest: $shouldFetchDailyDigest');
-
-    final isFeedLoaded = await loadFeed(force: force);
-    log("[loadUserFeed] ${isFeedLoaded ? '✅ Feed loaded successfully (${homeFeedType.name})' : '❌ Failed to load feed (${homeFeedType.name})'}");
-    log("[loadUserFeed] ingestLastDate = $ingestLastDate");
-    log("[loadUserFeed] readLastDate = $readLastDate");
-    log("[loadUserFeed] newDigestFeedAvailable = $newDigestFeedAvailable");
-
-    if (isFeedLoaded && homeFeedType == FeedType.digest) {
-      return await initReadCount(force: force);
-    }
-    return false;
+    return isFeedLoaded;
   }
 
   /// Initialize active feed tab on every app launch

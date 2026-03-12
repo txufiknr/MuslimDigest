@@ -123,6 +123,18 @@ class NotificationConfig {
   }
 
   /// Get notification schedule for daily at random hour (7 AM - 12 PM)
+  /// 
+  /// Creates a NotificationCalendar that repeats indefinitely.
+  /// The `repeats: true` flag is the key to long-term daily scheduling.
+  /// 
+  /// How this works for long-term scheduling:
+  /// - No end date specified = repeats forever
+  /// - System handles daily triggers automatically
+  /// - Survives app restarts, device reboots, and app updates
+  /// - UTC timezone ensures consistent timing globally
+  /// 
+  /// Note: Only ONE notification needs to be created with this schedule.
+  /// The Android/iOS notification systems will handle the daily repetition.
   static NotificationCalendar getDailySchedule({int? hour}) {
     final scheduleHour = hour ?? 8; // Default to 8 AM if not specified
     return NotificationCalendar(

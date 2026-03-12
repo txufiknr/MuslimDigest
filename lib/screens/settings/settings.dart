@@ -21,6 +21,8 @@ import 'package:muslimdigest/widgets/components/button.dart';
 import 'package:muslimdigest/widgets/components/logo.dart';
 import 'package:muslimdigest/widgets/components/icon_button.dart';
 import 'package:muslimdigest/widgets/components/switch.dart';
+import 'package:muslimdigest/widgets/more_apps.dart';
+import 'package:muslimdigest/widgets/user/reads_rank.dart';
 
 class SettingsPage extends ConsumerStatefulWidget {
   const SettingsPage({super.key});
@@ -100,6 +102,10 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                   
                   // Donate Button
                   DonateButton(brightness: Brightness.dark),
+                  const SizedBox(height: 24),
+                  
+                  // More Apps Section
+                  MoreApps(),
                   const SizedBox(height: 32),
                   
                   // Footer
@@ -160,45 +166,7 @@ class SettingsHeader extends ConsumerWidget {
           ),
         ),
         const SizedBox(height: 16),
-        Row(
-          children: [
-            Text(user.totalReadsRank.badge),
-            SizedBox(width: 8,),
-            Text.rich(
-              TextSpan(
-                children: [
-                  TextSpan(
-                    text: "You have read at least ",
-                    style: h.currentTextTheme.bodyMedium?.copyWith(
-                      color: Colors.white.withValues(alpha: 0.9),
-                    ),
-                  ),
-                  TextSpan(
-                    text: "${user.totalReads > 99 ? '99+' : user.totalReads}",
-                    style: h.currentTextTheme.bodyLarge?.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  TextSpan(
-                    text: " articles in last 7 days.",
-                    style: h.currentTextTheme.bodyMedium?.copyWith(
-                      color: Colors.white.withValues(alpha: 0.9),
-                    ),
-                  ),
-                ],
-              ),
-            ).expand(),
-          ],
-        ),
-        // const SizedBox(height: 16),
-        // Text(
-        //   getHijriDate(),
-        //   style: h.currentTextTheme.bodyMedium?.copyWith(
-        //     color: Colors.white.withValues(alpha: 0.8),
-        //     fontWeight: FontWeight.w500,
-        //   ),
-        // ),
+        UserReadsRank(brightness: Brightness.dark),
       ],
     );
   }

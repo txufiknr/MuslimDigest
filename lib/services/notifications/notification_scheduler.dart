@@ -1,13 +1,25 @@
 import 'package:flutter/foundation.dart';
 import 'package:awesome_notifications/awesome_notifications.dart';
-import 'package:muslimdigest/services/notification_service.dart';
-import 'package:muslimdigest/services/notification_controller.dart';
+import 'package:muslimdigest/services/notifications/notification_service.dart';
+import 'package:muslimdigest/services/notifications/notification_controller.dart';
 import 'package:muslimdigest/variables/user.dart';
 import 'package:muslimdigest/variables/settings.dart';
 import 'package:muslimdigest/config/notification_config.dart';
 import 'package:muslimdigest/config/constants.dart';
 
 /// Helper class for managing notification scheduling and lifecycle
+/// 
+/// Daily Notification Architecture:
+/// 1. Creates ONE notification with `repeats: true` flag
+/// 2. System handles daily repetition automatically
+/// 3. No need to reschedule every day
+/// 4. Continues indefinitely until manually cancelled
+/// 
+/// Key Methods:
+/// - initialize(): Sets up notification system without permissions
+/// - requestPermissionsAndSchedule(): Gets permissions and schedules daily notification
+/// - rescheduleDailyNotification(): Handles app updates/restarts
+/// - handlePreferenceChange(): Enables/disables based on user settings
 class NotificationScheduler {
   /// Initialize notifications without requesting permissions (for app startup)
   static Future<void> initialize() async {
@@ -34,7 +46,7 @@ class NotificationScheduler {
           await AwesomeNotifications().initialize(
             null, // Use default app icon
             NotificationConfig.channels,
-            debug: APP_IS_DEVELOPMENT,
+            debug: APP_IN_DEVELOPMENT,
           );
           debugPrint('✅ Notification system initialized with default icon');
         } catch (retryError) {
@@ -71,7 +83,7 @@ class NotificationScheduler {
       if (notificationType != NotificationType.none) {
         // Schedule the daily notification for 'all' or 'digest' types
         await _scheduleWithRetry();
-        debugPrint('📅 Daily notification scheduled for 2 AM UTC');
+        debugPrint('📅 Daily notification scheduled with randomized timing (7 AM - 12 PM UTC)');
       } else {
         debugPrint('📅 Notifications disabled by user preference');
       }

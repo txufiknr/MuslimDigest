@@ -7,8 +7,8 @@ import 'package:muslimdigest/variables/app.dart';
 import 'package:muslimdigest/variables/settings.dart';
 import 'package:uuid/uuid.dart';
 
-final isFirstRun = prefs.getString('user') == null;
-final isExistingUser = !isFirstRun;
+var isFirstRun = prefs.getString('user') == null;
+bool get isExistingUser => !isFirstRun;
 
 enum Gender {
   male,
@@ -147,5 +147,11 @@ class PrefData {
     // final decoded = jsonDecode(statesString) as Map<String, dynamic>;
     // return decoded.map((key, value) => MapEntry(key, value as int));
     return Map<String, int>.from(jsonDecode(statesString));
+  }
+
+  static DateTime? get ingestLastFetch {
+    final dateStr = prefs.getString('ingest_last_fetch');
+    if (dateStr == null) return null;
+    return DateTime.parse(dateStr);
   }
 }

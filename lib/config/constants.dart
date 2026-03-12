@@ -43,30 +43,7 @@ const MESSAGES = [
   "May your intention be sincere.",
 ];
 
-const NOTIFICATIONS = [
-  "A moment of learning can be a form of worship 📖",
-  "Angels lower their wings for the seeker of knowledge 🌺",
-  "The seeking of knowledge is obligatory for every Muslim 🕌",
-  "Knowledge illuminates the path to wisdom ✨",
-  "Read in the name of your Lord who created 📚",
-  "Seek knowledge from the cradle to the grave 🌅",
-  "The ink of the scholar is more sacred than the blood of the martyr 🖋️",
-  "He who travels seeking knowledge, Allah makes his path to Paradise easy 🛤️",
-  "Knowledge is a treasure, but practice is the key to it 🔑",
-  "The best of people are those who are most beneficial to others 🤝",
-  "A single verse of the Quran is better than a thousand prayers 💎",
-  "Learning in youth is like engraving on stone 🗿",
-  "The pursuit of knowledge is a journey to Allah 🕋",
-  "Wisdom is the lost property of the believer 💡",
-  "Teach others what you have learned, and you will truly understand 🎓",
-  "Every act of kindness is charity, including sharing knowledge 🌟",
-  "The more you know, the more you realize how much you need to learn 🌊",
-  "Patience in seeking knowledge brings abundant rewards ⏳",
-  "A day without learning is a day wasted ⏰",
-  "The Quran is a guide for those who reflect 🧠",
-];
-
 // Debug configurations
-const APP_IS_PRODUCTION = kReleaseMode;
-const APP_IS_DEVELOPMENT = kDebugMode;
+const APP_IN_PRODUCTION = kReleaseMode;
+const APP_IN_DEVELOPMENT = kDebugMode;
 const APP_USE_PRODUCTION_API = true;

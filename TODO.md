@@ -7,8 +7,8 @@ v2 features:
 [x] tour swipe animasi
 [x] debug share screenshot
 [x] test page feed/not_interested
+[x] more app by us
 [ ] tambah tab QnA
-[ ] more app by us
 
 disclaimers:
 [ ] Summaries are AI-assisted and intended for informational purposes.

@@ -11,7 +11,7 @@ import 'config/router.dart';
 import 'variables/app.dart';
 import 'package:theme_provider/theme_provider.dart';
 import 'providers/shared_preferences.dart';
-import 'utils/notification_scheduler.dart';
+import 'services/notifications/notification_scheduler.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -38,6 +38,7 @@ Future<void> main() async {
         'settings', // User settings data (JSON string)
         'streaks', // User streaks data (JSON string)
         'ingest_last_date', // Last feed ingestion date (YYYY-MM-DD)
+        'ingest_last_fetch', // Last digest feed fetch (DateTime ISO)
         'topic', // Selected feed topic (string)
         'topics', // List of available topics (JSON string)
         'feed_type', // Active feed type (string)

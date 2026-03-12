@@ -72,7 +72,7 @@ Future<dynamic> showBottomModalSheetContent(BuildContext context, {required Stri
     MyDivider().withPaddingVertical(12),
     SingleChildScrollView(
       padding: EdgeInsets.zero,
-      child: widgets.length == 1 ? widgets.first : Column(mainAxisSize: MainAxisSize.min, children: widgets),
+      child: widgets.length == 1 ? widgets.first : Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: widgets),
     ).fullWidth().flexible(),
   ], isDismissible: isDismissible);
 }

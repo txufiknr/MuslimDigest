@@ -110,7 +110,7 @@ class ApiService {
   /// Uses development URL when running in debug mode, production URL otherwise.
   /// This allows the app to connect to different API endpoints for testing
   /// and production environments.
-  static String get baseUrl => APP_IS_PRODUCTION || APP_USE_PRODUCTION_API ? APP_URL_API : APP_URL_API_DEV;
+  static String get baseUrl => APP_IN_PRODUCTION || APP_USE_PRODUCTION_API ? APP_URL_API : APP_URL_API_DEV;
 
   /// Get or create Dio instance with common configuration
   static Dio get dio {

@@ -168,14 +168,17 @@ class SummaryCard extends StatelessWidget {
     return MyCard(
       margin: 0,
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
+        // mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(icon, size: 24, color: Theme.of(context).colorScheme.primary),
-          const SizedBox(width: 8),
+          Icon(icon, size: 24, color: Theme.of(context).colorScheme.primary).withOpacity(.2).scale(3).moveIt(10, 0),
+          const SizedBox(width: 42),
           Text(
             caption,
             style: h.currentTextTheme.titleSmall?.copyWith(
               fontWeight: FontWeight.w500,
+              shadows: [
+                Shadow(color: Colors.white70, blurRadius: 20)
+              ]
             ),
           ),
         ],

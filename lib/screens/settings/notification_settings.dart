@@ -9,8 +9,8 @@ import 'package:muslimdigest/variables/user.dart';
 import 'package:muslimdigest/widgets/components/button.dart';
 import 'package:muslimdigest/widgets/components/selection_option.dart';
 import 'package:muslimdigest/variables/settings.dart';
-import 'package:muslimdigest/services/notification_service.dart';
-import 'package:muslimdigest/utils/notification_scheduler.dart';
+import 'package:muslimdigest/services/notifications/notification_service.dart';
+import 'package:muslimdigest/services/notifications/notification_scheduler.dart';
 
 class NotificationSettings extends ConsumerStatefulWidget {
   const NotificationSettings({super.key});

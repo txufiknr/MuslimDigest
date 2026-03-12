@@ -9,6 +9,7 @@ import 'package:muslimdigest/providers/user/user.dart';
 import 'package:muslimdigest/services/dio.dart';
 import 'package:muslimdigest/providers/feed/feed_cache.dart';
 import 'package:muslimdigest/services/feed_state_service.dart';
+import 'package:muslimdigest/variables/app.dart';
 import 'package:muslimdigest/variables/feed.dart';
 import 'package:muslimdigest/utils/repository.dart';
 import 'package:muslimdigest/utils/functions.dart';
@@ -465,6 +466,7 @@ abstract class BaseFeedNotifier extends Notifier<BaseFeedState> {
             await Future.wait([
               ref.read(ingestLastDateProvider.notifier).setValue(DateTime.parse(lastIngestDate)),
               ref.read(preferencesRepositoryProvider).remove('read_count_states'),
+              prefs.setString('ingest_last_fetch', DateTime.now().toUtc().toIso8601String())
             ]);
           }
         }

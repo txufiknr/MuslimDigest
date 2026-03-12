@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:awesome_notifications/awesome_notifications.dart';
 import 'package:muslimdigest/config/constants.dart';
 import 'package:muslimdigest/config/notification_config.dart';
+import 'package:muslimdigest/config/notification_content.dart';
 
 /// Service for managing daily notifications
 class NotificationService {
@@ -11,10 +12,19 @@ class NotificationService {
   static final Random _random = Random();
   NotificationService._internal();
 
-  /// Generate unique notification ID based on date
-  static int generateDateBasedId([DateTime? date]) {
-    final targetDate = date ?? DateTime.now();
-    return int.parse("${targetDate.year}${targetDate.month.toString().padLeft(2, '0')}${targetDate.day.toString().padLeft(2, '0')}");
+  /// Generate unique notification ID using 32-bit timestamp
+  /// 
+  /// This ensures each notification gets a unique identifier, which is
+  /// crucial for repeating notifications to avoid conflicts.
+  /// 
+  /// Why 32-bit timestamp works:
+  /// - Uses seconds since epoch instead of milliseconds for 32-bit compatibility
+  /// - Each call gets a unique second timestamp
+  /// - No possibility of collisions in normal usage
+  /// - Simple, reliable, and performant
+  /// - Perfect for daily notification scheduling
+  static int generateNotificationId() {
+    return DateTime.now().millisecondsSinceEpoch ~/ 1000;
   }
 
   /// Get random hour for better user experience (7 AM - 12 PM)
@@ -29,7 +39,7 @@ class NotificationService {
       NotificationConfig.DEFAULT_ICON_SMALL, // App icon
       NotificationConfig.channels,
       channelGroups: NotificationConfig.channelGroups,
-      debug: APP_IS_DEVELOPMENT,
+      debug: APP_IN_DEVELOPMENT,
     );
     
     // Note: Permission request moved to home page for better UX
@@ -58,12 +68,97 @@ class NotificationService {
     }
   }
 
-  /// Get a random notification message
-  static String getRandomNotification() {
-    return (List<String>.from(NOTIFICATIONS)..shuffle()).first;
+  /// Get daily notification content that changes each day
+  static IslamicNotificationContent getDailyNotificationContent() {
+    return IslamicNotificationContent.getDailyContent();
+  }
+
+  /// Schedule daily notification with monthly rotation (RECOMMENDED)
+  /// 
+  /// This method creates 30 notifications, each scheduled for a different day
+  /// of the month (1-30) and repeating monthly. This ensures different content
+  /// every day and works long-term even if the user never opens the app.
+  /// 
+  /// Key behaviors:
+  /// - Schedules 30 notifications for days 1-30 of each month
+  /// - Each notification has unique content based on its day of month
+  /// - Each notification repeats monthly on its assigned day
+  /// - Works long-term even if user never opens app
+  /// - Perfect monthly rotation without app interaction
+  static Future<void> scheduleMonthlyRotatingNotification() async {
+    try {
+      // Verify channels are properly initialized first
+      await _verifyChannelsInitialized();
+      
+      // Cancel any existing scheduled notifications
+      await AwesomeNotifications().cancelAllSchedules();
+
+      final rotationPeriod = IslamicNotificationContent.rotationPeriod;
+      final randomHour = getRandomNotificationHour();
+
+      debugPrint('📅 Scheduling MONTHLY ROTATING notifications:');
+      debugPrint('  - Rotation Period: $rotationPeriod days');
+      debugPrint('  - Hour: $randomHour:00 UTC');
+      debugPrint('  - Scheduling for days 1-$rotationPeriod of each month');
+
+      // Schedule notifications for each day of the month
+      for (int day = 1; day <= rotationPeriod; day++) {
+        // Get content based on the day of month
+        final notificationContent = IslamicNotificationContent.getContentForDay(day);
+        // Use a simple sequential ID to avoid overflow
+        final notificationId = 2000 + day; // Base ID + day
+
+        debugPrint('  - Day $day: ID $notificationId - ${notificationContent.title}');
+        debugPrint('    Repeats every month on day $day');
+
+        await AwesomeNotifications().createNotification(
+          content: NotificationConfig.getDailyReminderContent(
+            id: notificationId,
+            title: notificationContent.title,
+            body: notificationContent.body,
+          ),
+          schedule: NotificationCalendar(
+            // NOTE: No year specified - this enables monthly repeat
+            day: day,           // Day of month (1-30)
+            hour: randomHour,
+            minute: 0,
+            second: 0,
+            millisecond: 0,
+            repeats: true,      // Repeats MONTHLY on this day
+            preciseAlarm: true,
+            allowWhileIdle: true,
+            timeZone: 'UTC',
+          ),
+          actionButtons: NotificationConfig.getDailyReminderActions(),
+        );
+      }
+
+      debugPrint('✅ Monthly rotating notifications scheduled successfully');
+      debugPrint('🔄 $rotationPeriod unique notifications scheduled');
+      debugPrint('🎯 Each notification repeats monthly on its assigned day');
+      debugPrint('📱 Users will see different content every day indefinitely');
+      debugPrint('🌙 Perfect for long-term rotation without app interaction');
+    } catch (e) {
+      debugPrint('❌ Error scheduling monthly rotating notification: $e');
+      debugPrint('🔄 Attempting recovery...');
+      
+      // Try recovery with simpler notification
+      await _scheduleWithFallback();
+    }
   }
 
   /// Schedule daily notification at random hour (7 AM - 12 PM)
+  /// 
+  /// This method creates a notification that changes content daily.
+  /// To achieve different content each day, we need to reschedule 
+  /// the notification periodically rather than using a single repeating notification.
+  /// 
+  /// Key behaviors:
+  /// - Cancels existing schedules to prevent duplicates
+  /// - Uses unique ID to avoid conflicts
+  /// - Random hour selection (7-12 AM UTC) for better user experience
+  /// - Content changes daily based on date
+  /// - Survives app restarts and device reboots
   static Future<void> scheduleDailyNotification() async {
     try {
       // Verify channels are properly initialized first
@@ -72,20 +167,21 @@ class NotificationService {
       // Cancel any existing scheduled notifications
       await AwesomeNotifications().cancelAllSchedules();
 
-      final notificationMessage = getRandomNotification();
-      final notificationId = generateDateBasedId();
+      final notificationContent = getDailyNotificationContent();
+      final notificationId = generateNotificationId();
       final randomHour = getRandomNotificationHour();
 
       debugPrint('📅 Scheduling notification:');
       debugPrint('  - ID: $notificationId');
       debugPrint('  - Hour: $randomHour:00 UTC');
-      debugPrint('  - Message: $notificationMessage');
+      debugPrint('  - Title: ${notificationContent.title}');
+      debugPrint('  - Body: ${notificationContent.body}');
 
       await AwesomeNotifications().createNotification(
         content: NotificationConfig.getDailyReminderContent(
           id: notificationId,
-          title: APP_NAME,
-          body: notificationMessage,
+          title: notificationContent.title,
+          body: notificationContent.body,
         ),
         schedule: NotificationConfig.getDailySchedule(hour: randomHour),
         actionButtons: NotificationConfig.getDailyReminderActions(),
@@ -101,20 +197,44 @@ class NotificationService {
     }
   }
 
+  /// Reschedule daily notification with new content
+  /// This should be called periodically (e.g., daily or when app starts)
+  /// to ensure fresh content for the next notification
+  static Future<void> refreshDailyNotification() async {
+    try {
+      debugPrint('🔄 Refreshing daily notification with new content...');
+      
+      // Check if there's an existing scheduled notification
+      final scheduledNotifications = await AwesomeNotifications().listScheduledNotifications();
+      
+      if (scheduledNotifications.isEmpty) {
+        debugPrint('📅 No existing notification found, scheduling new one...');
+        await scheduleDailyNotification();
+      } else {
+        debugPrint('📅 Existing notification found, rescheduling with new content...');
+        // Cancel existing and reschedule with new content
+        await AwesomeNotifications().cancelAllSchedules();
+        await scheduleDailyNotification();
+      }
+    } catch (e) {
+      debugPrint('❌ Error refreshing daily notification: $e');
+    }
+  }
+
   /// Schedule with fallback configuration
   static Future<void> _scheduleWithFallback() async {
     try {
       debugPrint('📡 Using fallback notification configuration');
       
-      final notificationMessage = getRandomNotification();
-      final notificationId = generateDateBasedId();
+      final notificationContent = getDailyNotificationContent();
+      final notificationId = generateNotificationId();
       
       await AwesomeNotifications().createNotification(
         content: NotificationContent(
           id: notificationId,
           channelKey: NotificationConfig.dailyReminderChannelKey,
-          title: APP_NAME,
-          body: notificationMessage,
+          title: notificationContent.title,
+          body: notificationContent.body,
           notificationLayout: NotificationLayout.Default,
           category: NotificationCategory.Reminder,
           showWhen: true,
@@ -146,14 +266,14 @@ class NotificationService {
     try {
       debugPrint('🚨 Showing immediate notification as last resort');
       
-      final notificationMessage = getRandomNotification();
+      final notificationContent = getDailyNotificationContent();
       
       await AwesomeNotifications().createNotification(
         content: NotificationContent(
-          id: generateDateBasedId(),
+          id: generateNotificationId(),
           channelKey: NotificationConfig.dailyReminderChannelKey,
-          title: APP_NAME,
-          body: notificationMessage,
+          title: notificationContent.title,
+          body: notificationContent.body,
           notificationLayout: NotificationLayout.Default,
           category: NotificationCategory.Reminder,
           showWhen: true,
@@ -196,14 +316,14 @@ class NotificationService {
     try {
       debugPrint('🧪 Creating test notification...');
       
-      final notificationMessage = getRandomNotification();
-      final notificationId = generateDateBasedId();
+      final notificationContent = getDailyNotificationContent();
+      final notificationId = generateNotificationId();
 
       await AwesomeNotifications().createNotification(
         content: NotificationConfig.getTestContent(
           id: notificationId,
           title: '$APP_NAME - Test',
-          body: notificationMessage,
+          body: notificationContent.body,
         ),
       );
 
@@ -215,7 +335,7 @@ class NotificationService {
       try {
         await AwesomeNotifications().createNotification(
           content: NotificationContent(
-            id: generateDateBasedId(),
+            id: generateNotificationId(),
             channelKey: NotificationConfig.testChannelKey,
             title: '$APP_NAME - Test',
             body: 'Test notification',

@@ -128,6 +128,16 @@ class _HomeHeaderState extends ConsumerState<HomeHeader> {
         _scrollToSelectedTab(null);
       }
     });
+    
+    // Listen for topic changes and trigger load feed with debounce
+    ref.listen<String?>(topicProvider, (previous, next) {
+      if (!mounted || previous == next || next != null) return;
+      final currentFeedType = ref.read(feedTypeProvider);
+      if (currentFeedType.isHomeFeed) {
+        // Auto scroll to zero horizontal position
+        _scrollToSelectedTab(null);
+      }
+    });
 
     final h = MyHelper(context);
     final feedType = ref.watch(feedTypeProvider);

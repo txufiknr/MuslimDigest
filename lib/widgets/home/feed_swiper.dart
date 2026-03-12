@@ -13,8 +13,10 @@ import 'package:muslimdigest/models/user.dart';
 import 'package:muslimdigest/providers/feed/feed_cache.dart';
 import 'package:muslimdigest/providers/feed/feed_history.dart';
 import 'package:muslimdigest/providers/feed_type.dart';
+import 'package:muslimdigest/providers/ingest_last_date.dart';
 import 'package:muslimdigest/providers/read_count.dart';
 import 'package:muslimdigest/providers/read_count_states.dart';
+import 'package:muslimdigest/providers/read_last_date.dart';
 import 'package:muslimdigest/providers/topic.dart';
 import 'package:muslimdigest/providers/user/settings.dart';
 import 'package:muslimdigest/providers/user/user.dart';
@@ -23,7 +25,9 @@ import 'package:muslimdigest/utils/app_repository.dart';
 import 'package:muslimdigest/utils/extensions.dart';
 import 'package:muslimdigest/api/feeds.dart';
 import 'package:muslimdigest/utils/functions.dart';
+import 'package:muslimdigest/utils/time.dart';
 import 'package:muslimdigest/variables/feed.dart';
+import 'package:muslimdigest/variables/user.dart';
 import 'package:muslimdigest/widgets/components/button.dart';
 import 'package:muslimdigest/widgets/components/divider.dart';
 import 'package:muslimdigest/widgets/home/feed_card.dart';
@@ -92,6 +96,10 @@ class FeedSwiperState extends ConsumerState<FeedSwiper> {
   String? get _currentTopic => widget.feedType == null ? ref.watch(topicProvider) : null;
   int get _cardsCount => _feedItems.length + (_isDigestFeed ? 1 : 0);
 
+  // Date states
+  DateTime? get _lastIngestDate => ref.read(ingestLastDateProvider);
+  DateTime? get _readLastDate => ref.read(readLastDateProvider);
+
   // Read state
   Map<String, int> get _readCountStates => ref.watch(readCountStatesProvider);
   String get _readCountName => _isTopicFeed ? _currentTopic! : _feedType.name;
@@ -147,6 +155,7 @@ class FeedSwiperState extends ConsumerState<FeedSwiper> {
       await Future.wait([
         if (newCount == _feedItems.length) logStreak(ref),
         ref.read(readCountProvider.notifier).setValue(newCount),
+        if (_lastIngestDate != null && !isSameDay(_readLastDate, _lastIngestDate)) ref.read(readLastDateProvider.notifier).setValue(_lastIngestDate),
       ]);
     } else {
       await ref.read(readCountStatesProvider.notifier).update({
@@ -216,6 +225,7 @@ class FeedSwiperState extends ConsumerState<FeedSwiper> {
     // Update user total read
     if (addTotalReads) {
       final currentUser = ref.read(userProvider);
+      if (isFirstRun && currentUser.totalReads > 2) isFirstRun = false;
       await ref.read(userProvider.notifier).setValue(currentUser.copyWith(totalReads: currentUser.totalReads + 1));
     }
 

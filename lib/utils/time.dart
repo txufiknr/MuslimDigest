@@ -12,9 +12,7 @@ bool isSameDay(DateTime? date1, DateTime? date2) {
 }
 
 /// Check if a date is today
-bool isToday(DateTime date) {
-  return isSameDay(date, today);
-}
+bool isToday(DateTime? date) => isSameDay(date, today);
 
 /// Get current hijri date
 JHijri get hijriDate => JHijri.now();

@@ -21,12 +21,19 @@ class FeedbackForm extends StatefulWidget {
 class _FeedbackFormState extends State<FeedbackForm> {
   final _textController = TextEditingController();
   FeedbackCategory _selectedCategory = FeedbackCategory.suggestion;
+  var _isLoading = false;
 
   Future<void> _submit() async {
+    setState(() {
+      _isLoading = true;
+    });
     final categoryLabel = _selectedCategory.label;
     final result = await submitFeedback(widget.feedId, _selectedCategory.name, _textController.text.trim());
     if (!mounted) return;
-    if (result.successful) {
+    setState(() {
+      _isLoading = false;
+    });
+    if (result.success) {
       showSnackBarSuccess(context, '$categoryLabel has been sent successfully');
       context.pop({"category": _selectedCategory, "result": result});
     } else {
@@ -123,7 +130,8 @@ class _FeedbackFormState extends State<FeedbackForm> {
         MyButton(
           text: "Send Feedback",
           icon: Icon(CupertinoIcons.paperplane),
-          onPressed: _submit,
+          onPressed: _isLoading ? null : _submit,
+          isLoading: _isLoading,
         ),
         const SizedBox(height: 12),
         MyButton(
