@@ -153,6 +153,11 @@ class ApiService {
     }
   }
 
+  /// Cancel a specific request by ID (public method)
+  static void cancelRequest(String requestId) {
+    _cancelRequest(requestId);
+  }
+
   /// Cancel all active requests
   static void cancelAllRequests() {
     for (final requestId in _activeRequests.keys) {
@@ -160,6 +165,9 @@ class ApiService {
     }
     log('[ApiService] Cancelled all active requests');
   }
+
+  /// Get list of active request IDs
+  static Set<String> get activeRequestIds => _activeRequests.keys.toSet();
 
   /// Get count of active requests
   static int get activeRequestCount => _activeRequests.length;

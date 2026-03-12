@@ -64,6 +64,7 @@ class FeedItem {
   bool get isTrending => badges.contains('engagement:trending');
   bool get isHighlight => isTrending || isBreaking;
   bool get isEphemeral => badges.contains('content_tier:ephemeral') || cluster.contentType == 'news';
+  bool get isEvergreen => badges.contains('content_tier:evergreen') || ['quran', 'hadith', 'fiqh', 'sharia'].contains(cluster.contentType);
 
   String? get madhhab => badges.where((badge) => badge != 'madhhab:multiple').toList().firstWhereOrNull((badge) => badge.startsWith('maddhab:'));
   double get readTimeSeconds => cluster.readTime ?? estimateReadTime(summary);
@@ -84,6 +85,8 @@ class FeedItem {
 
   List<String> get badgeToDisplay {
     final filteredBadges = badges.where((badge) => 
+      // Hide all image badges
+      !badge.startsWith('image:') &&
       // Hide all trust level badges
       !badge.startsWith('trust_level:') &&
       // Hide all summary status badges

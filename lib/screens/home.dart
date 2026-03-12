@@ -16,9 +16,9 @@ import 'package:muslimdigest/providers/user/preferences.dart';
 import 'package:muslimdigest/utils/app.dart';
 import 'package:muslimdigest/utils/app_repository.dart';
 import 'package:muslimdigest/utils/debounce.dart';
-import 'package:muslimdigest/utils/helpers.dart';
 import 'package:muslimdigest/utils/notification_scheduler.dart';
 import 'package:muslimdigest/utils/dialogs.dart';
+import 'package:muslimdigest/api/feeds.dart';
 import 'package:muslimdigest/utils/extensions.dart';
 import 'package:muslimdigest/utils/functions.dart';
 import 'package:muslimdigest/utils/time.dart';
@@ -40,80 +40,58 @@ class HomePage extends ConsumerStatefulWidget {
 }
 
 class _HomePageState extends ConsumerState<HomePage> with RouteAware {
-  AppRepository get r => ref.read(appRepositoryProvider);
-
   late final Debounce _digestLoadDebounce = const Duration(milliseconds: 500).debounce;
   late final AppLifecycleListener _lifeCycleListener;
   UserPreferences? lastUserPreferences;
   var _isWillExit = false;
-  
+
   // Request cancellation tracking
   String? _currentFeedRequestId;
   static int _requestCounter = 0;
+  
+  /// Read notifiers
+  AppRepository get r => ref.read(appRepositoryProvider);
+  FeedType get _currentFeedType => ref.read(feedTypeProvider);
+  // bool get _isMyDigest => _currentFeedType.isDigest;
+  // int get _currentReadCount => ref.read(readCountProvider);
+  String? get _currentTopic => ref.read(topicProvider);
 
   /// Init feed loading
   void _initFeed() {
-    final feedType = ref.read(feedTypeProvider);
+    final feedType = _currentFeedType;
     final isNone = feedType.read(ref).isNone;
     if (isNone) {
-      log('🧾 Feed is empty and need loading...');
-      r.loadUserFeed(force: true);
-      // await r.loadUserFeed(force: true);
-      // if (mounted && r.newDigestFeedAvailable) {
-      //   _showDigestSummary();
-      // }
+      log('🧾 Feed ${feedType.name} is empty and need loading...');
+      _reloadFeed();
     }
   }
 
-  void _showDigestSummary() {
+  void _showDigestSummary() async {
     if (!mounted) return;
 
-    final h = MyHelper(context);
     final feedItems = ref.read(feedProvider).items ?? [];
     final totalStories = feedItems.length;
     final totalSeconds = feedItems.fold(0.0, (sum, item) => sum + (item.readTimeSeconds));
     final totalMinutes = (totalSeconds / 60).floor();
 
-    showBottomModalSheetContent(
+    final goToDigest = await showBottomModalSheetContent(
       context,
       title: "Today's Digest",
       widgets: <Widget>[
         ContextCard("Curated content tailored based on your interests", caption: "Daily Digest Ready!", icon: FeedType.digest.icon),
-        MyCard(
-          margin: 0,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(CupertinoIcons.book, size: 24, color: Theme.of(context).colorScheme.primary),
-              const SizedBox(width: 8),
-              Text(
-                "$totalStories ${totalStories == 1 ? 'story' : 'stories'} for you",
-                style: h.currentTextTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
-          ),
+        SummaryCard(
+          icon: CupertinoIcons.book,
+          caption: "$totalStories ${totalStories == 1 ? 'story' : 'stories'} for you",
         ),
-        MyCard(
-          margin: 0,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(CupertinoIcons.clock, size: 24, color: Theme.of(context).colorScheme.primary),
-              const SizedBox(width: 8),
-              Text(
-                "${totalMinutes.round()} ${totalMinutes.round() == 1 ? 'minute' : 'minutes'} read",
-                style: h.currentTextTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
-          ),
+        SummaryCard(
+          icon: CupertinoIcons.clock,
+          caption: "${totalMinutes.round()} ${totalMinutes.round() == 1 ? 'minute' : 'minutes'} read",
         ),
-        MyButton(text: "Read My Digest", icon: Icon(CupertinoIcons.book), onPressed: Navigator.of(context).pop),
+        MyButton(text: "Read My Digest", icon: Icon(CupertinoIcons.book), onPressed: () => Navigator.pop(context, true)),
       ].addItemInBetween(SizedBox(height: 16,))
-    );
+    ) ?? false;
+
+    if (mounted && goToDigest) _openFeed();
   }
 
   /// Save all user data
@@ -126,14 +104,30 @@ class _HomePageState extends ConsumerState<HomePage> with RouteAware {
   }
 
   void _reloadFeed() {
-    final feedType = ref.read(feedTypeProvider);
-    final topic = ref.read(topicProvider);
-    _loadFeed(feedType: feedType, topic: topic, force: true);
+    final feedType = _currentFeedType;
+    if (feedType.isDigest) {
+      _checkNewDigest(force: true);
+      return;
+    }
+    _loadFeed(feedType: feedType, topic: _currentTopic, force: true);
+    _checkNewDigest();
   }
 
   void _compareUserPreferences() async {
     if (lastUserPreferences == null) return;
+
     final userPreferences = ref.read(preferencesProvider);
+    final currentTopic = _currentTopic;
+    if (currentTopic != null) {
+      // Check if current active topic has been removed from interests
+      if (!userPreferences.topics.contains(currentTopic)) {
+        _openFeed();
+      }
+
+      // No need to offer refresh in topic feed page
+      _checkNewDigest();
+      return;
+    }
     
     // Check if topic preferences have changed
     final topicsChanged = !setEquals(userPreferences.topics, lastUserPreferences!.topics);
@@ -169,7 +163,7 @@ class _HomePageState extends ConsumerState<HomePage> with RouteAware {
     super.initState();
     _lifeCycleListener = AppLifecycleListener(
       onInactive: _saveAllData,
-      onResume: r.loadUserFeed,
+      onResume: _checkNewDigest,
     );
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
@@ -224,13 +218,15 @@ class _HomePageState extends ConsumerState<HomePage> with RouteAware {
 
   Future<void> _openFeed({FeedType? feedType, bool force = false}) async {
     final currentFeedType = feedType ?? r.homeFeedType;
+    log('[home] _openFeed feedType = $currentFeedType (original: $feedType)');
     await Future.wait([
       ref.read(topicProvider.notifier).clear(),
       ref.read(feedTypeProvider.notifier).setValue(currentFeedType),
     ]);
-    if (currentFeedType == FeedType.digest) {
-      r.loadUserFeed();
-    } else {
+
+    _checkNewDigest();
+
+    if (!currentFeedType.isDigest) {
       // Check read count state to optimize feed loading
       final readCountStates = ref.read(readCountStatesProvider);
       final feedTypeKey = currentFeedType.name;
@@ -244,14 +240,30 @@ class _HomePageState extends ConsumerState<HomePage> with RouteAware {
     }
   }
 
+  // Future<void> _checkNewDigest({bool force = false}) async {
+  //   final newDigestAvailable = await r.loadUserFeed(force: force);
+  //   final shouldShowDigestSummary = newDigestAvailable || (_isMyDigest && _currentReadCount == 0);
+  //   if (shouldShowDigestSummary) _showDigestSummary();
+  // }
+  Future<void> _checkNewDigest({bool force = false}) async {
+    await r.loadUserFeed(force: force);
+  }
+
   Future<void> _openFeedLatest({bool force = false}) => _openFeed(feedType: FeedType.latest, force: force);
   Future<void> _openFeedTrending({bool force = false}) => _openFeed(feedType: FeedType.trending, force: force);
 
   Future<void> _loadFeed({FeedType? feedType, String? topic, bool force = false}) async {
-    feedType ??= ref.read(feedTypeProvider);
+    feedType ??= _currentFeedType;
+    
+    // Cancel previous feed/latest topic requests before starting new one
+    // This prevents race conditions when user changes topics rapidly
+    if (feedType == FeedType.latest && topic != null) {
+      cancelFeedLatestTopicRequests();
+      log('[HomePage] Cancelled previous feed/latest topic requests for topic: $topic');
+    }
     
     // Cancel previous request and create new request ID
-    _currentFeedRequestId = 'feed_${++_requestCounter}_${feedType?.name ?? 'unknown'}_${topic ?? 'default'}';
+    _currentFeedRequestId = 'feed_${++_requestCounter}_${feedType.name}_${topic ?? 'default'}';
     
     log('[HomePage] Starting feed load with request ID: $_currentFeedRequestId');
     
@@ -295,6 +307,7 @@ class _HomePageState extends ConsumerState<HomePage> with RouteAware {
       ref.read(feedTypeProvider.notifier).setValue(FeedType.latest);
 
       // Cancel previous API call and start new one
+      // TODO: ensure this abort previous API call of GET /feed/latest?topic=$previous
       log('[HomePage] Topic changed from $previous to $next, cancelling previous request');
       _loadFeed(feedType: FeedType.latest, topic: next);
     });
@@ -302,8 +315,9 @@ class _HomePageState extends ConsumerState<HomePage> with RouteAware {
     // Listen for digest load and show digest summary
     ref.listen<FeedState>(feedProvider, (previous, next) {
       if (!mounted || previous == next) return;
-      if (next.isLoading) return;
-      if (next.isEmpty) return;
+      if (!(previous?.isLoading ?? false)) return; // if not previously loading
+      if (next.isLoading) return; // if still loading
+      if (next.isEmpty) return; // if empty
 
       final readLastDate = ref.read(readLastDateProvider);
       final isNewDay = readLastDate == null || !isToday(readLastDate);
@@ -321,7 +335,7 @@ class _HomePageState extends ConsumerState<HomePage> with RouteAware {
           _saveAllData();
           _isWillExit = true;
           showSnackBar(context, 'Press back again to exit');
-          // _showDigestSummary(); // TODO: temp
+          _showDigestSummary(); // TODO: temp
           delay(2000, () {
             _isWillExit = false;
             hideSnackBar(context);

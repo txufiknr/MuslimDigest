@@ -99,7 +99,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                   const SizedBox(height: 24),
                   
                   // Donate Button
-                  DonateButton(),
+                  DonateButton(brightness: Brightness.dark),
                   const SizedBox(height: 32),
                   
                   // Footer

@@ -9,3 +9,6 @@ v2 features:
 [x] test page feed/not_interested
 [ ] tambah tab QnA
 [ ] more app by us
+
+disclaimers:
+[ ] Summaries are AI-assisted and intended for informational purposes.

@@ -193,14 +193,17 @@ class MyButton extends StatelessWidget {
 }
 
 class DonateButton extends StatelessWidget {
-  const DonateButton({super.key});
+  final Brightness brightness;
+  final bool outlined;
+  const DonateButton({this.brightness = Brightness.light, this.outlined = false, super.key});
 
   @override
   Widget build(BuildContext context) {
     return MyButton(
       text: 'Donate',
       onPressed: () => openUrl(APP_URL_DONATE),
-      outlined: true,
+      outlined: outlined,
+      brightness: brightness,
       icon: Icon(CupertinoIcons.gift),
       variant: MyButtonVariant.success,
     );

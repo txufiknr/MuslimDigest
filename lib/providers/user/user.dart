@@ -1,4 +1,5 @@
 import 'dart:developer' show log;
+import 'dart:math' show max;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:muslimdigest/models/user.dart';
@@ -28,6 +29,13 @@ class UserNotifier extends Notifier<User> {
     await setValue(updatedUser);
   }
 
+  Future<void> decrementNotInterested() async {
+    final updatedUser = state.copyWith(
+      totalNotInterested: max(0, state.totalNotInterested - 1),
+    );
+    await setValue(updatedUser);
+  }
+
   Future<void> setValue(User value) async {
     state = value;
     await ref
@@ -43,8 +51,8 @@ class UserNotifier extends Notifier<User> {
   DateTime? get ingestLastDate => ref.read(ingestLastDateProvider);
   DateTime? get streakLastDate => ref.read(streaksProvider).lastReadAt;
   bool get isStreakToday => ref.read(streaksProvider.notifier).isStreakToday;
-  bool get isDailyDigestDone => isStreakToday || isSameDay(ingestLastDate, streakLastDate);
-  FeedType get homeFeedType => isDailyDigestDone ? FeedType.latest : FeedType.digest;
+  bool get isDailyDigestCompleted => isStreakToday || isSameDay(ingestLastDate, streakLastDate);
+  FeedType get homeFeedType => isDailyDigestCompleted ? FeedType.latest : FeedType.digest;
 
   Future<bool> load() async {
     try {
@@ -52,8 +60,10 @@ class UserNotifier extends Notifier<User> {
       if (response.successful) {
         // log("🧑 Current user result: ${response.result}");
         final user = User.fromJson(response.data);
+        final gender = user.gender;
+        final emoji = gender == Gender.female ? '👩' : '👨';
         await setValue(user);
-        log("🧑 Current user: ${user.toString()}");
+        log("$emoji Current user: ${user.toString()}");
       } else {
         log("🙅‍♂️ Current user: none");
       }

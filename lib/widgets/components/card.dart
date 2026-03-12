@@ -94,7 +94,6 @@ class HookCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final h = MyHelper(context);
     return Container(
-      margin: EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
         color: h.useColor(color, 50),
         borderRadius: BorderRadius.circular(10),
@@ -127,7 +126,6 @@ class ContextCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final h = MyHelper(context);
     return Container(
-      margin: EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
         color: h.useColor(color, 50),
         borderRadius: BorderRadius.circular(10),
@@ -152,6 +150,33 @@ class ContextCard extends StatelessWidget {
           Text(
             text,
             style: textStyle ?? h.currentTextTheme.bodySmall,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class SummaryCard extends StatelessWidget {
+  final IconData icon;
+  final String caption;
+  const SummaryCard({required this.icon, required this.caption, super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final h = MyHelper(context);
+    return MyCard(
+      margin: 0,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(icon, size: 24, color: Theme.of(context).colorScheme.primary),
+          const SizedBox(width: 8),
+          Text(
+            caption,
+            style: h.currentTextTheme.titleSmall?.copyWith(
+              fontWeight: FontWeight.w500,
+            ),
           ),
         ],
       ),

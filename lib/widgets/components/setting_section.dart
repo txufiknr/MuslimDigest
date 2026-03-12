@@ -2,7 +2,6 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:muslimdigest/config/colors.dart';
-import 'package:muslimdigest/config/themes.dart';
 import 'package:muslimdigest/utils/extensions.dart';
 import 'package:muslimdigest/utils/helpers.dart';
 import 'package:muslimdigest/variables/feed.dart';
@@ -235,40 +234,6 @@ class TextSizeDisplay extends StatelessWidget {
             color: AppColors.primary,
             fontWeight: FontWeight.w600,
           ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Reusable widget for preview section
-class PreviewSection extends StatelessWidget {
-  final String text;
-  final double fontSize;
-
-  const PreviewSection({
-    super.key,
-    required this.text,
-    required this.fontSize,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final h = MyHelper(context);
-    
-    return Container(
-      width: double.infinity,
-      padding: EdgeInsets.all(AppThemes.contentPadding),
-      // decoration: h.cardDecoration,
-      decoration: BoxDecoration(
-        color: h.currentTheme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: h.currentTheme.colorScheme.outline),
-      ),
-      child: Text(
-        text,
-        style: h.currentTextTheme.bodyMedium?.copyWith(
-          fontSize: fontSize,
         ),
       ),
     );

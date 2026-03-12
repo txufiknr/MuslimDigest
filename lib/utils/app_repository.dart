@@ -52,11 +52,8 @@ class AppRepository {
   Set<String> get avoidedTopics => preferences.avoidedTopics;
 
   /// Whether user completed daily digest reading (streak)
-  bool get isStreakToday {
-    if (!_ref.mounted) return false;
-    return _ref.read(streaksProvider.notifier).isStreakToday;
-  }
-  bool get isDailyDigestDone => isSameDay(ingestLastDate, streaks.lastReadAt);
+  bool get isStreakToday => _ref.mounted && _ref.read(streaksProvider.notifier).isStreakToday;
+  bool get isDailyDigestCompleted => isSameDay(ingestLastDate, streaks.lastReadAt);
 
   /// Reset read count if it's a new daily digest
   Future<bool> initReadCount({bool force = false}) async {
@@ -66,14 +63,6 @@ class AppRepository {
         _ref.read(readCountProvider.notifier).setValue(0),
         _ref.read(readLastDateProvider.notifier).setValue(ingestLastDate),
       ]);
-      // showBottomModalSheetContent(
-      //   _ref.context!,
-      //   title: "Today's Digest",
-      //   widgets: [
-      //     Text("• 5 stories", style: _ref.read(currentTextThemeProvider).bodyMedium),
-      //     Text("• 3 minute read", style: _ref.read(currentTextThemeProvider).bodyMedium),
-      //   ]
-      // );
       return true;
     } else {
       log("[home] 👋 Welcome back, it's still the same daily digest");
@@ -91,11 +80,14 @@ class AppRepository {
   }
   
   /// Determine home feed type
-  // FeedType get homeFeedType => shouldFetchDailyDigest || !isDailyDigestDone ? FeedType.digest : FeedType.latest;
+  // FeedType get homeFeedType => shouldFetchDailyDigest || !isDailyDigestCompleted ? FeedType.digest : FeedType.latest;
   FeedType get homeFeedType {
-    if (isFirstRun) return FeedType.digest; // always digest for first time user
-    if (!_ref.mounted) return FeedType.latest;
-    return !isStreakToday && (shouldFetchDailyDigest || !isDailyDigestDone) ? FeedType.digest : FeedType.latest;
+    // if (isFirstRun || !_ref.mounted) return FeedType.digest; // always digest for first time user (BUG: after streak still true)
+    if (!_ref.mounted) return FeedType.digest;
+    log('[gomeFeedType] isStreakToday = $isStreakToday');
+    log('[gomeFeedType] shouldFetchDailyDigest = $shouldFetchDailyDigest');
+    log('[gomeFeedType] isDailyDigestCompleted = $isDailyDigestCompleted');
+    return !isStreakToday && (shouldFetchDailyDigest || !isDailyDigestCompleted) ? FeedType.digest : FeedType.latest;
   }
 
   Future<bool> loadFeed({FeedType? feedType, String? topic, bool force = false, String? requestId}) async {
@@ -119,18 +111,20 @@ class AppRepository {
     return feedType.loadWithRef(_ref, topic: topic, force: force, requestId: requestId);
   }
 
-  Future<void> loadUserFeed({bool force = false}) async {
+  Future<bool> loadUserFeed({bool force = false}) async {
     // First time user: will load personalized feed after onboarding
-    if (isFirstRun) return;
+    if (isFirstRun) return false;
     
+    log('[loadUserFeed] shouldFetchDailyDigest = $shouldFetchDailyDigest');
+
     // Daily digest is up to date
     if (!force && !shouldFetchDailyDigest) {
-      log('🧾 User feed is up to date, no need to refresh...');
-      return;
+      log('🧾 Digest feed is up to date, no need to refresh...');
+      return false;
     }
 
     log('[loadUserFeed] isDailyDigestUpToDate: $isDailyDigestUpToDate');
-    log('[loadUserFeed] isDailyDigestDone: $isDailyDigestDone');
+    log('[loadUserFeed] isDailyDigestCompleted: $isDailyDigestCompleted');
     log('[loadUserFeed] readLastDate: $readLastDate');
     log('[loadUserFeed] ingestLastDate: $ingestLastDate');
     log('[loadUserFeed] today: $today');
@@ -140,10 +134,14 @@ class AppRepository {
 
     final isFeedLoaded = await loadFeed(force: force);
     log("[loadUserFeed] ${isFeedLoaded ? '✅ Feed loaded successfully (${homeFeedType.name})' : '❌ Failed to load feed (${homeFeedType.name})'}");
+    log("[loadUserFeed] ingestLastDate = $ingestLastDate");
+    log("[loadUserFeed] readLastDate = $readLastDate");
+    log("[loadUserFeed] newDigestFeedAvailable = $newDigestFeedAvailable");
 
     if (isFeedLoaded && homeFeedType == FeedType.digest) {
-      await initReadCount(force: force);
+      return await initReadCount(force: force);
     }
+    return false;
   }
 
   /// Initialize active feed tab on every app launch
@@ -151,7 +149,7 @@ class AppRepository {
     if (isFirstRun) return; // no need to do anything for first time user
     final currentFeedType = _ref.read(feedTypeProvider);
     final currentTopic = _ref.read(topicProvider);
-    final trendingCount = _ref.watch(feedTrendingProvider).total;
+    final trendingCount = _ref.read(feedTrendingProvider).total;
     if (!currentFeedType.isHomeFeed || currentTopic != null || (currentFeedType == FeedType.trending && trendingCount == 0)) {
       // Go back to home feed tab without any topic selected
       await Future.wait([

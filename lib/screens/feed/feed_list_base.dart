@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:muslimdigest/models/feed.dart';
 import 'package:muslimdigest/strategies/feed_action_strategies.dart';
+import 'package:muslimdigest/utils/contents.dart';
 import 'package:muslimdigest/utils/dialogs.dart';
 import 'package:muslimdigest/variables/feed.dart';
 import 'package:muslimdigest/providers/feed/base_feed_notifier.dart';
@@ -342,7 +343,7 @@ class _FeedListBasePageState extends ConsumerState<FeedListBasePage> {
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
-                        feed.topic!.toCapitalized(),
+                        getTopicLabel(feed.topic!),
                         style: h.currentTextTheme.bodySmall?.copyWith(
                           color: AppColors.primary,
                           fontWeight: FontWeight.w500,

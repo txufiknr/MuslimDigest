@@ -197,7 +197,7 @@ class _FeedCardState extends ConsumerState<FeedCard> with AutomaticKeepAliveClie
             Text(MESSAGES[(currentStreak - 1) % MESSAGES.length], textAlign: TextAlign.center, style: h.currentTextTheme.bodyMedium),
             StreaksCard(),
             Lottie.asset('assets/lottie/streak.json').expand(),
-            if (!_isTakingScreenshot) DonateButton(),
+            if (!_isTakingScreenshot) DonateButton(outlined: true,),
             MyButton(text: "Continue reading", icon: Icon(CupertinoIcons.book), onPressed: widget.onSeeLatest,),
             MyDivider(),
             Row(
@@ -354,7 +354,8 @@ class _FeedHeader extends ConsumerWidget {
       }
       if (feedItem.isNuanced) {
         return Vibe(
-          title: "Key Insight",
+          title: "Context Matters",
+          description: "Understanding this topic benefits from historical context and scholarly explanation.",
           color: Colors.teal,
         );
       }
@@ -528,20 +529,16 @@ class _FeedContent extends ConsumerWidget {
               fontSize: textSize,
             ),
           ),
-          const SizedBox(height: 16),
           
           // Badges
-          if (feedItem.badges.isNotEmpty) ...[
-            Wrap(
-              spacing: 6,
-              runSpacing: 6,
-              children: [
-                ...badges,
-                ...(badges.length < MAX_BADGES_TO_DISPLAY ? keywords.take(MAX_BADGES_TO_DISPLAY - badges.length) : [])
-              ],
-            ),
-          ],
-          const SizedBox(height: 24),
+          if (feedItem.badges.isNotEmpty) Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            children: [
+              ...badges,
+              ...(badges.length < MAX_BADGES_TO_DISPLAY ? keywords.take(MAX_BADGES_TO_DISPLAY - badges.length) : [])
+            ],
+          ),
 
           // Context text
           if (feedItem.context != null) ContextCard(feedItem.context!),
@@ -553,8 +550,8 @@ class _FeedContent extends ConsumerWidget {
             children: feedItem.alsoRead.where((c) => c.displayTitle != null).map((cluster) {
               return _AlsoReadChip(cluster);
             }).toList(),
-          ).withPadding(top: 16),
-        ],
+          ),
+        ].addItemInBetween(SizedBox(height: 16)),
       ),
     );
   }
@@ -808,7 +805,13 @@ class _FeedFooterSource extends StatelessWidget {
             const SizedBox(width: 6),
             Icon(Icons.open_in_new, size: 14, color: h.currentTheme.colorScheme.tertiary),
 
-            if (feedItem.isEphemeral && feedItem.publishedAt != null) ...[
+            if (!feedItem.isEvergreen && feedItem.publishedAt != null) ...[
+              SizedBox(width: 4),
+              Text('•', style: TextStyle(
+                color: h.currentTheme.colorScheme.tertiary,
+                fontSize: 12,
+              ),),
+              SizedBox(width: 4),
               TimeagoCompact(
                 dateTime: feedItem.publishedAt!,
                 explicit: true,

@@ -4,9 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:muslimdigest/config/colors.dart';
 import 'package:muslimdigest/config/themes.dart';
 import 'package:muslimdigest/models/user.dart';
+import 'package:muslimdigest/providers/feed/feed_not_interested.dart';
 import 'package:muslimdigest/providers/user/preferences.dart';
 import 'package:muslimdigest/providers/user/settings.dart';
-import 'package:muslimdigest/providers/user/user.dart';
 import 'package:muslimdigest/utils/extensions.dart';
 import 'package:muslimdigest/widgets/components/divider.dart';
 import 'package:muslimdigest/widgets/components/app_bar.dart';
@@ -130,16 +130,6 @@ class _PersonalizationPageState extends ConsumerState<PersonalizationPage> with 
               ),
             ],
           ),
-
-          // Preview Section
-          // SettingSection(
-          //   children: [
-          //     PreviewSection(
-          //       text: '$GREETINGS, $_firstName. Welcome to $APP_NAME - $APP_DESCRIPTION. This is how your article text will appear with the selected size. Swipe ${settings.swipeDirection.name} to navigate to the next article, and swipe to the opposite direction to undo.',
-          //       fontSize: settings.textSize.toDouble(),
-          //     ),
-          //   ],
-          // ),
           
           // Hidden Content Management Section
           SettingSection(
@@ -150,14 +140,14 @@ class _PersonalizationPageState extends ConsumerState<PersonalizationPage> with 
                 h,
                 icon: CupertinoIcons.eye_slash,
                 title: 'Avoided Sources',
-                count: _getAvoidedSourcesCount(),
+                count: _avoidedSourcesCount,
                 onTap: () => context.push('/hidden_content?tab=0'),
               ),
               _HiddenContentButton(
                 h,
                 icon: CupertinoIcons.hand_thumbsdown,
                 title: 'Hidden Feeds',
-                count: _getHiddenFeedsCount(),
+                count: _hiddenFeedsCount,
                 onTap: () => context.push('/hidden_content?tab=1'),
               ),
             ],
@@ -168,27 +158,10 @@ class _PersonalizationPageState extends ConsumerState<PersonalizationPage> with 
   }
 
   /// Get the count of avoided sources from user preferences
-  int _getAvoidedSourcesCount() {
-    final preferences = ref.read(preferencesProvider);
-    return preferences.avoidedSources.length;
-  }
+  int get _avoidedSourcesCount => ref.watch(preferencesProvider).avoidedSources.length;
 
   /// Get the count of hidden feeds from all feed providers
-  int _getHiddenFeedsCount() {
-    return ref.read(userProvider).totalNotInterested;
-    // Collect all not interested items from all feed providers
-    // final feedStates = [
-    //   ref.read(feedProvider),
-    //   ref.read(feedLikedProvider),
-    //   ref.read(feedSavedProvider),
-    // ];
-
-    // int totalCount = 0;
-    // for (final state in feedStates) {
-    //   totalCount += state.notInterestedItems.length;
-    // }
-    // return totalCount;
-  }
+  int get _hiddenFeedsCount => ref.watch(feedNotInterestedProvider).total;
 
   /// Build a hidden content management button with count
   Widget _HiddenContentButton(MyHelper h, {

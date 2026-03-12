@@ -10,6 +10,53 @@ import 'package:muslimdigest/utils/dialogs.dart';
 import 'package:muslimdigest/utils/functions.dart';
 import 'package:muslimdigest/variables/feed.dart';
 
+/// Feed API helper for managing feed-specific operations and request cancellation
+
+/// Check if a request ID represents a feed/latest request with topic parameters
+/// 
+/// Returns true for requests like: 'feed_1_latest_islam', 'feed_2_latest_quran'
+/// Returns false for requests like: 'feed_1_latest_default', 'feed_1_digest'
+bool isFeedLatestTopicRequest(String requestId) {
+  // Pattern: feed_<number>_latest_<topic>
+  // Where <topic> is not 'default' and the request contains 'latest'
+  final parts = requestId.split('_');
+  
+  // Must have at least 4 parts: feed, number, latest, topic
+  if (parts.length < 4) return false;
+  
+  // Must be a 'latest' feed request
+  if (parts.length < 3 || parts[2] != 'latest') return false;
+  
+  // Must have a topic that's not 'default'
+  final topic = parts[3];
+  return topic != 'default';
+}
+
+/// Cancel only feed/latest requests with topic parameters
+/// 
+/// This method specifically targets GET feed/latest requests that include
+/// topic query parameters, leaving other requests (including feed/latest 
+/// without topics) untouched.
+void cancelFeedLatestTopicRequests() {
+  final requestsToCancel = <String>[];
+  
+  // Find all feed/latest topic requests
+  for (final requestId in ApiService.activeRequestIds) {
+    if (isFeedLatestTopicRequest(requestId)) {
+      requestsToCancel.add(requestId);
+    }
+  }
+  
+  // Cancel the identified requests
+  for (final requestId in requestsToCancel) {
+    ApiService.cancelRequest(requestId);
+  }
+  
+  if (requestsToCancel.isNotEmpty) {
+    log('[FeedApiHelper] Cancelled ${requestsToCancel.length} feed/latest topic requests: ${requestsToCancel.join(', ')}');
+  }
+}
+
 Future<bool> markRead(String clusterId, FeedType? source) async {
   final response = await ApiService.post('feed/history', {'clusterId': clusterId, 'source': ?source?.name});
   log("[markRead] post history result: ${response.result}");

@@ -191,7 +191,6 @@ class TimeagoCompact extends StatelessWidget {
         fontSize: fontSize,
         fontWeight: FontWeight.w500,
       ),
-      textAlign: TextAlign.end,
     );
   }
 }

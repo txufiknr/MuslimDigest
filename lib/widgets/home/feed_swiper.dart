@@ -319,6 +319,7 @@ class FeedSwiperState extends ConsumerState<FeedSwiper> {
         final previousItem = previousIndex == _feedItems.length ? null : _feedItems[previousIndex];
         // log('[feed] Swipe direction: $direction, previousItem: ${previousItem.title}');
         // log('[feed] Swiped item: ${previousItem.title}');
+        log('[feed] Feed type: $_feedType');
 
         // When an undo swipe is detected
         if (direction != _swipeDirection) {

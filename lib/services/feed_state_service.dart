@@ -6,6 +6,7 @@ import 'package:muslimdigest/models/feed.dart';
 import 'package:muslimdigest/providers/feed/base_feed_notifier.dart';
 import 'package:muslimdigest/providers/feed/feed_not_interested.dart';
 import 'package:muslimdigest/providers/user/preferences.dart';
+import 'package:muslimdigest/providers/user/user.dart';
 import 'package:muslimdigest/utils/dialogs.dart';
 import 'package:muslimdigest/utils/extensions.dart';
 import 'package:muslimdigest/variables/feed.dart';
@@ -56,6 +57,10 @@ class FeedStateService {
       // Remove feed item from the not interested feed
       final notInterestedNotifier = ref.read(feedNotInterestedProvider.notifier);
       await notInterestedNotifier.removeItem(feedId);
+
+      // Decrement user's not interested count
+      final userNotifier = ref.read(userProvider.notifier);
+      await userNotifier.decrementNotInterested();
     } catch (e) {
       // Silently ignore errors related to unmounted widgets
       if (!e.toString().contains('unmounted')) {
