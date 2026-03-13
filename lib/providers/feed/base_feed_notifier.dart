@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:muslimdigest/api/feeds.dart';
 import 'package:muslimdigest/models/feed.dart';
 import 'package:muslimdigest/providers/ingest_last_date.dart';
+import 'package:muslimdigest/providers/read_count_states.dart';
 import 'package:muslimdigest/providers/user/user.dart';
 import 'package:muslimdigest/services/dio.dart';
 import 'package:muslimdigest/providers/feed/feed_cache.dart';
@@ -385,10 +386,10 @@ abstract class BaseFeedNotifier extends Notifier<BaseFeedState> {
         );
         return true;
       } else {
-        log('[BaseFeedNotifier] Cache miss, proceeding to API call');
+        log('[BaseFeedNotifier] 🍪 Cache miss, proceeding to API call');
       }
     } else {
-      log('[BaseFeedNotifier] Skipping cache check (forceRefresh=$forceRefresh, isLoadMore=$isLoadMore)');
+      log('[BaseFeedNotifier] ⏩ Skipping cache check (forceRefresh=$forceRefresh, isLoadMore=$isLoadMore)');
     }
 
     state = state.copyWith(
@@ -398,7 +399,7 @@ abstract class BaseFeedNotifier extends Notifier<BaseFeedState> {
     );
     
     try {
-      log('[BaseFeedNotifier] Making API call to: $endpoint');
+      log('[BaseFeedNotifier] 🌐 Making API call to: $endpoint');
       final response = await ApiService.get(
         endpoint, 
         queryParams: queryParams, 
@@ -411,8 +412,8 @@ abstract class BaseFeedNotifier extends Notifier<BaseFeedState> {
           response.data.map((item) => FeedItem.fromJson(item as Map<String, dynamic>))
         );
         
-        log('[BaseFeedNotifier] API response: received ${feedItems.length} items, isLoadMore: $isLoadMore');
-        log('[BaseFeedNotifier] Current state items: ${state.items?.length ?? 0}');
+        log('[BaseFeedNotifier] 🔥 API response: received ${feedItems.length} items, isLoadMore: $isLoadMore');
+        log('[BaseFeedNotifier] 📊 Current state items: ${state.items?.length ?? 0}');
         // log('[BaseFeedNotifier] Response result: ${response.result}');
         // log('[BaseFeedNotifier] Response result items count: ${response.result?['items'].length}');
         
@@ -428,27 +429,39 @@ abstract class BaseFeedNotifier extends Notifier<BaseFeedState> {
         if (isLoadMore && state.items != null) {
           // Check if we're getting duplicate items (same cursor)
           if (nextCursor == state.nextCursor) {
-            log('[BaseFeedNotifier] Same cursor detected, skipping duplicate items');
+            log('[BaseFeedNotifier] ⏩ Same cursor detected, skipping duplicate items');
             return false;
           }
           
           // Append new items to existing ones
           updatedItems = [...state.items!, ...feedItems];
-          log('[BaseFeedNotifier] Appended items: ${state.items!.length} + ${feedItems.length} = ${updatedItems.length}');
+          log('[BaseFeedNotifier] 🧩 Appended items: ${state.items!.length} + ${feedItems.length} = ${updatedItems.length}');
         } else {
           // Replace all items for initial load
           updatedItems = feedItems;
-          log('[BaseFeedNotifier] Replaced items: ${updatedItems.length}');
+          log('[BaseFeedNotifier] 🧩 Replaced items: ${updatedItems.length}');
         }
         
         await setValue(updatedItems, skipCache: isLoadMore);
+
+        // Check current page index
+        if (endpoint == FeedType.latest.endpoint) {
+          final currentReadCountStates = ref.read(readCountStatesProvider);
+          final currentPageIndex = currentReadCountStates[FeedType.latest.name] ?? 0;
+          if (currentPageIndex > updatedItems.length - 1) {
+            log('[BaseFeedNotifier] 👀 page index overflow for $endpoint: reset to zero');
+            ref.read(readCountStatesProvider.notifier).setValue({
+              ...currentReadCountStates..remove(FeedType.latest.name)
+            });
+          }
+        }
         
         // Cache the response (only for initial loads, not load more)
         if (!isLoadMore) {
-          log('[BaseFeedNotifier] Caching ${updatedItems.length} items for endpoint: $endpoint');
+          log('[BaseFeedNotifier] 🍪 Caching ${updatedItems.length} items for endpoint: $endpoint');
           await cache.setFeedItems(endpoint, updatedItems, queryParams: queryParams);
         } else {
-          log('[BaseFeedNotifier] Skipping cache for loadMore operation');
+          log('[BaseFeedNotifier] ⏩ Skipping cache for loadMore operation');
         }
         
         // Update pagination state

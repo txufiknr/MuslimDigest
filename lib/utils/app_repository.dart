@@ -142,12 +142,12 @@ class AppRepository {
     }
   }
 
+  /// Reset latest and trending feed current page to zero on every app launch
   Future<void> _initReadCountStates() async {
     final currentReadCountStates = _ref.read(readCountStatesProvider);
     final homeFeedTypes = FeedType.values.where((f) => f.isHomeFeed).map((f) => f.name);
-    currentReadCountStates.removeWhere((name, _) => !homeFeedTypes.contains(name));
     await _ref.read(readCountStatesProvider.notifier).setValue({
-      ...currentReadCountStates
+      ...currentReadCountStates..removeWhere((name, _) => !homeFeedTypes.contains(name))
     });
     log('🧾 init read count states: ${_ref.read(readCountStatesProvider)}');
   }
