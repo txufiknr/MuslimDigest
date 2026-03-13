@@ -83,6 +83,67 @@ class FeedItem {
   bool get isOngoing => relatedEvent?.isOngoing == true;
   String get vibeAnimationAsset => 'assets/lottie/vibes/${relatedEvent?.name.name}.json';
 
+  Vibe get vibe {
+    if (madhhab != null) {
+      final madhhabName = madhhab!.toCapitalized();
+      return Vibe(
+        title: "$madhhabName Fiqh",
+        description: 'Based on $madhhabName fiqh',
+        color: Colors.indigo,
+      );
+    }
+    if (badges.contains('scholars:single')) {
+      return Vibe(
+        title: "Scholarly Reference",
+        description: "Mentions a recognized Islamic scholar",
+        color: Colors.deepPurple,
+      );
+    }
+    if (isOngoing) {
+      final event = relatedEvent!.name;
+      return Vibe(
+        title: "${event.emoji} ${event.title}",
+        description: event.subtitle,
+        color: Colors.green,
+      );
+    }
+    if (isHighlight) {
+      return Vibe(
+        title: "Today's Highlight",
+        color: Colors.orange,
+      );
+    }
+    if (source.targetGender != null) {
+      return Vibe(
+        title: "For ${source.targetGender!.label}",
+        color: source.targetGender!.color,
+      );
+    }
+    if (isNuanced) {
+      return Vibe(
+        title: "Context Matters",
+        description: "Understanding this topic benefits from historical context and scholarly explanation.",
+        color: Colors.teal,
+      );
+    }
+    if (cluster.contentType != null) {
+      return Vibe(
+        title: getContentTypeLabel(cluster.contentType!),
+        color: getContentTypeColor(cluster.contentType!),
+      );
+    }
+    if (cluster.topicPrimary != null) {
+      return Vibe(
+        title: getTopicLabel(cluster.topicPrimary!),
+        color: getTopicColor(cluster.topicPrimary!),
+      );
+    }
+    return Vibe(
+      title: readTimeLabel,
+      color: Colors.blue,
+    );
+  }
+
   List<String> get badgeToDisplay {
     final filteredBadges = badges.where((badge) => 
       // Hide all image badges

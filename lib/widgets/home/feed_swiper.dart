@@ -94,7 +94,11 @@ class FeedSwiperState extends ConsumerState<FeedSwiper> {
   int get _readCount => ref.watch(readCountProvider);
   FeedType get _homeFeedType => ref.read(appRepositoryProvider).homeFeedType;
   String? get _currentTopic => widget.feedType == null ? ref.watch(topicProvider) : null;
-  int get _cardsCount => _feedItems.length + (_isDigestFeed ? 1 : 0);
+  
+  // Every feed type now has an extra card:
+  // - Digest: has streak card
+  // - Others: has return to page 1 card
+  int get _cardsCount => _feedItems.length + 1;
 
   // Date states
   DateTime? get _lastIngestDate => ref.read(ingestLastDateProvider);
@@ -118,9 +122,14 @@ class FeedSwiperState extends ConsumerState<FeedSwiper> {
 
   // Lazy loading
   bool get _shouldTriggerLazyLoad {
+    // Digest feed has fixed DAILY_READ_TARGET limit, no lazy load
     if (_isDigestFeed) return false;
     
-    final feedState = _feedType.watch(ref);
+    // Check current feed state
+    final feedState = _feedType.read(ref);
+    log('[_shouldTriggerLazyLoad] 🕵️‍♂️ feedState.total = ${feedState.total}');
+    log('[_shouldTriggerLazyLoad] 🕵️‍♂️ feedState.hasMore = ${feedState.hasMore}');
+    log('[_shouldTriggerLazyLoad] 🕵️‍♂️ feedState.isLoadingMore = ${feedState.isLoadingMore}');
     if (!feedState.hasMore || feedState.isLoadingMore) return false;
     
     // Only trigger when we're within TRIGGER items of the end of loaded items
@@ -128,6 +137,8 @@ class FeedSwiperState extends ConsumerState<FeedSwiper> {
     final itemsFromEnd = _feedItems.length - _currentItemIndex;
     final progressInPage = _currentItemIndex % CURSOR_PAGINATION_LIMIT;
     
+    log('[_shouldTriggerLazyLoad] 🕵️‍♂️ itemsFromEnd = $itemsFromEnd');
+    log('[_shouldTriggerLazyLoad] 🕵️‍♂️ progressInPage = $progressInPage');
     return itemsFromEnd <= CURSOR_PAGINATION_TRIGGER && progressInPage >= CURSOR_PAGINATION_TRIGGER;
   }
 
@@ -313,12 +324,12 @@ class FeedSwiperState extends ConsumerState<FeedSwiper> {
       ),
       initialIndex: _initialItemIndex,
       numberOfCardsDisplayed: _cardsCount == 1 ? 1 : 2,
-      cardsCount: _cardsCount + 1,
+      cardsCount: _cardsCount + 1, // Add extra so can undo when on the last card
       cardBuilder: (context, index, percentThresholdX, percentThresholdY) {
         if (index == _cardsCount) return SizedBox.shrink();
         return FeedCard(
           _feedType,
-          feedItem: _isDigestFeed && index == _feedItems.length ? null : _feedItems[index],
+          feedItem: index == _feedItems.length ? null : _feedItems[index],
           onSeeLatest: widget.onSeeLatest,
         );
       },

@@ -79,9 +79,9 @@ class BaseFeedState {
 abstract class BaseFeedNotifier extends Notifier<BaseFeedState> {
   /// Load more items using cursor pagination
   Future<bool> loadMore({int? limit}) async {
-    log('[BaseFeedNotifier] loadMore called. hasMore: ${state.hasMore}, isLoadingMore: ${state.isLoadingMore}, nextCursor: ${state.nextCursor}');
+    log('[BaseFeedNotifier] 🔍 loadMore called. hasMore: ${state.hasMore}, isLoadingMore: ${state.isLoadingMore}, nextCursor: ${state.nextCursor}');
     if (!state.hasMore || state.isLoadingMore || state.nextCursor == null) {
-      log('[BaseFeedNotifier] loadMore blocked - hasMore: ${state.hasMore}, isLoadingMore: ${state.isLoadingMore}, nextCursor: ${state.nextCursor}');
+      log('[BaseFeedNotifier] ❓ loadMore blocked - hasMore: ${state.hasMore}, isLoadingMore: ${state.isLoadingMore}, nextCursor: ${state.nextCursor}');
       return false;
     }
     

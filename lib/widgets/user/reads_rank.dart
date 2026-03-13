@@ -7,7 +7,9 @@ import 'package:muslimdigest/utils/helpers.dart';
 
 class UserReadsRank extends ConsumerWidget {
   final Brightness brightness;
-  const UserReadsRank({this.brightness = Brightness.light, super.key});
+  final TextStyle? style;
+  final TextAlign? textAlign;
+  const UserReadsRank({this.style, this.textAlign, this.brightness = Brightness.light, super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -48,6 +50,8 @@ class UserReadsRank extends ConsumerWidget {
           ),
         ],
       ),
+      style: style,
+      textAlign: textAlign,
     );
   }
 }

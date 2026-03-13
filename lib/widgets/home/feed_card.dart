@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lottie/lottie.dart';
 import 'package:muslimdigest/config/feeds.dart';
+import 'package:muslimdigest/providers/read_count_states.dart';
 import 'package:muslimdigest/utils/contents.dart';
 import 'package:muslimdigest/config/colors.dart';
 import 'package:muslimdigest/config/constants.dart';
@@ -37,6 +38,7 @@ import 'package:muslimdigest/widgets/home/feedback_form.dart';
 import 'package:muslimdigest/api/feeds.dart';
 import 'package:muslimdigest/providers/user/preferences.dart';
 import 'package:muslimdigest/services/feed_state_service.dart';
+import 'package:muslimdigest/widgets/user/reads_rank.dart';
 import 'package:path_provider/path_provider.dart';
 import '../../models/feed.dart';
 import 'package:screenshot/screenshot.dart';
@@ -176,6 +178,16 @@ class _FeedCardState extends ConsumerState<FeedCard> with AutomaticKeepAliveClie
       return null;
     }
   }
+  
+  void _backToPageOne() {
+    if (widget.feedType.isDigest) return widget.onSeeLatest?.call();
+    final currentReadCountStates = ref.read(readCountStatesProvider);
+    ref.read(readCountStatesProvider.notifier).setValue({
+      ...currentReadCountStates,
+      widget.feedType.name: 0,
+    });
+    widget.feedType.load(ref, forceRefresh: true);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -183,7 +195,8 @@ class _FeedCardState extends ConsumerState<FeedCard> with AutomaticKeepAliveClie
     final h = MyHelper(context);
     final streaks = ref.read(streaksProvider);
     final currentStreak = streaks.currentStreak;
-    final isStreakCard = widget.feedItem == null;
+    final isDigest = widget.feedType.isDigest;
+    final isExtraCard = widget.feedItem == null;
 
     // Determine if feed should be hidden
     final shouldShowPlaceholder = FeedStateService.shouldHideFeed(ref, widget.feedItem);
@@ -200,17 +213,22 @@ class _FeedCardState extends ConsumerState<FeedCard> with AutomaticKeepAliveClie
       child: Container(
         width: double.infinity,
         decoration: h.cardDecoration,
-        padding: isStreakCard ? EdgeInsets.all(AppThemes.contentPadding) : EdgeInsets.zero,
-        child: isStreakCard ? Column(
+        padding: isExtraCard ? EdgeInsets.all(AppThemes.contentPadding) : EdgeInsets.zero,
+        child: isExtraCard ? Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text("Another day of beneficial knowledge.", textAlign: TextAlign.center, style: h.currentTextTheme.titleLarge),
+            Text(isDigest ? "Another day of beneficial knowledge." : "You've reached the end", textAlign: TextAlign.center, style: h.currentTextTheme.titleLarge),
             Text(MESSAGES[(currentStreak - 1) % MESSAGES.length], textAlign: TextAlign.center, style: h.currentTextTheme.bodyMedium),
-            StreaksCard(),
-            Lottie.asset('assets/lottie/streak.json').expand(),
+            if (isDigest) StreaksCard() else UserReadsRank(textAlign: TextAlign.center,),
+            // Lottie.asset('assets/lottie/streak.json').expand(),
+            Lottie.asset('assets/lottie/streak.json').flexible(),
             if (!_isTakingScreenshot) DonateButton(outlined: true,),
-            MyButton(text: "Continue reading", icon: Icon(CupertinoIcons.book), onPressed: widget.onSeeLatest,),
+            MyButton(
+              text: isDigest ? "Continue reading" : "Back to Page One",
+              icon: isDigest ? Icon(CupertinoIcons.book) : Icon(CupertinoIcons.refresh),
+              onPressed: isDigest ? widget.onSeeLatest : _backToPageOne,
+            ),
             MyDivider(),
             Row(
               children: _isTakingScreenshot ? [
@@ -327,67 +345,7 @@ class _FeedHeader extends ConsumerWidget {
     final hasYouTubeVideo = feedItem.hasYouTubeVideo;
     final settings = ref.watch(settingsProvider);
     final textSize = settings.textSize.toDouble();
-
-    final vibe = (() {
-      if (feedItem.madhhab != null) {
-        final madhhabName = feedItem.madhhab!.toCapitalized();
-        return Vibe(
-          title: "$madhhabName Fiqh",
-          description: 'Based on $madhhabName fiqh',
-          color: Colors.indigo,
-        );
-      }
-      if (feedItem.badges.contains('scholars:single')) {
-        return Vibe(
-          title: "Scholarly Reference",
-          description: "Mentions a recognized Islamic scholar",
-          color: Colors.deepPurple,
-        );
-      }
-      if (feedItem.isOngoing) {
-        final event = feedItem.relatedEvent!.name;
-        return Vibe(
-          title: "${event.emoji} ${event.title}",
-          description: event.subtitle,
-          color: Colors.green,
-        );
-      }
-      if (feedItem.isHighlight) {
-        return Vibe(
-          title: "Today's Highlight",
-          color: Colors.orange,
-        );
-      }
-      if (feedItem.source.targetGender != null) {
-        return Vibe(
-          title: "For ${feedItem.source.targetGender!.label}",
-          color: feedItem.source.targetGender!.color,
-        );
-      }
-      if (feedItem.isNuanced) {
-        return Vibe(
-          title: "Context Matters",
-          description: "Understanding this topic benefits from historical context and scholarly explanation.",
-          color: Colors.teal,
-        );
-      }
-      if (feedItem.cluster.contentType != null) {
-        return Vibe(
-          title: getContentTypeLabel(feedItem.cluster.contentType!),
-          color: getContentTypeColor(feedItem.cluster.contentType!),
-        );
-      }
-      if (feedItem.cluster.topicPrimary != null) {
-        return Vibe(
-          title: getTopicLabel(feedItem.cluster.topicPrimary!),
-          color: getTopicColor(feedItem.cluster.topicPrimary!),
-        );
-      }
-      return Vibe(
-        title: feedItem.readTimeLabel,
-        color: Colors.blue,
-      );
-    })();
+    final vibe = feedItem.vibe;
 
     return ClipRRect(
       borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
