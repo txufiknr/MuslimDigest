@@ -26,7 +26,7 @@ MaterialColor getContentTypeColor(String? contentType) {
 String getTopicLabel(String topic) {
   if (topic == 'quran') return 'Qur’an';
   if (topic == 'dua') return 'Duʿa';
-  if (topic == 'news' || topic == 'muslimworld') return 'Muslim world';
+  if (topic == 'muslimworld') return 'Muslim world';
   return topic.toCapitalized();
 }
 

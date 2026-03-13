@@ -24,7 +24,7 @@ class Tour extends ConsumerWidget {
 
     if (isTourExited) return SizedBox.shrink();
 
-    final isLoading = ref.watch(feedTypeProvider).watch(ref).isLoading;
+    final isLoading = !ref.watch(feedTypeProvider).watch(ref).isAvailable;
     final isTourEnded = historyCount >= 2;
     final shouldDismiss = isLoading || isTourEnded;
 

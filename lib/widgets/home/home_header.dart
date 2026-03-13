@@ -14,6 +14,7 @@ import 'package:muslimdigest/providers/read_count.dart';
 import 'package:muslimdigest/providers/user/streaks.dart';
 import 'package:muslimdigest/providers/topic.dart';
 import 'package:muslimdigest/providers/user/user.dart';
+import 'package:muslimdigest/utils/contents.dart';
 import 'package:muslimdigest/utils/dialogs.dart';
 import 'package:muslimdigest/utils/extensions.dart';
 import 'package:muslimdigest/utils/format.dart';
@@ -267,7 +268,7 @@ class _TopicTab extends StatelessWidget {
             children: <Widget>[
               if (icon != null) Icon(icon, color: foregroundColor, size: 16,),
               Text(
-                title.toCapitalized(),
+                getTopicLabel(title),
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: foregroundColor,

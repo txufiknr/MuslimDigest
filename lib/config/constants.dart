@@ -17,8 +17,8 @@ const APP_URL_PRIVACY = "https://www.termsfeed.com/live/f42c0040-062b-46d8-b070-
 const APP_URL_DONATE = "https://sociabuzz.com/txufiknr/donate";
 
 // API URLs from environment variables
-final APP_URL_API = dotenv.env['APP_URL_API']!;
-final APP_URL_API_DEV = dotenv.env['APP_URL_API_DEV']!;
+final APP_URL_API = dotenv.env['APP_URL_API'] ?? "https://muslim-digest-backend.vercel.app/api";
+final APP_URL_API_DEV = dotenv.env['APP_URL_API_DEV'] ?? "http://192.168.1.5:3000/api";
 final APP_USER_AGENT = dotenv.env['APP_USER_AGENT'] ?? "MuslimDigestApp";
 
 // App assets
@@ -44,6 +44,6 @@ const MESSAGES = [
 ];
 
 // Debug configurations
-const APP_IN_PRODUCTION = kReleaseMode;
+const APP_IN_PRODUCTION = !kDebugMode;
 const APP_IN_DEVELOPMENT = kDebugMode;
 const APP_USE_PRODUCTION_API = true;

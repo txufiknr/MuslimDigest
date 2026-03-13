@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:muslimdigest/config/colors.dart';
 import 'package:muslimdigest/config/themes.dart';
-import 'package:muslimdigest/utils/extensions.dart';
+import 'package:muslimdigest/utils/contents.dart';
 import 'package:muslimdigest/utils/helpers.dart';
 
 enum TopicState { neutral, preferred, avoided }
@@ -126,7 +126,7 @@ class TopicChip extends StatelessWidget {
       visualDensity: VisualDensity.compact,
       labelPadding: EdgeInsets.zero,
       label: Text(
-        topic.toCapitalized(),
+        getTopicLabel(topic),
         style: h.currentTextTheme.bodyMedium?.copyWith(
           color: colors.getTextColor(state),
           fontWeight: FontWeight.w500,
