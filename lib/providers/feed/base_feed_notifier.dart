@@ -445,15 +445,14 @@ abstract class BaseFeedNotifier extends Notifier<BaseFeedState> {
         await setValue(updatedItems, skipCache: isLoadMore);
 
         // Check current page index
-        if (endpoint == FeedType.latest.endpoint) {
-          final currentReadCountStates = ref.read(readCountStatesProvider);
-          final currentPageIndex = currentReadCountStates[FeedType.latest.name] ?? 0;
-          if (currentPageIndex > updatedItems.length - 1) {
-            log('[BaseFeedNotifier] 👀 page index overflow for $endpoint: reset to zero');
-            ref.read(readCountStatesProvider.notifier).setValue({
-              ...currentReadCountStates..remove(FeedType.latest.name)
-            });
-          }
+        final feedType = FeedType.fromEndpoint(endpoint);
+        final currentReadCountStates = ref.read(readCountStatesProvider);
+        final currentPageIndex = currentReadCountStates[feedType.name] ?? 0;
+        if (currentPageIndex > updatedItems.length - 1) {
+          log('[BaseFeedNotifier] 👀 page index overflow for $endpoint: reset to zero');
+          ref.read(readCountStatesProvider.notifier).setValue({
+            ...currentReadCountStates..remove(feedType.name)
+          });
         }
         
         // Cache the response (only for initial loads, not load more)

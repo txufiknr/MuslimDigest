@@ -210,7 +210,6 @@ class FeedSwiperState extends ConsumerState<FeedSwiper> {
       await ref.read(readCountProvider.notifier).setValue(readCount - 1);
     } else if (_readCountState > 0) {
       await ref.read(readCountStatesProvider.notifier).update({
-        // _readCountName: _readCountState - 1,
         _readCountName: min(_cardsCount - 1, _readCountState) - 1,
       });
     }
@@ -333,11 +332,6 @@ class FeedSwiperState extends ConsumerState<FeedSwiper> {
         log('[feed] 👀 _feedType: $_feedType');
         log('[feed] 👀 _cardsCount: $_cardsCount');
         log('[feed] 👀 _currentItemIndex: $_currentItemIndex');
-
-        // TODO: bug on app re-open, latest feed items reset to only 15 items
-        // [log] [feed] 👀 _feedType: FeedType.latest
-        // [log] [feed] 👀 _cardsCount: 15
-        // [log] [feed] 👀 _currentItemIndex: 27
 
         // When an undo swipe is detected
         if (direction != _swipeDirection) {

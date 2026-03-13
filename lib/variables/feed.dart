@@ -68,17 +68,11 @@ enum FeedType {
   notInterested;
 
   static FeedType fromString(String name) {
-    return values.firstWhere(
-      (type) => type.name == name,
-      orElse: () => digest,
-    );
+    return values.firstWhere((type) => type.name == name, orElse: () => digest);
   }
 
   static FeedType fromEndpoint(String endpoint) {
-    return values.firstWhere(
-      (type) => type.endpoint == endpoint,
-      orElse: () => digest,
-    );
+    return values.firstWhere((type) => type.endpoint == endpoint, orElse: () => digest);
   }
 
   bool get isHomeFeed => [digest, latest].contains(this);
