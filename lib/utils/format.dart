@@ -47,9 +47,9 @@ final _kSaidQuotePattern = RegExp(
   caseSensitive: false,
 );
 
-// Matches stating quote pattern: "prefix stating, "quoted text""
+// Matches stating and states quote patterns: "prefix stating/states, "quoted text""
 final _kStatingQuotePattern = RegExp(
-  r'(.*)stating\s*,\s*"([^"]+)"',
+  r'(.*)stat(?:ing|es)\s*,\s*"([^"]+)"',
   caseSensitive: false,
 );
 
@@ -74,8 +74,8 @@ final _kStatingQuotePattern = RegExp(
 /// - [wordsQuotePrefix] is the prefix word before the colon in words quote pattern.
 /// - [saidQuote] is the quoted text part when said quote pattern is detected.
 /// - [saidQuotePrefix] is the prefix words before the colon in said quote pattern.
-/// - [statingQuote] is the quoted text part when stating quote pattern is detected.
-/// - [statingQuotePrefix] is the prefix words before the comma in stating quote pattern.
+/// - [statingQuote] is the quoted text part when stating/states quote pattern is detected.
+/// - [statingQuotePrefix] is the prefix words before the comma in stating/states quote pattern.
 /// - [trailing] is the text after the quote pattern.
 @immutable
 class _ParseResult {
@@ -266,7 +266,7 @@ _ParseResult _parseText(String rawText) {
     );
   }
 
-  // ── Strategy 2.9: Stating quote detection ─────────────────────────────
+  // ── Strategy 2.9: Stating/States quote detection ─────────────────────────────
   final statingQuoteMatch = _kStatingQuotePattern.firstMatch(normalizedText);
   if (statingQuoteMatch != null) {
     final prefix = statingQuoteMatch.group(1)?.trim();
@@ -274,8 +274,12 @@ _ParseResult _parseText(String rawText) {
     final matchEnd = statingQuoteMatch.end;
     final afterQuote = normalizedText.substring(matchEnd).trim();
     
+    // Determine which word was used (stating or states) and preserve it
+    final matchedText = statingQuoteMatch.group(0)!;
+    final usedWord = matchedText.contains('states') ? 'states' : 'stating';
+    
     return _ParseResult(
-      statingQuotePrefix: prefix?.isNotEmpty == true ? prefix : 'stating',
+      statingQuotePrefix: prefix?.isNotEmpty == true ? '$prefix $usedWord' : usedWord,
       statingQuote: quoteText,
       trailing: afterQuote.isNotEmpty ? afterQuote : null,
     );
