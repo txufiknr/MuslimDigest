@@ -6,6 +6,7 @@ import 'package:muslimdigest/api/feeds.dart';
 import 'package:muslimdigest/models/feed.dart';
 import 'package:muslimdigest/providers/ingest_last_date.dart';
 import 'package:muslimdigest/providers/read_count_states.dart';
+import 'package:muslimdigest/providers/topic.dart';
 import 'package:muslimdigest/providers/user/user.dart';
 import 'package:muslimdigest/services/dio.dart';
 import 'package:muslimdigest/providers/feed/feed_cache.dart';
@@ -401,8 +402,8 @@ abstract class BaseFeedNotifier extends Notifier<BaseFeedState> {
     try {
       log('[BaseFeedNotifier] 🌐 Making API call to: $endpoint');
       final response = await ApiService.get(
-        endpoint, 
-        queryParams: queryParams, 
+        endpoint,
+        queryParams: queryParams,
         options: options,
         requestId: requestId,
       );
@@ -452,11 +453,13 @@ abstract class BaseFeedNotifier extends Notifier<BaseFeedState> {
         // Check current page index
         final feedType = FeedType.fromEndpoint(endpoint);
         final currentReadCountStates = ref.read(readCountStatesProvider);
-        final currentPageIndex = currentReadCountStates[feedType.name] ?? 0;
-        if (currentPageIndex > updatedItems.length - 1) {
-          log('[BaseFeedNotifier] 👀 page index overflow for $endpoint: reset to zero');
+        final currentTopic = ref.read(topicProvider);
+        final readCountStateKey = currentTopic ?? feedType.name;
+        final currentPageIndex = currentReadCountStates[readCountStateKey] ?? 0;
+        if (currentPageIndex > max(0, updatedItems.length - 1)) {
+          log('[BaseFeedNotifier] 👀 page index overflow for $endpoint: removing key');
           ref.read(readCountStatesProvider.notifier).setValue({
-            ...currentReadCountStates..remove(feedType.name)
+            ...currentReadCountStates..remove(readCountStateKey)
           });
         }
         

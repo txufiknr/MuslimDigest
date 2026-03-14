@@ -129,6 +129,7 @@ class FeedSwiperState extends ConsumerState<FeedSwiper> {
     final feedState = _feedType.read(ref);
     log('[_shouldTriggerLazyLoad] 🕵️‍♂️ feedState.total = ${feedState.total}');
     log('[_shouldTriggerLazyLoad] 🕵️‍♂️ feedState.hasMore = ${feedState.hasMore}');
+    log('[_shouldTriggerLazyLoad] 🕵️‍♂️ feedState.nextCursor = ${feedState.nextCursor}');
     log('[_shouldTriggerLazyLoad] 🕵️‍♂️ feedState.isLoadingMore = ${feedState.isLoadingMore}');
     if (!feedState.hasMore || feedState.isLoadingMore) return false;
     
@@ -174,7 +175,7 @@ class FeedSwiperState extends ConsumerState<FeedSwiper> {
       });
 
       // Trigger lazy loading after swipe
-      _triggerLazyLoad();
+      // _triggerLazyLoad();
     }
 
     // Request review after 5 swipes every 5 feed items

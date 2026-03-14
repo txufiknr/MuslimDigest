@@ -98,9 +98,10 @@ class AppRepository {
       log('[loadUserFeed] ❓ ingestLastDate today = ${ingestLastDate != null && isToday(ingestLastDate!)}');
       log('[loadUserFeed] ❓ feedState.isAvailable = ${feedState.isAvailable}');
       log('[loadUserFeed] ❓ isFirstRun = $isFirstRun');
+      log('[loadUserFeed] ❓ currentRoute = $currentRoute');
 
       // First time user: will load personalized feed after onboarding
-      if (isFirstRun && currentRoute != '/home') return false;
+      if (isFirstRun && currentRoute != 'home') return false;
       
       // Daily digest is up to date
       if (!force && isDailyDigestUpToDate) {
