@@ -89,7 +89,8 @@ class _WelcomePageState extends ConsumerState<WelcomePage> {
 
   /// Complete the welcome process
   void _complete() {
-    ref.read(feedProvider.notifier).load(timeoutMs: 60000); // load digest feed immediately
+    // Pre-load feed immediately for faster UX with specific requestId for duplicate detection
+    ref.read(feedProvider.notifier).load(timeoutMs: 60000, requestId: 'welcome_preload');
     context.go('/home');
   }
 

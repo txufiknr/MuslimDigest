@@ -60,11 +60,18 @@ class _HomePageState extends ConsumerState<HomePage> with RouteAware {
   bool get _isFeedLoading => ref.watch(feedTypeProvider).watch(ref).isLoading;
   String? get _currentTopic => ref.read(topicProvider);
 
-  /// Init feed loading
+  /// Init feed loading with duplicate prevention
   void _initFeed() {
     final feedType = _currentFeedType;
-    final isNone = feedType.read(ref).isNone;
-    if (isNone) {
+    final feedState = feedType.read(ref);
+    
+    // Check if feed is already loading (from welcome pre-load or other source)
+    if (feedState.isLoading) {
+      log('🧾 Feed ${feedType.name} is already loading, skipping duplicate request...');
+      return;
+    }
+    
+    if (feedState.isNone) {
       log('🧾 Feed ${feedType.name} is empty and need loading...');
       _reloadFeed();
     }
