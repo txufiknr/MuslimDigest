@@ -16,6 +16,7 @@ import 'package:muslimdigest/providers/user/streaks.dart';
 import 'package:muslimdigest/providers/topics.dart';
 import 'package:muslimdigest/providers/user/user.dart';
 import 'package:muslimdigest/utils/app.dart';
+import 'package:muslimdigest/utils/route.dart';
 import 'package:muslimdigest/utils/time.dart';
 import 'package:muslimdigest/variables/feed.dart' show FeedType;
 import 'package:muslimdigest/variables/user.dart';
@@ -99,7 +100,7 @@ class AppRepository {
       log('[loadUserFeed] ❓ isFirstRun = $isFirstRun');
 
       // First time user: will load personalized feed after onboarding
-      if (isFirstRun) return false;
+      if (isFirstRun && currentRoute != '/home') return false;
       
       // Daily digest is up to date
       if (!force && isDailyDigestUpToDate) {

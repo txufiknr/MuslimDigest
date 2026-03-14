@@ -89,7 +89,7 @@ class _WelcomePageState extends ConsumerState<WelcomePage> {
 
   /// Complete the welcome process
   void _complete() {
-    ref.read(feedProvider.notifier).load(); // load digest feed immediately
+    ref.read(feedProvider.notifier).load(timeoutMs: 60000); // load digest feed immediately
     context.go('/home');
   }
 

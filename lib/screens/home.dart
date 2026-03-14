@@ -147,18 +147,7 @@ class _HomePageState extends ConsumerState<HomePage> with RouteAware {
     if (lastUserPreferences == null) return;
 
     final userPreferences = ref.read(preferencesProvider);
-    final currentTopic = _currentTopic;
-    if (currentTopic != null) {
-      // Check if current active topic has been removed from interests
-      if (!userPreferences.topics.contains(currentTopic)) {
-        _openFeed();
-      }
 
-      // No need to offer refresh in topic feed page
-      _checkNewDigest();
-      return;
-    }
-    
     // Check if topic preferences have changed
     final topicsChanged = !setEquals(userPreferences.topics, lastUserPreferences!.topics);
     final avoidedTopicsChanged = !setEquals(userPreferences.avoidedTopics, lastUserPreferences!.avoidedTopics);
@@ -166,12 +155,35 @@ class _HomePageState extends ConsumerState<HomePage> with RouteAware {
 
     log('[_compareUserPreferences] topicsChanged = $topicsChanged');
     log('[_compareUserPreferences] avoidedTopicsChanged = $avoidedTopicsChanged');
-    
+
     lastUserPreferences = null;
 
     if (!isChanged) return;
+
+    // Save all user data, including new preferences
     _saveAllData();
 
+    if (topicsChanged) {
+      // Remove removed topic keys from readCountState
+      final currentReadCountStates = ref.read(readCountStatesProvider);
+      ref.read(readCountStatesProvider.notifier).setValue({
+        ...currentReadCountStates..removeWhere((name, _) => !userPreferences.topics.contains(name)),
+      });
+    }
+
+    final currentTopic = _currentTopic;
+    if (currentTopic != null) {
+      // Check if current active topic has been removed from interests
+      if (!userPreferences.topics.contains(currentTopic)) {
+        _openFeed();
+      }
+
+      // Check if digest feed need reloading
+      _checkNewDigest();
+      return;
+    }
+    
+    // Offer to reload the feed after preferences update
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       final reload = await showBottomModalConfirm(
         context,

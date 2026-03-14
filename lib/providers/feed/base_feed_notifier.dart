@@ -414,8 +414,13 @@ abstract class BaseFeedNotifier extends Notifier<BaseFeedState> {
         
         log('[BaseFeedNotifier] 🔥 API response: received ${feedItems.length} items, isLoadMore: $isLoadMore');
         log('[BaseFeedNotifier] 📊 Current state items: ${state.items?.length ?? 0}');
+        log('[BaseFeedNotifier] 👀 Response items count: ${response.result?['items']?.length}');
+        if (response.result?['items']?.isNotEmpty == true) {
+          log('[BaseFeedNotifier] 👀 First result: ${response.result?['items'].first}');
+        } else {
+          log('[BaseFeedNotifier] 👀 No result');
+        }
         // log('[BaseFeedNotifier] Response result: ${response.result}');
-        // log('[BaseFeedNotifier] Response result items count: ${response.result?['items'].length}');
         
         // Extract pagination info from response
         final hasMore = response.result?['hasMore'] ?? true;

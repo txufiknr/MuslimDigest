@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:lottie/lottie.dart';
 import 'package:muslimdigest/config/feeds.dart';
 import 'package:muslimdigest/providers/read_count_states.dart';
+import 'package:muslimdigest/providers/topic.dart';
 import 'package:muslimdigest/utils/contents.dart';
 import 'package:muslimdigest/config/colors.dart';
 import 'package:muslimdigest/config/constants.dart';
@@ -182,9 +183,12 @@ class _FeedCardState extends ConsumerState<FeedCard> with AutomaticKeepAliveClie
   void _backToPageOne() {
     if (widget.feedType.isDigest) return widget.onSeeLatest?.call();
     final currentReadCountStates = ref.read(readCountStatesProvider);
+    final currentTopic = ref.read(topicProvider);
+    final isTopicTab = currentTopic != null;
+    final readCountStateKey = isTopicTab ? currentTopic : widget.feedType.name;
     ref.read(readCountStatesProvider.notifier).setValue({
       ...currentReadCountStates,
-      widget.feedType.name: 0,
+      readCountStateKey: 0,
     });
     widget.feedType.load(ref, forceRefresh: true);
   }

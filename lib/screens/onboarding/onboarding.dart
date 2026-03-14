@@ -21,7 +21,7 @@ class OnboardingPage extends ConsumerWidget {
   /// Start reading as a guest (global)
   void _startReadingNow(BuildContext context, WidgetRef ref) async {
     await ref.read(userProvider.notifier).setValue(PrefData.user);
-    ref.read(feedProvider.notifier).load(); // load digest feed immediately
+    ref.read(feedProvider.notifier).load(timeoutMs: 60000); // load digest feed immediately
     if (context.mounted) context.go('/home');
   }
 
