@@ -2,9 +2,8 @@ v1.0.1
 added 1 extra card "you've reached the end" with "back to page one" button
 optimized preferences changed handler
 fixed back to page one bug on topic feed
-increase first time digest load timeout for better successful load without cache
-fix reload feed bug on first run
-
+increase first-time digest load timeout for better success without cache
+fixed reload feed bug on first run and app resume
 
 v1.0.0
 Features to explore:

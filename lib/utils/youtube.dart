@@ -42,13 +42,9 @@ String? extractVideoId(String? url) {
 }
 
 /// Generates YouTube thumbnail URL using the yt.img short URL format
-/// 
-/// Uses: https://yt.img/VIDEO_ID/maxresdefault.jpg
-/// Returns null if videoId is null or empty
 String? generateThumbnailUrl(String? videoId) {
   if (videoId == null || videoId.isEmpty) return null;
-  
-  return 'https://yt.img/$videoId/maxresdefault.jpg';
+  return 'https://i.ytimg.com/vi/$videoId/maxresdefault.jpg';
 }
 
 /// Validates if a URL is a YouTube URL
