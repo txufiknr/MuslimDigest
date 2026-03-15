@@ -432,7 +432,7 @@ class SettingsFooter extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             TextButton(
-              onPressed: () => openUrl('mailto:$APP_COMPANY_EMAIL'),
+              onPressed: () => openUrl(APP_COMPANY_CONTACT),
               child: Text(
                 'Contact Us',
                 style: h.currentTextTheme.bodySmall?.copyWith(

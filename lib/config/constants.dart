@@ -10,6 +10,7 @@ const APP_DESCRIPTION = "Your daily window into the Muslim world";
 const APP_COPYRIGHT = "Taufik Nur Rahmanda";
 const APP_COMPANY = "TARRA Soft";
 const APP_COMPANY_EMAIL = "flias.test@gmail.com";
+const APP_COMPANY_CONTACT = "https://linktr.ee/tarrasoft";
 
 // App URLs
 const APP_URL_PLAYSTORE = "https://play.google.com/store/apps/details?id=com.tarra.muslimdigest";
