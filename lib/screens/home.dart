@@ -48,6 +48,7 @@ class _HomePageState extends ConsumerState<HomePage> with RouteAware {
   late final Debounce _digestLoadDebounce = const Duration(milliseconds: 500).debounce;
   late final AppLifecycleListener _lifeCycleListener;
   UserPreferences? lastUserPreferences;
+  DateTime? lastActiveDate;
   var _isWillExit = false;
 
   // Request cancellation tracking
@@ -59,6 +60,7 @@ class _HomePageState extends ConsumerState<HomePage> with RouteAware {
   FeedType get _currentFeedType => ref.read(feedTypeProvider);
   bool get _isFeedLoading => ref.watch(feedTypeProvider).watch(ref).isLoading;
   String? get _currentTopic => ref.read(topicProvider);
+  bool get _isDigest => _currentFeedType.isDigest;
 
   /// Init feed loading with duplicate prevention
   void _initFeed() {
@@ -129,6 +131,17 @@ class _HomePageState extends ConsumerState<HomePage> with RouteAware {
     ) ?? false;
 
     if (mounted && goToDigest) _openFeed();
+  }
+
+  void _onInactive() {
+    lastActiveDate = DateTime.now();
+    _saveAllData();
+  }
+
+  void _onActive() {
+    final shouldReload = _isDigest && !isToday(lastActiveDate);
+    if (shouldReload) log("[home] 👋 Welcome back! It's a new day since you left, we'll reload your feed");
+    _checkNewDigest(force: shouldReload);
   }
 
   /// Save all user data
@@ -211,8 +224,8 @@ class _HomePageState extends ConsumerState<HomePage> with RouteAware {
   void initState() {
     super.initState();
     _lifeCycleListener = AppLifecycleListener(
-      onInactive: _saveAllData,
-      onResume: _checkNewDigest,
+      onInactive: _onInactive,
+      onResume: _onActive,
     );
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
@@ -414,7 +427,7 @@ class _HomePageState extends ConsumerState<HomePage> with RouteAware {
                   FeedSwiper(
                     onReload: () => _loadFeed(force: true),
                     onSeeLatest: () => _openFeedLatest(force: true),
-                    onSeeHome: _openFeed,
+                    onSeeHome: () => _openFeed(force: true),
                   ).expand(),
                   // Loader or reading streak progressbar
                   ReadingStreakFooter(),

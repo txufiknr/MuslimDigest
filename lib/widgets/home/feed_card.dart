@@ -357,7 +357,7 @@ class _FeedHeader extends ConsumerWidget {
         children: [
           // Image or video
           CachedImageWidget(
-            imageUrl: feedItem.imageUrl,
+            imageUrl: feedItem.displayImageUrl,
             height: 200,
             width: double.infinity,
             fit: BoxFit.cover,
@@ -467,7 +467,14 @@ class _FeedHeader extends ConsumerWidget {
           // ),
         ],
       ).onTap(() {
-        if (hasYouTubeVideo) openUrl(feedItem.videoUrl!);
+        if (APP_IN_DEVELOPMENT) {
+          log('[feed_card] feedItem.videoUrl = ${feedItem.videoUrl}');
+          log('[feed_card] feedItem.hasYouTubeVideo = ${feedItem.hasYouTubeVideo}');
+          log('[feed_card] feedItem.youTubeVideoID = ${feedItem.youTubeVideoID}');
+          log('[feed_card] feedItem.displayImageUrl = ${feedItem.displayImageUrl}');
+        } else {
+          if (hasYouTubeVideo) openUrl(feedItem.videoUrl!);
+        }
       }),
     );
   }
@@ -886,6 +893,7 @@ class _FeedBadgeChip extends StatelessWidget {
     
     // Handle dynamic patterns
     if (_badgeLabel == 'madhhab') return 'Based on $_valueCapitalized fiqh';
+    if (_badgeLabel == 'target') return 'Target audience: $_valueCapitalized';
     
     return null;
   }
@@ -896,6 +904,7 @@ class _FeedBadgeChip extends StatelessWidget {
     if (_badgeLabel == 'madhhab') return Colors.indigo;
     if (_badgeLabel == 'image') return Colors.cyan;
     if (_badgeLabel == 'coverage') return Colors.teal;
+    if (_badgeLabel == 'target') return Colors.pink;
 
     switch (_badgeLabel) {
       case 'trust_level':

@@ -35,6 +35,9 @@ class AppRepository {
   DateTime? get readLastDate => _ref.read(readLastDateProvider);
   int get readCount => _ref.read(readCountProvider);
   FeedState get feedState => _ref.read(feedProvider);
+  Map<String, int> get currentReadCountStates => _ref.read(readCountStatesProvider);
+  String? get currentTopic => _ref.read(topicProvider);
+  FeedType get currentFeedType => _ref.read(feedTypeProvider);
 
   /// Whether today's digest feed fetch is done or due
   bool get isDailyDigestUpToDate => ingestLastDate != null && isToday(ingestLastDate!) && feedState.isAvailable;
@@ -74,8 +77,9 @@ class AppRepository {
     if (feedType.isDigest) {
       await initReadCount(force: true);
     } else {
-      final newStates = _ref.read(readCountStatesProvider)..remove(topic ?? feedType.name);
-      await _ref.read(readCountStatesProvider.notifier).setValue(newStates);
+      await _ref.read(readCountStatesProvider.notifier).setValue({
+        ...currentReadCountStates..remove(topic ?? feedType.name)
+      });
     }
   }
   
@@ -86,6 +90,13 @@ class AppRepository {
     log('[homeFeedType] shouldFetchDailyDigest = $shouldFetchDailyDigest');
     log('[homeFeedType] isDailyDigestCompleted = $isDailyDigestCompleted');
     return !isStreakToday && (shouldFetchDailyDigest || !isDailyDigestCompleted) ? FeedType.digest : FeedType.latest;
+  }
+
+  int getCurrentPageIndex([FeedType? feedType]) {
+    feedType ??= currentFeedType;
+    final readCountStates = _ref.read(readCountStatesProvider);
+    final readCountStateKey = (feedType.isLatest ? currentTopic : null) ?? feedType.name;
+    return readCountStates[readCountStateKey] ?? 0;
   }
 
   Future<bool> loadFeed({FeedType? feedType, String? topic, bool force = false, String? requestId}) async {
@@ -116,6 +127,11 @@ class AppRepository {
       return false;
     }
 
+    if (!force && getCurrentPageIndex(feedType) > 0) {
+      log("[loadFeed] ⏩ Skipping ${feedType.name} feed reload when at page: ${getCurrentPageIndex(feedType)}");
+      return false;
+    }
+
     final isFeedLoaded = await feedType.loadWithRef(_ref, topic: topic, force: force, requestId: requestId);
     if (isFeedLoaded) {
       if (homeFeedType.isDigest) {
@@ -131,8 +147,6 @@ class AppRepository {
   /// Initialize active feed tab on every app launch
   Future<void> initActiveFeed() async {
     if (isFirstRun) return; // no need to do anything for first time user
-    final currentFeedType = _ref.read(feedTypeProvider);
-    final currentTopic = _ref.read(topicProvider);
     final trendingCount = _ref.read(feedTrendingProvider).total;
     if (!currentFeedType.isHomeFeed || currentTopic != null || (currentFeedType == FeedType.trending && trendingCount == 0)) {
       // Go back to home feed tab without any topic selected
@@ -146,7 +160,6 @@ class AppRepository {
 
   /// Reset latest and trending feed current page to zero on every app launch
   Future<void> _initReadCountStates() async {
-    final currentReadCountStates = _ref.read(readCountStatesProvider);
     final homeFeedTypes = FeedType.values.where((f) => f.isHomeFeed).map((f) => f.name);
     await _ref.read(readCountStatesProvider.notifier).setValue({
       ...currentReadCountStates..removeWhere((name, _) => !homeFeedTypes.contains(name))

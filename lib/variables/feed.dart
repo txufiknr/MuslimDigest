@@ -79,6 +79,13 @@ enum FeedType {
   bool get isDigest => this == digest;
   bool get isLatest => this == latest;
 
+  // int getCurrentPageIndex(WidgetRef ref) {
+  //   final readCountStates = ref.read(readCountStatesProvider);
+  //   final currentTopic = ref.read(topicProvider);
+  //   final readCountStateKey = (isLatest ? currentTopic : null) ?? name;
+  //   return readCountStates[readCountStateKey] ?? 0;
+  // }
+
   String get label {
     switch (this) {
       case digest: return 'My Digest';

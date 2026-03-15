@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:muslimdigest/utils/contents.dart';
 import 'package:muslimdigest/utils/extensions.dart';
 import 'package:muslimdigest/utils/time.dart';
+import 'package:muslimdigest/utils/youtube.dart';
 import 'package:muslimdigest/variables/feed.dart';
 import 'package:muslimdigest/variables/user.dart';
 
@@ -79,6 +80,9 @@ class FeedItem {
   String get displayTitle => hasVideo ? (videoTitle ?? title) : title;
   String get sourceLabel => source.siteName ?? source.id;
   String? get sourceLink => canonicalUrl ?? sourceUrl;
+
+  String? get youTubeVideoID => hasYouTubeVideo ? extractVideoId(videoUrl) : null;
+  String? get displayImageUrl => imageUrl ?? (hasYouTubeVideo ? generateThumbnailUrl(youTubeVideoID) : null);
 
   bool get isOngoing => relatedEvent?.isOngoing == true;
   String get vibeAnimationAsset => 'assets/lottie/vibes/${relatedEvent?.name.name}.json';
