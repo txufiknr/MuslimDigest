@@ -181,7 +181,7 @@ class FeedStateService {
     await ref.read(userProvider.notifier).setValue(currentUser.copyWith(
       totalLiked: max(0, newTotalLiked),
     ));
-    log('[FeedStateService] Updated user totalLiked: $newTotalLiked (like: $isLiked)');
+    log('[FeedStateService] ❤️ Updated user totalLiked: $newTotalLiked (like: $isLiked)');
     
     // Calculate like count once to ensure consistency across all feed types
     final calculatedLikeCount = likeCount ?? (isLiked ? feedItem.likeCount + 1 : max(0, feedItem.likeCount - 1));
@@ -341,7 +341,7 @@ class FeedStateService {
     await ref.read(userProvider.notifier).setValue(currentUser.copyWith(
       totalSaved: max(0, newTotalSaved),
     ));
-    log('[FeedStateService] Updated user totalSaved: $newTotalSaved (save: $isSaved)');
+    log('[FeedStateService] 💾 Updated user totalSaved: $newTotalSaved (save: $isSaved)');
     
     // Update the item in all feed types
     for (final feedType in FeedType.values) {
@@ -368,22 +368,17 @@ class FeedStateService {
     if (updateCache) {
       final cache = ref.read(feedCacheProvider);
       
-      // Update "All Saved" cache
-      await _updateCacheForQueryWithRef(cache, 'feed/saved', null, feedItem, isSaved);
+      // Determine which cache to update
+      final queryParams = specificCollection != null 
+          ? {'collection': specificCollection}
+          : null;
       
-      // If we know the specific collection, update only that cache
-      if (specificCollection != null) {
-        await _updateCacheForQueryWithRef(cache, 'feed/saved', {'collection': specificCollection}, feedItem, isSaved);
-      } else {
-        // If we don't know the collection, invalidate all collection caches
-        // This is a fallback - ideally we should track the collection
-        log('[FeedStateService] Unknown collection for saved item ${feedItem.id}, invalidating all collection caches');
-        await cache.invalidateAllCacheForEndpoint('feed/saved');
-      }
+      // Update the appropriate cache (single operation)
+      await _updateCacheForQueryWithRef(cache, 'feed/saved', queryParams, feedItem, isSaved);
       
-      log('[FeedStateService] Updated saved feeds cache: ${isSaved ? 'added' : 'removed'} item ${feedItem.id} ${specificCollection != null ? 'to/from "$specificCollection"' : '(all caches)'}');
+      log('[FeedStateService] 💾 Updated saved feeds cache: ${isSaved ? 'added' : 'removed'} item ${feedItem.id} ${specificCollection != null ? 'to/from "$specificCollection"' : '(all)'}');
     } else {
-      log('[FeedStateService] Skipping cache update for saved item ${feedItem.id} (updateCache=false)');
+      log('[FeedStateService] ⏸️ Skipping cache update for saved item ${feedItem.id} (updateCache=false)');
     }
   }
 
@@ -414,9 +409,9 @@ class FeedStateService {
       await cache.setFeedItems(endpoint, updatedItems, queryParams: queryParams);
       
       final querySuffix = queryParams != null ? '?${queryParams.entries.map((e) => '${e.key}=${e.value}').join('&')}' : '';
-      log('[FeedStateService] Updated cache for $endpoint$querySuffix: ${isActive ? 'added' : 'removed'} item ${feedItem.id}');
+      log('[FeedStateService] 💾 Updated cache for $endpoint$querySuffix: ${isActive ? 'added' : 'removed'} item ${feedItem.id}');
     } catch (e) {
-      log('[FeedStateService] Failed to update cache for query $queryParams: $e');
+      log('[FeedStateService] ❌ Failed to update cache for query $queryParams: $e');
       // Invalidate this specific cache on error
       await cache.invalidateCache(endpoint, queryParams: queryParams);
     }

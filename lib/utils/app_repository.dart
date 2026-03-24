@@ -41,6 +41,7 @@ class AppRepository {
 
   /// Whether today's digest feed fetch is done or due
   bool get isDailyDigestUpToDate => ingestLastDate != null && isToday(ingestLastDate!) && feedState.isAvailable;
+  // "Do we have today's content?"
   bool get shouldFetchDailyDigest => !isDailyDigestUpToDate;
 
   /// Digest feed is newer than last read (even though it's not today)
@@ -85,16 +86,16 @@ class AppRepository {
     if (!_ref.mounted || isFirstRun) return true; // always digest for first time user
     log('[homeFeedType] isStreakToday = $isStreakToday');
     log('[homeFeedType] shouldFetchDailyDigest = $shouldFetchDailyDigest');
+    log('[homeFeedType] shouldForceReloadDigest = $shouldForceReloadDigest');
     log('[homeFeedType] isDailyDigestCompleted = $isDailyDigestCompleted');
     if (isStreakToday) return false; // has streak today
-    return shouldFetchDailyDigest || newDigestFeedAvailable || !isDailyDigestCompleted;
+    return shouldFetchDailyDigest || shouldForceReloadDigest || newDigestFeedAvailable || !isDailyDigestCompleted;
   }
 
-  /// Determine if digest should be reloaded (new day or no read count)
+  /// Determine if digest should be reloaded (new day)
   /// Already handles if ingestLastDate is null (isToday accepts null, returning false)
-  bool get shouldForceReloadDigest {
-    return !isToday(ingestLastDate) && readCount == 0;
-  }
+  /// "Should we ignore cached content and get fresh?"
+  bool get shouldForceReloadDigest => !isToday(ingestLastDate);
 
   /// Determine home feed type
   FeedType get homeFeedType => shouldShowDigest ? FeedType.digest : FeedType.latest;

@@ -151,16 +151,17 @@ class _HomePageState extends ConsumerState<HomePage> with RouteAware {
   bool get _isNewDay => !isToday(_lastActiveDate) || r.shouldForceReloadDigest;
 
   bool _onActive() {
-    // final shouldReload = _isDigest && !isToday(_lastActiveDate);
-    // if (shouldReload) log("[home] 👋 Welcome back! It's a new day since you left, we'll reload your feed");
-    // _checkNewDigest(force: shouldReload);
     log('🧾 [init] _onActive _isNewDay: $_isNewDay');
-    log('🧾 [init] _onActive r.homeFeedType: ${r.homeFeedType}');
-    if (_isNewDay && r.homeFeedType.isDigest) {
+    log('🧾 [init] _onActive r.shouldShowDigest: ${r.shouldShowDigest}');
+    
+    if (_isNewDay) {
       log("[home] 👋 Welcome back! It's a new day since you left, we'll load your digest");
       _openFeed(force: true);
+      
+      // Show digest summary after feed loads (handled by the listener above)
       return true;
     }
+    
     _checkNewDigest();
     return false;
   }
@@ -409,21 +410,31 @@ class _HomePageState extends ConsumerState<HomePage> with RouteAware {
 
       final readLastDate = ref.read(readLastDateProvider);
       final isNewDay = readLastDate == null || !isToday(readLastDate);
-      if (!isNewDay) return;
-      if (!_currentFeedType.isDigest) return;
-
-      _digestLoadDebounce.run(_showDigestSummary);
+      final isNewDayBasedOnActive = _isNewDay;
+      
+      log('[HomePage] Feed loaded: isNewDay=$isNewDay, isNewDayBasedOnActive=$isNewDayBasedOnActive, isDigest=${_currentFeedType.isDigest}');
+      
+      // Only trigger digest summary from feed listener when NOT a new day scenario
+      // (New day scenarios are handled by _onActive and feed type change listener)
+      if (!(isNewDay || isNewDayBasedOnActive) && _currentFeedType.isDigest) {
+        _digestLoadDebounce.run(_showDigestSummary);
+      }
     });
     
-    // Listen for digest feed type change and show digest summary if no items read
+    // Listen for digest feed type change and show digest summary
     ref.listen<FeedType>(feedTypeProvider, (previous, next) {
       if (!mounted || previous == next) return;
       if (!next.isDigest) return; // if not digest
 
       final readCount = ref.read(readCountProvider);
-      if (readCount > 0) return; // if already read some items
-
-      _digestLoadDebounce.run(_showDigestSummary);
+      final isNewDay = _isNewDay;
+      
+      log('[HomePage] Feed type changed to digest: readCount=$readCount, isNewDay=$isNewDay');
+      
+      // Show digest summary if no items read OR it's a new day
+      if (readCount == 0 || isNewDay) {
+        _digestLoadDebounce.run(_showDigestSummary);
+      }
     });
 
     return PopScope(
