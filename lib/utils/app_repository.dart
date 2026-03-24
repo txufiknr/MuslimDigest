@@ -94,7 +94,7 @@ class AppRepository {
 
   /// Determine if digest should be reloaded (new day)
   /// Already handles if ingestLastDate is null (isToday accepts null, returning false)
-  /// "Should we ignore cached content and get fresh?"
+  /// "Should we fetch fresh content for new day?"
   bool get shouldForceReloadDigest => !isToday(ingestLastDate);
 
   /// Determine home feed type

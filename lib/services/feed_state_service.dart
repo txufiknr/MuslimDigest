@@ -187,6 +187,7 @@ class FeedStateService {
     final calculatedLikeCount = likeCount ?? (isLiked ? feedItem.likeCount + 1 : max(0, feedItem.likeCount - 1));
     log('[FeedStateService] ❤️ Calculated likeCount for ${feedItem.id}: $calculatedLikeCount ${likeCount != null ? '(provided)' : '(calculated)'}');
     
+    // Update all feed types atomically (optimistic approach)
     for (final feedType in FeedType.values) {
       // Skip the specified feed type to avoid circular dependency
       if (skipFeedType != null && feedType == skipFeedType) continue;
@@ -194,6 +195,7 @@ class FeedStateService {
       final notifier = feedType.getNotifierWithRef(ref);
       final currentState = feedType.readWithRef(ref);
       final currentItem = currentState.items?.firstWhereOrNull((item) => item.id == feedItem.id);
+      
       if (currentItem != null && currentItem.isLiked != isLiked) {
         // Update the item in this feed type with pre-calculated like count
         final updatedItems = currentState.items?.map((item) {

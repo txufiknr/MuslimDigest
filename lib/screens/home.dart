@@ -416,7 +416,7 @@ class _HomePageState extends ConsumerState<HomePage> with RouteAware {
       
       // Only trigger digest summary from feed listener when NOT a new day scenario
       // (New day scenarios are handled by _onActive and feed type change listener)
-      if (!(isNewDay || isNewDayBasedOnActive) && _currentFeedType.isDigest) {
+      if (_currentFeedType.isDigest && (isNewDay || isNewDayBasedOnActive)) {
         _digestLoadDebounce.run(_showDigestSummary);
       }
     });
