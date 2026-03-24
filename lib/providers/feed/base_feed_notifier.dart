@@ -181,44 +181,31 @@ abstract class BaseFeedNotifier extends Notifier<BaseFeedState> {
     final currentItem = state.items?.firstWhere((item) => item.id == feedId);
     if (currentItem == null) return;
 
-    // Calculate new like count for feed item
-    int? newLikeCount;
-
     // Calculate new like count for user
     final currentUser = ref.read(userProvider);
     int? newTotalLiked;
     int? newTotalSaved;
-
-    // Track which operations actually changed state to avoid redundant cache invalidation
-    final List<String> cachesToInvalidate = [];
-    final List<Future<void>> cacheUpdates = [];
     
     // Handle like operation
     if (isLiked != null && isLiked != currentItem.isLiked) {
-      newLikeCount = isLiked ? currentItem.likeCount + 1 : currentItem.likeCount - 1;
+      // Calculate like count once to ensure consistency across all feed types
+      final calculatedLikeCount = isLiked ? currentItem.likeCount + 1 : max(0, currentItem.likeCount - 1);
       newTotalLiked = isLiked ? currentUser.totalLiked + 1 : currentUser.totalLiked - 1;
       fireAndForget(() => like(feedId, isLiked));
       
-      // Update like status across all feed types (skip current to avoid circular dependency)
+      // Update like status across all feed types with immediate cache updates
       final currentFeedType = FeedType.fromEndpoint(endpoint);
       await FeedStateService.updateLikeStatusEverywhereWithRef(
         ref, 
-        feedId, 
+        currentItem, // Pass the full FeedItem as expected by updated method
         isLiked, 
-        likeCount: newLikeCount,
         skipFeedType: currentFeedType,
+        likeCount: calculatedLikeCount, // Pass pre-calculated count for consistency
+        updateCache: true, // Keep immediate cache updates for better UX
       );
       
-      // Schedule cache update
-      cacheUpdates.add(_updateFeedCache(
-        endpoint: 'feed/liked',
-        updatedItem: currentItem.copyWith(isLiked: isLiked),
-        isActive: isLiked,
-      ));
-      
-      if (endpoint == 'feed') {
-        cachesToInvalidate.add(endpoint);
-      }
+      // Cache updates are now handled by FeedStateService.updateLikeStatusEverywhereWithRef
+      // No need to schedule redundant cache updates here
     }
     
     // Handle save operation
@@ -226,108 +213,31 @@ abstract class BaseFeedNotifier extends Notifier<BaseFeedState> {
       newTotalSaved = isSaved ? currentUser.totalSaved + 1 : currentUser.totalSaved - 1;
       fireAndForget(() => save(feedId, isSaved));
       
-      // Update save status across all feed types (skip current to avoid circular dependency)
+      // Update save status across all feed types with consistent cache behavior
       final currentFeedType = FeedType.fromEndpoint(endpoint);
       await FeedStateService.updateSaveStatusEverywhereWithRef(
         ref, 
-        feedId, 
+        currentItem,
         isSaved,
         skipFeedType: currentFeedType,
+        updateCache: false, // Defer cache updates for consistent behavior
       );
       
-      // Schedule cache update
-      cacheUpdates.add(_updateFeedCache(
-        endpoint: 'feed/saved',
-        updatedItem: currentItem.copyWith(isSaved: isSaved),
-        isActive: isSaved,
-      ));
-      
-      if (endpoint == 'feed') {
-        cachesToInvalidate.add(endpoint);
+      if (isSaved) {
+        log('[BaseFeedNotifier] Deferring cache update for saved item $feedId until collection is selected');
+      } else {
+        log('[BaseFeedNotifier] Deferring cache update for unsaved item $feedId (consistent with save behavior)');
       }
     }
 
-    // Update feed item state in current feed type (already updated by FeedStateService)
-    // But we still need to update the current state for immediate UI updates
-    final updatedItems = state.items?.map((item) {
-      if (item.id == feedId) {
-        return item.copyWith(
-          isLiked: isLiked ?? item.isLiked,
-          isSaved: isSaved ?? item.isSaved,
-          likeCount: max(0, newLikeCount ?? item.likeCount),
-        );
-      }
-      return item;
-    }).toList();
-    
-    state = state.copyWith(items: updatedItems);
+    // Feed item state is already updated by FeedStateService across all feed types
+    // State updates are centralized to ensure consistency and avoid race conditions
 
-    // Update user state and cache
+    // Update user state
     ref.read(userProvider.notifier).setValue(currentUser.copyWith(
       totalLiked: max(0, newTotalLiked ?? currentUser.totalLiked),
       totalSaved: max(0, newTotalSaved ?? currentUser.totalSaved),
     ));
-    
-    // Update cached data
-    // final feedItemsString = updatedItems == null ? null : jsonEncode(updatedItems.map((item) => item.toJson()).toList());
-    // await ref.read(preferencesRepositoryProvider).setString(endpoint, feedItemsString);
-
-    // Feed cache data is now handled by SecureFeedCache, no need to save to SharedPreferences
-    // The cache will be updated/invalidated below if needed
-    
-    // Execute cache updates and invalidations
-    if (cacheUpdates.isNotEmpty || cachesToInvalidate.isNotEmpty) {
-      final cache = ref.read(feedCacheProvider);
-      
-      // Execute all cache updates in parallel
-      if (cacheUpdates.isNotEmpty) {
-        await Future.wait(cacheUpdates);
-      }
-      
-      // Invalidate remaining caches
-      if (cachesToInvalidate.isNotEmpty) {
-        final uniqueCaches = cachesToInvalidate.toSet();
-        for (final cacheKey in uniqueCaches) {
-          await cache.invalidateCache(cacheKey);
-        }
-      }
-    }
-  }
-
-  /// Generic method to update feed caches (liked/saved) by adding or removing items
-  Future<void> _updateFeedCache({
-    required String endpoint,
-    required FeedItem updatedItem,
-    required bool isActive,
-  }) async {
-    try {
-      final cache = ref.read(feedCacheProvider);
-      
-      // Get current items from cache
-      final currentItems = await cache.getFeedItems(endpoint) ?? <FeedItem>[];
-      
-      final List<FeedItem> updatedItems;
-      
-      if (isActive) {
-        // Add item to feed (avoid duplicates)
-        updatedItems = [
-          updatedItem,
-          ...currentItems.where((item) => item.id != updatedItem.id),
-        ];
-      } else {
-        // Remove the item from feed
-        updatedItems = currentItems
-            .where((item) => item.id != updatedItem.id)
-            .toList();
-      }
-      
-      // Update the cache with the modified list
-      await cache.setFeedItems(endpoint, updatedItems);
-      
-      log('[BaseFeedNotifier] Updated $endpoint cache: ${isActive ? 'added' : 'removed'} item ${updatedItem.id}');
-    } catch (e) {
-      log('[BaseFeedNotifier] Failed to update $endpoint cache: $e');
-    }
   }
 
   /// Loads feed items from a specified API endpoint with caching and pagination support.

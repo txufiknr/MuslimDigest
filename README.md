@@ -21,15 +21,38 @@
 | 📱 **Flutter** (Framework) | Cross-platform, fast development, beautiful UI |
 | 🎯 **Dart** (Language) | Type-safe, optimized for Flutter |
 | 🗺️ **Go Router** (Navigation) | Declarative routing, deep linking support |
+| 🚅 **Riverpod** (State Management) | Reactive state management, dependency injection |
 | 🌙 **Theme Provider** (Theming) | Runtime theme switching, persistence |
 | 💾 **Shared Preferences** (Storage) | User preferences and settings persistence |
 | 🔐 **Flutter Secure Storage** (Cache) | Secure feed caching with dynamic keys |
-| 🌐 **HTTP** (API Client) | RESTful API communication |
+| 🌐 **Dio** (HTTP Client) | Advanced HTTP client with cancellation |
 | 🔗 **URL Launcher** (External Links) | In-app browser and external links |
 | 🆔 **UUID** (User IDs) | Standard unique identifier generation |
 | ⚙️ **Flutter Dotenv** (Environment) | Environment variable management |
+| 📱 **Cupertino Icons** (Icons) | iOS-style icons for cross-platform consistency |
+| 🔔 **Awesome Notifications** (Notifications) | Local and push notifications |
+| 🖼️ **Cached Network Image** (Image Caching) | Optimized network image loading with caching |
+| 📡 **Connectivity Plus** (Connectivity) | Network connectivity monitoring |
+| 🚀 **External App Launcher** (App Integration) | Launch more apps from within the app |
+| 🎴 **Flutter Card Swiper** (UI Components) | Card swiper widget for interactive carousels |
+| 📝 **In App Review** (User Feedback) | In-app rating and review prompts |
+| 📅 **JHijri** (Date/Time) | Hijri calendar support |
+| 🎬 **Lottie** (Animations) | Beautiful After Effects animations |
+| 📦 **Package Info Plus** (App Info) | App version and build information |
+| 📁 **Path Provider** (File System) | File system access for cross-platform paths |
+| 🔑 **Permission Handler** (Permissions) | Device permission management |
+| 🔄 **Pull to Refresh** (UI Interaction) | Pull-to-refresh widget implementation |
+| 📸 **Screenshot** (Screen Capture) | Screen capture functionality |
+| 📤 **Share Plus** (Sharing) | Cross-platform content sharing |
 
 ## Core Principles
+
+### 🚀 Optimistic UI Architecture
+- **Fire-and-forget pattern** - Optimistic updates for instant user experience
+- **Immediate UI Updates** - Interface responds instantly to user actions
+- **Background Synchronization** - API calls run asynchronously without blocking UI
+- **Local State Authority** - Cache and state serve as the source of truth
+- **Graceful Failure Handling** - API failures don't revert optimistic UI changes
 
 ### 🎨 Modern UI/UX Design
 - **Material 3 Design** - Following Google's latest design system
@@ -37,7 +60,7 @@
 - **Responsive Layout** - Optimized for various screen sizes
 - **Smooth Animations** - Engaging micro-interactions and transitions
 
-### 🚀 Performance Optimizations
+### 🚅 Performance Optimizations
 - **Route Preloading** - Faster navigation with preloaded routes
 - **Efficient State Management** - Minimal rebuilds and optimal performance
 - **Image Caching** - Optimized image loading and caching

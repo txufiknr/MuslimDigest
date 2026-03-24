@@ -164,13 +164,13 @@ enum FeedType {
     }
   }
 
-  Future<bool> loadWithRef(Ref ref, {String? topic, int? timeoutMs, int? limit, bool force = false, String? requestId}) {
+  Future<bool> loadWithRef(Ref ref, {String? topic, int? timeoutMs, int? limit, bool force = false, String? requestId, Map<String, String>? queryParams}) {
     switch (this) {
       case digest: return ref.read(feedProvider.notifier).load(timeoutMs: timeoutMs, forceRefresh: force, requestId: requestId);
       case latest: return ref.read(feedLatestProvider.notifier).load(topic: topic, limit: limit, forceRefresh: force, requestId: requestId);
       case trending: return ref.read(feedTrendingProvider.notifier).load(limit: limit, forceRefresh: force, requestId: requestId);
       case liked: return ref.read(feedLikedProvider.notifier).load(limit: limit, forceRefresh: force, requestId: requestId);
-      case saved: return ref.read(feedSavedProvider.notifier).load(limit: limit, forceRefresh: force, requestId: requestId);
+      case saved: return ref.read(feedSavedProvider.notifier).load(limit: limit, forceRefresh: force, requestId: requestId, queryParams: queryParams);
       case history: return ref.read(feedHistoryProvider.notifier).load(limit: limit, forceRefresh: force, requestId: requestId);
       case notInterested: return ref.read(feedNotInterestedProvider.notifier).load(limit: limit, forceRefresh: force, requestId: requestId);
     }

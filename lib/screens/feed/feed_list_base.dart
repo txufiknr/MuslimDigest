@@ -23,6 +23,7 @@ import 'package:muslimdigest/widgets/components/app_bar.dart';
 import 'package:muslimdigest/widgets/components/cached_image.dart';
 import 'package:muslimdigest/widgets/components/icon_button.dart';
 import 'package:muslimdigest/widgets/components/placeholder.dart';
+import 'package:muslimdigest/widgets/collections/collection_search.dart';
 
 abstract class FeedListBasePage extends ConsumerStatefulWidget {
   final String title;
@@ -47,6 +48,9 @@ abstract class FeedListBasePage extends ConsumerStatefulWidget {
   /// Get the appropriate provider for this feed type
   NotifierProvider<BaseFeedNotifier, BaseFeedState> get provider;
 
+  /// Get query parameters for API calls (override in subclasses if needed)
+  Map<String, String>? get queryParams => null;
+
   @override
   ConsumerState<FeedListBasePage> createState() => _FeedListBasePageState();
 }
@@ -54,10 +58,16 @@ abstract class FeedListBasePage extends ConsumerStatefulWidget {
 class _FeedListBasePageState extends ConsumerState<FeedListBasePage> {
   final ScrollController _scrollController = ScrollController();
   final RefreshController _refreshController = RefreshController(initialRefresh: false);
+  final TextEditingController _searchController = TextEditingController();
   
   // Request cancellation tracking
   String? _currentFeedRequestId;
   static int _requestCounter = 0;
+  
+  // Search state
+  List<FeedItem> _allFeeds = [];
+  List<FeedItem> _filteredFeeds = [];
+  String _searchQuery = '';
   
   AppRepository get r => ref.read(appRepositoryProvider);
 
@@ -65,6 +75,7 @@ class _FeedListBasePageState extends ConsumerState<FeedListBasePage> {
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
+    _searchController.addListener(_onSearchChanged);
     
     // Delay the initial load to avoid modifying provider during build cycle
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -76,6 +87,7 @@ class _FeedListBasePageState extends ConsumerState<FeedListBasePage> {
   void dispose() {
     _scrollController.dispose();
     _refreshController.dispose();
+    _searchController.dispose();
     super.dispose();
   }
 
@@ -90,13 +102,30 @@ class _FeedListBasePageState extends ConsumerState<FeedListBasePage> {
     }
   }
 
+  void _onSearchChanged() {
+    final query = _searchController.text.trim();
+    setState(() {
+      _searchQuery = query;
+      _filteredFeeds = _performSearch(_allFeeds, query);
+    });
+  }
+
+  List<FeedItem> _performSearch(List<FeedItem> feeds, String query) {
+    if (query.isEmpty) return feeds;
+    
+    return feeds.where((feed) => feed.matchSearchTerm(query)).toList();
+  }
+
   Future<void> _loadInitialFeeds() async {
     final state = ref.read(widget.provider);
 
     // No cached data, or there might be more items - must load from backend
     if (state.isEmpty || state.hasMore) {
       final notifier = ref.read(widget.provider.notifier);
-      await notifier.loadFromEndpoint(widget.feedType.endpoint);
+      await notifier.loadFromEndpoint(
+        widget.feedType.endpoint,
+        queryParams: widget.queryParams,
+      );
     }
   }
 
@@ -115,6 +144,7 @@ class _FeedListBasePageState extends ConsumerState<FeedListBasePage> {
       feedType: widget.feedType,
       force: true,
       requestId: _currentFeedRequestId,
+      queryParams: widget.queryParams,
     );
     
     // Only show error if this is still the current request
@@ -226,7 +256,15 @@ class _FeedListBasePageState extends ConsumerState<FeedListBasePage> {
   Widget build(BuildContext context) {
     final h = MyHelper(context);
     final state = ref.watch(widget.provider);
-    final list = _buildFeedList(h, state);
+    
+    // Update search data when provider state changes
+    final currentFeeds = state.items ?? [];
+    if (currentFeeds != _allFeeds) {
+      _allFeeds = currentFeeds;
+      _filteredFeeds = _performSearch(_allFeeds, _searchQuery);
+    }
+    
+    final list = _buildFeedList(h, state, _filteredFeeds);
 
     if (!widget.useScaffold) return list;
 
@@ -237,60 +275,90 @@ class _FeedListBasePageState extends ConsumerState<FeedListBasePage> {
     );
   }
 
-  Widget _buildEmptyState(MyHelper h) {
+  Widget _buildEmptyState(MyHelper h, {bool isSearchResult = false}) {
+    final title = isSearchResult 
+      ? 'No feeds found for "$_searchQuery"' 
+      : 'No ${widget.title.toLowerCase()} yet';
+    final footer = isSearchResult 
+      ? 'Try a different search term' 
+      : widget.placeholderTooltip;
+    
     return MyPlaceholder(
-      'No ${widget.title.toLowerCase()} yet',
-      footer: widget.placeholderTooltip,
+      title,
+      footer: footer,
       padding: 48,
       icon: Icon(
-        widget.placeholderIcon,
+        isSearchResult ? CupertinoIcons.search : widget.placeholderIcon,
         size: 64,
         color: AppColors.primary.withValues(alpha: 0.5),
       ),
     ).center();
   }
 
-  Widget _buildFeedList(MyHelper h, BaseFeedState state) {
-    final feeds = state.items ?? [];
-
+  Widget _buildFeedList(MyHelper h, BaseFeedState state, List<FeedItem> feeds) {
     return LayoutBuilder(
       builder: (context, constraints) {
         final maxHeight = constraints.maxHeight;
-        return SmartRefresher(
-          physics: state.isGetting ? NeverScrollableScrollPhysics() : AlwaysScrollableScrollPhysics(),
-          controller: _refreshController,
-          enablePullDown: true,
-          enablePullUp: false,
-          onRefresh: _onRefresh,
-          header: CustomHeader(
-            builder: (context, mode) {
-              if (mode == RefreshStatus.canRefresh || mode == RefreshStatus.refreshing) {
-                return CupertinoActivityIndicator(animating: mode == RefreshStatus.refreshing).squared(24).center();
-              }
-              return SizedBox.shrink();
-            },
-          ),
-          child: ListView.builder(
-            controller: _scrollController,
-            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: AppThemes.contentPadding),
-            itemCount: feeds.length + (feeds.isEmpty || state.hasMore ? 1 : 0),
-            itemBuilder: (context, index) {
-              // Empty state
-              if (state.isGetting) {
-                return _buildLoadingIndicator().sized(height: maxHeight);
-              }
-              if (feeds.isEmpty) {
-                return _buildEmptyState(h).sized(height: maxHeight);
-              }
-        
-              // Loading more indicator
-              if (index == feeds.length) {
-                return CupertinoActivityIndicator().squared(24).center();
-              }
+        return Column(
+          children: [
+            // Search widget
+            CollectionSearchWidget(
+              controller: _searchController,
+              hintText: 'Search ${widget.title.toLowerCase()}...',
+              onClear: () {
+                setState(() {
+                  _searchQuery = '';
+                  _filteredFeeds = _allFeeds;
+                });
+              },
+              onChanged: (query) {
+                // Real-time search is handled by _onSearchChanged listener
+              },
+            ).withPadding(
+              horizontal: AppThemes.contentPadding,
+              vertical: 8
+            ),
+            
+            // Feed list
+            Expanded(
+              child: SmartRefresher(
+                physics: state.isGetting ? NeverScrollableScrollPhysics() : AlwaysScrollableScrollPhysics(),
+                controller: _refreshController,
+                enablePullDown: true,
+                enablePullUp: false,
+                onRefresh: _onRefresh,
+                header: CustomHeader(
+                  builder: (context, mode) {
+                    if (mode == RefreshStatus.canRefresh || mode == RefreshStatus.refreshing) {
+                      return CupertinoActivityIndicator(animating: mode == RefreshStatus.refreshing).squared(24).center();
+                    }
+                    return SizedBox.shrink();
+                  },
+                ),
+                child: ListView.builder(
+                  controller: _scrollController,
+                  padding: const EdgeInsets.symmetric(vertical: 16, horizontal: AppThemes.contentPadding),
+                  itemCount: feeds.length + (feeds.isEmpty || state.hasMore ? 1 : 0),
+                  itemBuilder: (context, index) {
+                    // Empty state
+                    if (state.isGetting) {
+                      return _buildLoadingIndicator().sized(height: maxHeight);
+                    }
+                    if (feeds.isEmpty) {
+                      return _buildEmptyState(h, isSearchResult: _searchQuery.isNotEmpty).sized(height: maxHeight);
+                    }
               
-              return _buildFeedItem(h, feeds[index]);
-            },
-          ),
+                    // Loading more indicator
+                    if (index == feeds.length) {
+                      return CupertinoActivityIndicator().squared(24).center();
+                    }
+                    
+                    return _buildFeedItem(h, feeds[index]);
+                  },
+                ),
+              ),
+            ),
+          ],
         );
       }
     );

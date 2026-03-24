@@ -68,8 +68,27 @@ Future<bool> like(String clusterId, bool value) async {
   return response.success;
 }
 
-Future<bool> save(String clusterId, bool value) async {
-  final response = await ApiService.post('feed/save', {'clusterId': clusterId, 'value': value});
+Future<bool> save(String clusterId, bool value, {String? collection}) async {
+  final response = await ApiService.post('feed/save', {
+    'clusterId': clusterId, 
+    'value': value,
+    if (collection != null && collection.isNotEmpty) 'collection': collection,
+  });
+  return response.success;
+}
+
+/// Update the collection for an already saved feed
+Future<bool> updateCollection(String clusterId, String? collection) async {
+  final response = await ApiService.put('feed/save', {
+    'clusterId': clusterId,
+    if (collection != null && collection.isNotEmpty) 'collection': collection,
+  });
+  return response.success;
+}
+
+/// Remove a feed from saved items or uncategorize it
+Future<bool> removeSavedFeed(String clusterId, {String action = 'remove'}) async {
+  final response = await ApiService.delete('feed/saved?clusterId=$clusterId&action=$action');
   return response.success;
 }
 

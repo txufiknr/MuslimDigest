@@ -7,6 +7,7 @@ import 'package:muslimdigest/screens/settings/personalization.dart';
 import 'package:muslimdigest/screens/feed/saved_feeds.dart';
 import 'package:muslimdigest/screens/feed/single_feed.dart';
 import 'package:muslimdigest/screens/settings/hidden_content.dart';
+import 'package:muslimdigest/screens/collections/collections_page.dart';
 import '../screens/onboarding/splash.dart';
 import '../screens/home.dart';
 import '../screens/onboarding/onboarding.dart';
@@ -70,7 +71,15 @@ class AppRouter {
       GoRoute(
         path: '/saved_feeds',
         name: 'saved_feeds',
-        builder: (context, state) => const SavedFeedsPage(),
+        builder: (context, state) {
+          final collection = state.uri.queryParameters['collection'];
+          return SavedFeedsPage(collection: collection);
+        },
+      ),
+      GoRoute(
+        path: '/collections',
+        name: 'collections',
+        builder: (context, state) => const CollectionsPage(),
       ),
       GoRoute(
         path: '/history',

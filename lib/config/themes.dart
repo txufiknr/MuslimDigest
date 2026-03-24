@@ -47,6 +47,7 @@ class AppThemes {
     required Color onSurface,
     required Color outline,
     required Color tertiary,
+    required Color tertiaryContainer,
   }) {
     return ColorScheme.fromSeed(
       seedColor: AppColors.primary,
@@ -63,6 +64,7 @@ class AppThemes {
       onError: Colors.white,
       outline: outline,
       tertiary: tertiary,
+      tertiaryContainer: tertiaryContainer,
     );
   }
 
@@ -74,6 +76,7 @@ class AppThemes {
     onSurface: AppColors.textPrimaryLight,
     outline: Colors.grey[200]!,
     tertiary: AppColors.mutedLight,
+    tertiaryContainer: AppColors.borderLight,
   );
 
   static ColorScheme get darkColorScheme => _buildColorScheme(
@@ -84,6 +87,7 @@ class AppThemes {
     onSurface: AppColors.textPrimaryDark,
     outline: Colors.grey[800]!,
     tertiary: AppColors.mutedDark,
+    tertiaryContainer: AppColors.borderDark,
   );
 
   // Button Styles

@@ -61,8 +61,8 @@ class NotificationController {
   /// Share notification content
   static Future<void> _shareContent(Map<String, String?> data) async {
     try {
-      final title = data['title'] ?? 'Islamic Reminder';
-      final body = data['body'] ?? 'Daily Islamic inspiration';
+      final title = data['title'] ?? APP_NAME;
+      final body = data['body'] ?? APP_DESCRIPTION;
       
       await sharePlus.share(
         ShareParams(

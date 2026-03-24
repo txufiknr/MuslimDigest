@@ -47,7 +47,7 @@ extension NullableStringExtension on String? {
 extension ListNullableStringExtension on List<String?> {
   /// Check if any string in the list contains any of the provided keywords (case-insensitive)
   bool containsAnyIgnoreCase(List<String> keywords) {
-    return any((str) => str?.containsAnyIgnoreCase(keywords) == true);
+    return whereType<String>().any((str) => str.containsAnyIgnoreCase(keywords));
   }
 }
 

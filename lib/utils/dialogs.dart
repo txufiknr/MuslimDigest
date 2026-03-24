@@ -37,10 +37,13 @@ Future<dynamic> showBottomModalSheet(BuildContext context, List<Widget> widgets,
     backgroundColor: h.currentTheme.colorScheme.surface,
     shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(AppThemes.modalRadius))),
     clipBehavior: Clip.antiAlias,
+    useSafeArea: false,
     builder: (BuildContext context) {
+      final bottomPadding = MediaQuery.viewPaddingOf(context).bottom;
       return Padding(
         padding: EdgeInsets.all(AppThemes.contentPadding).copyWith(
-          bottom: h.viewInsetsBottom + AppThemes.contentPadding * 2,
+          // bottom: h.viewInsetsBottom + AppThemes.contentPadding * 2,
+          bottom: bottomPadding + AppThemes.contentPadding * 2,
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,

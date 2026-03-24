@@ -6,16 +6,23 @@ import 'package:muslimdigest/screens/feed/feed_list_base.dart';
 import 'package:muslimdigest/variables/feed.dart';
 
 class SavedFeedsPage extends FeedListBasePage {
-  const SavedFeedsPage({super.key})
+  final String? collection;
+  
+  const SavedFeedsPage({super.key, this.collection})
       : super(
-          title: 'Saved Feeds',
+          title: collection ?? 'Saved Feeds',
           feedType: FeedType.saved,
           actionIcon: CupertinoIcons.bookmark_fill,
           actionTooltip: 'Unsave',
           placeholderIcon: CupertinoIcons.bookmark,
-          placeholderTooltip: "Let's save some feeds before they disappear",
+          placeholderTooltip: collection != null 
+            ? 'No feeds in "$collection"' 
+            : "Let's save some feeds before they disappear",
         );
 
   @override
   NotifierProvider<BaseFeedNotifier, BaseFeedState> get provider => feedSavedProvider;
+  
+  @override
+  Map<String, String>? get queryParams => collection != null ? {'collection': collection!} : null;
 }

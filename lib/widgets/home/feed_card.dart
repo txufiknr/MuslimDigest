@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lottie/lottie.dart';
 import 'package:muslimdigest/config/feeds.dart';
+import 'package:muslimdigest/providers/feed_type.dart';
 import 'package:muslimdigest/providers/read_count_states.dart';
 import 'package:muslimdigest/providers/topic.dart';
 import 'package:muslimdigest/utils/contents.dart';
@@ -25,6 +26,7 @@ import 'package:muslimdigest/utils/functions.dart';
 import 'package:muslimdigest/utils/helpers.dart';
 import 'package:muslimdigest/variables/app.dart';
 import 'package:muslimdigest/variables/feed.dart';
+import 'package:muslimdigest/variables/time.dart';
 import 'package:muslimdigest/widgets/components/badge.dart';
 import 'package:muslimdigest/widgets/components/button.dart';
 import 'package:muslimdigest/widgets/components/cached_image.dart';
@@ -39,6 +41,7 @@ import 'package:muslimdigest/widgets/home/feedback_form.dart';
 import 'package:muslimdigest/api/feeds.dart';
 import 'package:muslimdigest/providers/user/preferences.dart';
 import 'package:muslimdigest/services/feed_state_service.dart';
+import 'package:muslimdigest/widgets/collections/collection_selection_sheet.dart';
 import 'package:muslimdigest/widgets/user/reads_rank.dart';
 import 'package:path_provider/path_provider.dart';
 import '../../models/feed.dart';
@@ -97,11 +100,95 @@ class _FeedCardState extends ConsumerState<FeedCard> with AutomaticKeepAliveClie
   void _save() async {
     if (_feedId == null) return;
     
+    // Predefine the new save state to avoid ambiguity
+    final isSaved = !_isSaved;
+    
     try {
-      await _notifier.update(_feedId, isSaved: !_isSaved);
+      // Step 1: Save immediately (fire and forget, uncategorized)
+      await _notifier.update(_feedId, isSaved: isSaved);
+      
+      // Step 2: If saving (not unsaving), show collection selection
+      if (isSaved && mounted) {
+        _showCollectionSelectionSheet();
+      }
     } catch (e) {
       // Silent error handling - UI will revert automatically on state rebuild
       log('[FeedCard] Save update failed: $e');
+    }
+  }
+
+  void _showCollectionSelectionSheet() {
+    if (_feedId == null || widget.feedItem == null) return;
+    
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) => CollectionSelectionSheet(
+        feedId: _feedId,
+        feedTitle: widget.feedItem!.displayTitle,
+        onCollectionSelected: (collection) {
+          _updateFeedCollection(collection);
+        },
+        onCollectionCreated: _createCollectionAndSave,
+      ),
+    );
+  }
+
+  void _updateFeedCollection(String collection) async {
+    if (_feedId == null) return;
+    
+    try {
+      final success = await updateCollection(_feedId, collection);
+      if (!mounted) return;
+      if (success) {
+        showSnackBarSuccess(context, 'Saved to "$collection"');
+        
+        // Update cache with collection information
+        await FeedStateService.updateSaveStatusEverywhere(
+          ref, 
+          widget.feedItem!, 
+          true, 
+          specificCollection: collection,
+          updateCache: true, // Enable cache updates now that collection is known
+        );
+      } else {
+        showSnackBarError(context, 'Failed to update collection');
+      }
+    } catch (e) {
+      log('[FeedCard] Update collection failed: $e');
+      if (mounted) {
+        showSnackBarError(context, 'Failed to update collection');
+      }
+    }
+  }
+
+  Future<void> _createCollectionAndSave(String collection) async {
+    if (_feedId == null) return;
+    
+    try {
+      // Collections are created implicitly when saving with a new collection name
+      // Just save directly to the new collection - backend will handle creation
+      final success = await save(_feedId, true, collection: collection);
+      if (!mounted) return;
+      if (success) {
+        showSnackBarSuccess(context, 'Created and saved to "$collection"');
+        
+        // Update cache with collection information using FeedStateService
+        await FeedStateService.updateSaveStatusEverywhere(
+          ref, 
+          widget.feedItem!,
+          true,
+          specificCollection: collection,
+          updateCache: true, // Enable cache updates now that collection is known
+        );
+      } else {
+        showSnackBarError(context, 'Failed to save to new collection');
+      }
+    } catch (e) {
+      log('[FeedCard] Create collection and save failed: $e');
+      if (mounted) {
+        showSnackBarError(context, 'Failed to create collection');
+      }
     }
   }
 
@@ -138,7 +225,7 @@ class _FeedCardState extends ConsumerState<FeedCard> with AutomaticKeepAliveClie
       
       // Use application documents directory for better compatibility
       final directory = await getApplicationDocumentsDirectory();
-      final imageName = "$_feedId.png";
+      final imageName = "${_feedId ?? 'streak'}_$todayString.png";
       
       // Ensure directory exists
       if (!await directory.exists()) {
@@ -190,7 +277,8 @@ class _FeedCardState extends ConsumerState<FeedCard> with AutomaticKeepAliveClie
       ...currentReadCountStates,
       readCountStateKey: 0,
     });
-    widget.feedType.load(ref, forceRefresh: true);
+    // Preserve the current topic when going back to page one so users stay in the same topic feed
+    widget.feedType.load(ref, topic: currentTopic, forceRefresh: true);
   }
 
   @override
@@ -472,6 +560,8 @@ class _FeedHeader extends ConsumerWidget {
           log('[feed_card] feedItem.hasYouTubeVideo = ${feedItem.hasYouTubeVideo}');
           log('[feed_card] feedItem.youTubeVideoID = ${feedItem.youTubeVideoID}');
           log('[feed_card] feedItem.displayImageUrl = ${feedItem.displayImageUrl}');
+          ref.read(feedTypeProvider.notifier).setValue(FeedType.latest);
+          ref.read(topicProvider.notifier).clear();
         } else {
           if (hasYouTubeVideo) openUrl(feedItem.videoUrl!);
         }

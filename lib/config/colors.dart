@@ -23,6 +23,8 @@ class AppColors {
   static const Color info = Color(0xFF64B5F6);
   static const Color mutedLight = Color(0xFF9E9E9E);
   static const Color mutedDark = Color(0xFF8D8D8D);
+  static const Color borderLight = Color.fromARGB(255, 145, 145, 145);
+  static const Color borderDark = Color.fromARGB(255, 107, 107, 107);
   
   // Background Colors
   static const Color backgroundLight = Color(0xFFFFFFFF);

@@ -36,7 +36,7 @@ MaterialColor getTopicColor(String? topic) {
     case 'aqeedah': return Colors.deepOrange;
     case 'dua': return Colors.lightGreen;
     case 'eschatology': return Colors.blueGrey;
-    case 'ethic': return Colors.blue;
+    case 'ethic': return Colors.deepOrange;
     case 'family': return Colors.purple;
     case 'fasting': return Colors.lime;
     case 'fiqh': return Colors.indigo;
@@ -46,7 +46,7 @@ MaterialColor getTopicColor(String? topic) {
     case 'opinion': return Colors.red;
     case 'quran': return Colors.teal;
     case 'seerah': return Colors.brown;
-    case 'social': return Colors.green;
+    case 'social': return Colors.orange;
     case 'worship': return Colors.deepPurple;
     default: return Colors.teal;
   }

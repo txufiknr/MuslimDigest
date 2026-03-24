@@ -14,12 +14,14 @@ import 'package:muslimdigest/providers/read_count.dart';
 import 'package:muslimdigest/providers/user/streaks.dart';
 import 'package:muslimdigest/providers/topic.dart';
 import 'package:muslimdigest/providers/user/user.dart';
+import 'package:muslimdigest/utils/app_repository.dart';
 import 'package:muslimdigest/utils/contents.dart';
 import 'package:muslimdigest/utils/dialogs.dart';
 import 'package:muslimdigest/utils/extensions.dart';
 import 'package:muslimdigest/utils/format.dart';
 import 'package:muslimdigest/utils/helpers.dart';
 import 'package:muslimdigest/providers/user/preferences.dart';
+import 'package:muslimdigest/utils/time.dart';
 import 'package:muslimdigest/variables/feed.dart' show FeedType;
 import 'package:muslimdigest/widgets/components/button.dart';
 import 'package:muslimdigest/widgets/components/card.dart';
@@ -96,6 +98,8 @@ class _HomeHeaderState extends ConsumerState<HomeHeader> {
     final h = MyHelper(context);
 
     // States
+    final r = ref.read(appRepositoryProvider);
+    final shouldShowDigest = r.shouldShowDigest;
     final firstName = ref.read(userProvider).firstName;
     final readCount = ref.read(readCountProvider);
     final streaks = ref.read(streaksProvider);
@@ -103,17 +107,24 @@ class _HomeHeaderState extends ConsumerState<HomeHeader> {
     // Conditions
     final currentStreak = streaks.currentStreak;
     final readTarget = ref.read(feedProvider).items?.length ?? DAILY_READ_TARGET;
-    final isStreak = readCount == readTarget;
+    // final isStreak = readCount == readTarget;
+    final isStreakToday = isToday(streaks.lastReadAt);
     final isStreakAlive = currentStreak > 0;
 
     // Messages
     final streakMessage = isStreakAlive ? "You’ve been learning for ${formatNumber(currentStreak)} days in a row 🌱" : "Let’s start a fresh reading rhythm 🌱";
-    final streakHint = isStreak ? "Come back tomorrow for another streak." : "Read ${readTarget - readCount} more for next streak!";
+    final streakHint = isStreakToday
+        ? "Come back tomorrow for another streak."
+        : shouldShowDigest
+          ? "Read ${readTarget - readCount} more for next streak!"
+          : currentStreak > 0
+            ? "Keep up your daily reading habit"
+            : "Nurture your daily knowledge habit";
 
     await showBottomModalSheetContent(context, title: "Reading Streak", widgets: [
       Text("$GREETINGS, $firstName. $streakMessage", style: h.currentTextTheme.bodyMedium,),
       StreaksCard().withPaddingVertical(16),
-      Text(streakHint, style: h.currentTextTheme.bodyMedium?.copyWith(fontSize: 15, fontStyle: FontStyle.italic),),
+      Text(streakHint, textAlign: TextAlign.center, style: h.currentTextTheme.bodyMedium?.copyWith(fontSize: 15, fontStyle: FontStyle.italic),).center(),
       SizedBox(height: 16,),
       MyButton(text: "Keep reading", icon: Icon(CupertinoIcons.book), onPressed: context.pop),
     ]);

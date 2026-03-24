@@ -1,3 +1,10 @@
+v1.0.4
+search liked and saved feed
+save feed to collection
+fixed bug not opening digest on new day
+fixed notification small icon
+fixed back to page one in specific topic feed
+
 v1.0.1
 added 1 extra card "you've reached the end" with "back to page one" button
 optimized preferences changed handler

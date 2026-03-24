@@ -10,6 +10,7 @@ import 'package:muslimdigest/config/constants.dart';
 import 'package:muslimdigest/models/user.dart';
 import 'package:muslimdigest/providers/feed/feed.dart';
 import 'package:muslimdigest/providers/feed_type.dart';
+import 'package:muslimdigest/providers/read_count.dart';
 import 'package:muslimdigest/providers/read_count_states.dart';
 import 'package:muslimdigest/providers/read_last_date.dart';
 import 'package:muslimdigest/providers/topic.dart';
@@ -47,8 +48,8 @@ class HomePage extends ConsumerStatefulWidget {
 class _HomePageState extends ConsumerState<HomePage> with RouteAware {
   late final Debounce _digestLoadDebounce = const Duration(milliseconds: 500).debounce;
   late final AppLifecycleListener _lifeCycleListener;
-  UserPreferences? lastUserPreferences;
-  DateTime? lastActiveDate;
+  UserPreferences? _lastUserPreferences;
+  DateTime? _lastActiveDate;
   var _isWillExit = false;
 
   // Request cancellation tracking
@@ -60,19 +61,28 @@ class _HomePageState extends ConsumerState<HomePage> with RouteAware {
   FeedType get _currentFeedType => ref.read(feedTypeProvider);
   bool get _isFeedLoading => ref.watch(feedTypeProvider).watch(ref).isLoading;
   String? get _currentTopic => ref.read(topicProvider);
-  bool get _isDigest => _currentFeedType.isDigest;
+  // bool get _isDigest => _currentFeedType.isDigest;
 
   /// Init feed loading with duplicate prevention
   void _initFeed() {
+    if (_onActive()) return;
+
     final feedType = _currentFeedType;
+    if (!feedType.isDigest && r.homeFeedType.isDigest) {
+      log("[home] 👋 Welcome back! Let's continue with your daily digest");
+      _openFeed(force: r.shouldForceReloadDigest);
+      return;
+    }
+
     final feedState = feedType.read(ref);
-    
+
     // Check if feed is already loading (from welcome pre-load or other source)
     if (feedState.isLoading) {
       log('🧾 Feed ${feedType.name} is already loading, skipping duplicate request...');
       return;
     }
     
+    // If not loading but feed is empty, reload it
     if (feedState.isNone) {
       log('🧾 Feed ${feedType.name} is empty and need loading...');
       _reloadFeed();
@@ -134,14 +144,25 @@ class _HomePageState extends ConsumerState<HomePage> with RouteAware {
   }
 
   void _onInactive() {
-    lastActiveDate = DateTime.now();
+    _lastActiveDate = DateTime.now();
     _saveAllData();
   }
 
-  void _onActive() {
-    final shouldReload = _isDigest && !isToday(lastActiveDate);
-    if (shouldReload) log("[home] 👋 Welcome back! It's a new day since you left, we'll reload your feed");
-    _checkNewDigest(force: shouldReload);
+  bool get _isNewDay => !isToday(_lastActiveDate) || r.shouldForceReloadDigest;
+
+  bool _onActive() {
+    // final shouldReload = _isDigest && !isToday(_lastActiveDate);
+    // if (shouldReload) log("[home] 👋 Welcome back! It's a new day since you left, we'll reload your feed");
+    // _checkNewDigest(force: shouldReload);
+    log('🧾 [init] _onActive _isNewDay: $_isNewDay');
+    log('🧾 [init] _onActive r.homeFeedType: ${r.homeFeedType}');
+    if (_isNewDay && r.homeFeedType.isDigest) {
+      log("[home] 👋 Welcome back! It's a new day since you left, we'll load your digest");
+      _openFeed(force: true);
+      return true;
+    }
+    _checkNewDigest();
+    return false;
   }
 
   /// Save all user data
@@ -150,7 +171,7 @@ class _HomePageState extends ConsumerState<HomePage> with RouteAware {
   }
 
   void _saveUserPreferences() {
-    lastUserPreferences = ref.read(preferencesProvider);
+    _lastUserPreferences = ref.read(preferencesProvider);
   }
 
   void _reloadFeed() {
@@ -164,19 +185,19 @@ class _HomePageState extends ConsumerState<HomePage> with RouteAware {
   }
 
   void _compareUserPreferences() async {
-    if (lastUserPreferences == null) return;
+    if (_lastUserPreferences == null) return;
 
     final userPreferences = ref.read(preferencesProvider);
 
     // Check if topic preferences have changed
-    final topicsChanged = !setEquals(userPreferences.topics, lastUserPreferences!.topics);
-    final avoidedTopicsChanged = !setEquals(userPreferences.avoidedTopics, lastUserPreferences!.avoidedTopics);
+    final topicsChanged = !setEquals(userPreferences.topics, _lastUserPreferences!.topics);
+    final avoidedTopicsChanged = !setEquals(userPreferences.avoidedTopics, _lastUserPreferences!.avoidedTopics);
     final isChanged = topicsChanged || avoidedTopicsChanged;
 
     log('[_compareUserPreferences] topicsChanged = $topicsChanged');
     log('[_compareUserPreferences] avoidedTopicsChanged = $avoidedTopicsChanged');
 
-    lastUserPreferences = null;
+    _lastUserPreferences = null;
 
     if (!isChanged) return;
 
@@ -299,11 +320,11 @@ class _HomePageState extends ConsumerState<HomePage> with RouteAware {
     log('[home] _openFeed feedTypeKey = $feedTypeKey');
     log('[home] _openFeed readCount = $readCount');
     
-    // Skip reloading if user has already read items
-    if (readCount > 0) return;
+    // Skip reloading if user has already read items and not forcing reload
+    if (readCount > 0 && !force) return;
 
     // Load feed - cache check is handled internally
-    _loadFeed(feedType: currentFeedType);
+    _loadFeed(feedType: currentFeedType, force: force);
   }
 
   Future<void> _checkNewDigest({bool force = false}) async {
@@ -389,6 +410,18 @@ class _HomePageState extends ConsumerState<HomePage> with RouteAware {
       final readLastDate = ref.read(readLastDateProvider);
       final isNewDay = readLastDate == null || !isToday(readLastDate);
       if (!isNewDay) return;
+      if (!_currentFeedType.isDigest) return;
+
+      _digestLoadDebounce.run(_showDigestSummary);
+    });
+    
+    // Listen for digest feed type change and show digest summary if no items read
+    ref.listen<FeedType>(feedTypeProvider, (previous, next) {
+      if (!mounted || previous == next) return;
+      if (!next.isDigest) return; // if not digest
+
+      final readCount = ref.read(readCountProvider);
+      if (readCount > 0) return; // if already read some items
 
       _digestLoadDebounce.run(_showDigestSummary);
     });

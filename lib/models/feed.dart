@@ -59,6 +59,8 @@ class FeedItem {
     this.relatedEvent,
   });
 
+  bool matchSearchTerm(String keyword) => [title, displayTitle, summary, topic, ...keywords].containsAnyIgnoreCase([keyword]);
+
   bool get hasVideo => videoUrl != null;
   bool get hasYouTubeVideo => videoUrl?.contains('youtu') == true;
   bool get isNuanced => ['quran', 'hadith', 'fiqh'].contains(cluster.contentType);

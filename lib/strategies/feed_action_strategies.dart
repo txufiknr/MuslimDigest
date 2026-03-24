@@ -96,7 +96,7 @@ class UnsaveFeedStrategy extends BaseFeedActionStrategy {
   @override
   Future<void> updateUI(WidgetRef ref, FeedItem feed) async {
     // Update save status across all feed types immediately
-    await FeedStateService.updateSaveStatusEverywhere(ref, feed.id, false);
+    await FeedStateService.updateSaveStatusEverywhere(ref, feed, false);
     
     // Update user saved count immediately
     final currentUser = ref.read(userProvider);
