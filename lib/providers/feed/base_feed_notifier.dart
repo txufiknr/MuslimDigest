@@ -221,13 +221,13 @@ abstract class BaseFeedNotifier extends Notifier<BaseFeedState> {
         currentItem,
         isSaved,
         skipFeedType: currentFeedType,
-        updateCache: false, // Defer cache updates for consistent behavior
+        updateCache: !isSaved, // Update cache immediately when un-saving, defer when saving
       );
       
       if (isSaved) {
         log('[BaseFeedNotifier] Deferring cache update for saved item $feedId until collection is selected');
       } else {
-        log('[BaseFeedNotifier] Deferring cache update for unsaved item $feedId (consistent with save behavior)');
+        log('[BaseFeedNotifier] Updating cache immediately for unsaved item $feedId');
       }
     }
 
