@@ -56,9 +56,13 @@ class _HomePageState extends ConsumerState<HomePage> with RouteAware {
   String? _currentFeedRequestId;
   static int _requestCounter = 0;
   
+  /// Digest summary display tracking (idempotent)
+  bool _isDigestSummaryShowing = false;
+  
   /// Read notifiers
   AppRepository get r => ref.read(appRepositoryProvider);
   FeedType get _currentFeedType => ref.read(feedTypeProvider);
+  int get _currentReadCount => ref.read(readCountProvider);
   bool get _isFeedLoading => ref.watch(feedTypeProvider).watch(ref).isLoading;
   String? get _currentTopic => ref.read(topicProvider);
   // bool get _isDigest => _currentFeedType.isDigest;
@@ -89,7 +93,26 @@ class _HomePageState extends ConsumerState<HomePage> with RouteAware {
     }
   }
 
-  void _showDigestSummary() async {
+  /// Idempotent digest summary display (safe to call multiple times, only shows once)
+  void _showDigestSummaryIdempotent() async {
+    if (_isDigestSummaryShowing) {
+      log('[HomePage] 👀 Digest summary already showing, skipping duplicate call');
+      return;
+    }
+    
+    if (!mounted) return;
+    
+    _isDigestSummaryShowing = true;
+    log("[HomePage] 🌟 Showing today's digest summary");
+    
+    // Show digest summary and reset flag when complete
+    await _showDigestSummary();
+
+    // Reset flag when dialog is dismissed
+    _isDigestSummaryShowing = false;
+  }
+
+  Future<void> _showDigestSummary() async {
     if (!mounted) return;
 
     final feedItems = ref.read(feedProvider).items ?? [];
@@ -158,7 +181,8 @@ class _HomePageState extends ConsumerState<HomePage> with RouteAware {
       log("[home] 👋 Welcome back! It's a new day since you left, we'll load your digest");
       _openFeed(force: true);
       
-      // Show digest summary after feed loads (handled by the listener above)
+      // Ensure digest summary shows on new day (idempotent)
+      _showDigestSummaryIdempotent();
       return true;
     }
     
@@ -414,10 +438,10 @@ class _HomePageState extends ConsumerState<HomePage> with RouteAware {
       
       log('[HomePage] Feed loaded: isNewDay=$isNewDay, isNewDayBasedOnActive=$isNewDayBasedOnActive, isDigest=${_currentFeedType.isDigest}');
       
-      // Only trigger digest summary from feed listener when NOT a new day scenario
+      // Trigger digest summary from feed listener (idempotent - safe to call multiple times)
       // (New day scenarios are handled by _onActive and feed type change listener)
-      if (_currentFeedType.isDigest && (isNewDay || isNewDayBasedOnActive)) {
-        _digestLoadDebounce.run(_showDigestSummary);
+      if (_currentFeedType.isDigest) {
+        _digestLoadDebounce.run(_showDigestSummaryIdempotent);
       }
     });
     
@@ -426,14 +450,14 @@ class _HomePageState extends ConsumerState<HomePage> with RouteAware {
       if (!mounted || previous == next) return;
       if (!next.isDigest) return; // if not digest
 
-      final readCount = ref.read(readCountProvider);
+      final readCount = _currentReadCount;
       final isNewDay = _isNewDay;
       
       log('[HomePage] Feed type changed to digest: readCount=$readCount, isNewDay=$isNewDay');
       
-      // Show digest summary if no items read OR it's a new day
-      if (readCount == 0 || isNewDay) {
-        _digestLoadDebounce.run(_showDigestSummary);
+      // Show digest summary if it's digest (idempotent - safe to call multiple times)
+      if (next.isDigest) {
+        _digestLoadDebounce.run(_showDigestSummaryIdempotent);
       }
     });
 
