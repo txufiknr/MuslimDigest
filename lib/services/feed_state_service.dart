@@ -158,6 +158,7 @@ class FeedStateService {
   /// 
   /// This method ensures that when an item is liked or unliked, the change
   /// is reflected everywhere the item appears - in all feed lists and caches.
+  /// Also updates user state to maintain consistency.
   /// 
   /// Parameters:
   /// - [ref] - The Ref for accessing providers and state
@@ -174,6 +175,14 @@ class FeedStateService {
     int? likeCount,
     bool updateCache = true,
   }) async {
+    // Update user state first to maintain consistency
+    final currentUser = ref.read(userProvider);
+    final newTotalLiked = isLiked ? currentUser.totalLiked + 1 : currentUser.totalLiked - 1;
+    await ref.read(userProvider.notifier).setValue(currentUser.copyWith(
+      totalLiked: max(0, newTotalLiked),
+    ));
+    log('[FeedStateService] Updated user totalLiked: $newTotalLiked (like: $isLiked)');
+    
     // Calculate like count once to ensure consistency across all feed types
     final calculatedLikeCount = likeCount ?? (isLiked ? feedItem.likeCount + 1 : max(0, feedItem.likeCount - 1));
     log('[FeedStateService] ❤️ Calculated likeCount for ${feedItem.id}: $calculatedLikeCount ${likeCount != null ? '(provided)' : '(calculated)'}');
@@ -314,7 +323,8 @@ class FeedStateService {
   /// Common implementation for updating save status across all feed types.
   /// 
   /// This private method contains the shared logic to avoid code duplication
-  /// between the WidgetRef and Ref versions of the public methods.
+  /// between the WidgetRef and Ref versions of public methods.
+  /// Also updates user state to maintain consistency.
   static Future<void> _updateSaveStatusEverywhereImpl({
     required dynamic ref,
     required FeedItem feedItem,
@@ -325,6 +335,14 @@ class FeedStateService {
     required Function getNotifier,
     required Function readState,
   }) async {
+    // Update user state first to maintain consistency
+    final currentUser = ref.read(userProvider);
+    final newTotalSaved = isSaved ? currentUser.totalSaved + 1 : currentUser.totalSaved - 1;
+    await ref.read(userProvider.notifier).setValue(currentUser.copyWith(
+      totalSaved: max(0, newTotalSaved),
+    ));
+    log('[FeedStateService] Updated user totalSaved: $newTotalSaved (save: $isSaved)');
+    
     // Update the item in all feed types
     for (final feedType in FeedType.values) {
       // Skip the specified feed type to avoid circular dependency

@@ -7,7 +7,6 @@ import 'package:muslimdigest/models/feed.dart';
 import 'package:muslimdigest/providers/ingest_last_date.dart';
 import 'package:muslimdigest/providers/read_count_states.dart';
 import 'package:muslimdigest/providers/topic.dart';
-import 'package:muslimdigest/providers/user/user.dart';
 import 'package:muslimdigest/services/dio.dart';
 import 'package:muslimdigest/providers/feed/feed_cache.dart';
 import 'package:muslimdigest/services/feed_state_service.dart';
@@ -181,16 +180,10 @@ abstract class BaseFeedNotifier extends Notifier<BaseFeedState> {
     final currentItem = state.items?.firstWhere((item) => item.id == feedId);
     if (currentItem == null) return;
 
-    // Calculate new like count for user
-    final currentUser = ref.read(userProvider);
-    int? newTotalLiked;
-    int? newTotalSaved;
-    
     // Handle like operation
     if (isLiked != null && isLiked != currentItem.isLiked) {
       // Calculate like count once to ensure consistency across all feed types
       final calculatedLikeCount = isLiked ? currentItem.likeCount + 1 : max(0, currentItem.likeCount - 1);
-      newTotalLiked = isLiked ? currentUser.totalLiked + 1 : currentUser.totalLiked - 1;
       fireAndForget(() => like(feedId, isLiked));
       
       // Update like status across all feed types with immediate cache updates
@@ -210,7 +203,6 @@ abstract class BaseFeedNotifier extends Notifier<BaseFeedState> {
     
     // Handle save operation
     if (isSaved != null && isSaved != currentItem.isSaved) {
-      newTotalSaved = isSaved ? currentUser.totalSaved + 1 : currentUser.totalSaved - 1;
       fireAndForget(() => save(feedId, isSaved));
       
       // Update save status across all feed types with consistent cache behavior
@@ -231,13 +223,8 @@ abstract class BaseFeedNotifier extends Notifier<BaseFeedState> {
     }
 
     // Feed item state is already updated by FeedStateService across all feed types
-    // State updates are centralized to ensure consistency and avoid race conditions
-
-    // Update user state
-    ref.read(userProvider.notifier).setValue(currentUser.copyWith(
-      totalLiked: max(0, newTotalLiked ?? currentUser.totalLiked),
-      totalSaved: max(0, newTotalSaved ?? currentUser.totalSaved),
-    ));
+    // User state updates are also centralized in FeedStateService to ensure consistency
+    // No separate state updates needed here
   }
 
   /// Loads feed items from a specified API endpoint with caching and pagination support.
