@@ -47,6 +47,7 @@ import 'package:path_provider/path_provider.dart';
 import '../../models/feed.dart';
 import 'package:screenshot/screenshot.dart';
 import 'package:share_plus/share_plus.dart';
+import 'dart:io';
 
 /// Individual feed card widget
 class FeedCard extends ConsumerStatefulWidget {
@@ -153,12 +154,29 @@ class _FeedCardState extends ConsumerState<FeedCard> with AutomaticKeepAliveClie
         );
       } else {
         showSnackBarError(context, 'Failed to update collection');
+        // CRITICAL: Update cache even on API failure to maintain consistency
+        // UI shows item as saved, so cache must reflect it
+        await FeedStateService.updateSaveStatusEverywhere(
+          ref, 
+          widget.feedItem!, 
+          true, 
+          updateCache: true, // Ensure cache reflects UI state
+        );
+        log('[FeedCard] API failed but cache updated to maintain UI consistency');
       }
     } catch (e) {
       log('[FeedCard] Update collection failed: $e');
       if (mounted) {
         showSnackBarError(context, 'Failed to update collection');
       }
+      // CRITICAL: Update cache even on exception to maintain consistency
+      await FeedStateService.updateSaveStatusEverywhere(
+        ref, 
+        widget.feedItem!, 
+        true, 
+        updateCache: true, // Ensure cache reflects UI state
+      );
+      log('[FeedCard] Exception but cache updated to maintain UI consistency');
     }
   }
 
@@ -215,6 +233,7 @@ class _FeedCardState extends ConsumerState<FeedCard> with AutomaticKeepAliveClie
   }
 
   Future<String?> _screenshot() async {
+    String? imagePath;
     try {
       // Request appropriate storage permissions based on Android version
       final hasPermission = await requestStoragePermission();
@@ -244,7 +263,7 @@ class _FeedCardState extends ConsumerState<FeedCard> with AutomaticKeepAliveClie
       // Add delay to ensure widget is fully rendered
       await Future.delayed(Duration(milliseconds: 200));
       
-      final imagePath = await _screenshotController.captureAndSave(
+      imagePath = await _screenshotController.captureAndSave(
         directory.path, 
         fileName: imageName,
         pixelRatio: 2.0,
@@ -263,6 +282,20 @@ class _FeedCardState extends ConsumerState<FeedCard> with AutomaticKeepAliveClie
       if (mounted) {
         showSnackBarError(context, "Screenshot failed. Please try again.");
       }
+      
+      // CRITICAL: Clean up on failure to prevent memory leaks
+      if (imagePath != null) {
+        try {
+          final file = File(imagePath);
+          if (await file.exists()) {
+            await file.delete();
+            log('[FeedCard] Cleaned up failed screenshot: $imagePath');
+          }
+        } catch (cleanupError) {
+          log('[FeedCard] Failed to cleanup screenshot: $cleanupError');
+        }
+      }
+      
       return null;
     }
   }

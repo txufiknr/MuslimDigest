@@ -91,6 +91,7 @@ class AppRepository {
   }
 
   /// Determine if digest should be reloaded (new day or no read count)
+  /// Already handles if ingestLastDate is null (isToday accepts null, returning false)
   bool get shouldForceReloadDigest {
     return !isToday(ingestLastDate) && readCount == 0;
   }
