@@ -14,7 +14,6 @@ import 'package:muslimdigest/variables/app.dart';
 import 'package:muslimdigest/variables/feed.dart';
 import 'package:muslimdigest/utils/repository.dart';
 import 'package:muslimdigest/utils/functions.dart';
-import 'package:muslimdigest/utils/extensions.dart';
 import 'package:muslimdigest/config/feeds.dart' show CURSOR_PAGINATION_LIMIT;
 
 class BaseFeedState {
@@ -68,7 +67,7 @@ class BaseFeedState {
 
   /// Get a specific feed item by ID, returns null if not found
   FeedItem? getItem(String feedId) {
-    return items?.firstWhereOrNull((item) => item.id == feedId);
+    return items?.where((item) => item.id == feedId).firstOrNull;
   }
 
   bool isNotInterested(String feedId) {
@@ -205,7 +204,17 @@ abstract class BaseFeedNotifier extends Notifier<BaseFeedState> {
     if (isSaved != null && isSaved != currentItem.isSaved) {
       fireAndForget(() => save(feedId, isSaved));
       
-      // Update save status across all feed types with consistent cache behavior
+      // Update current feed type state immediately for UI responsiveness
+      final updatedItems = state.items?.map((item) {
+        if (item.id == feedId) {
+          return item.copyWith(isSaved: isSaved);
+        }
+        return item;
+      }).toList();
+      
+      state = state.copyWith(items: updatedItems);
+      
+      // Update save status across all other feed types (skip current to avoid circular dependency)
       final currentFeedType = FeedType.fromEndpoint(endpoint);
       await FeedStateService.updateSaveStatusEverywhereWithRef(
         ref, 

@@ -104,7 +104,7 @@ class _FeedCardState extends ConsumerState<FeedCard> with AutomaticKeepAliveClie
     // Predefine the new save state to avoid ambiguity
     final isSaved = !_isSaved;
     
-    try {
+    // try {
       // Step 1: Save immediately (fire and forget, uncategorized)
       await _notifier.update(_feedId, isSaved: isSaved);
       
@@ -112,10 +112,10 @@ class _FeedCardState extends ConsumerState<FeedCard> with AutomaticKeepAliveClie
       if (isSaved && mounted) {
         _showCollectionSelectionSheet();
       }
-    } catch (e) {
-      // Silent error handling - UI will revert automatically on state rebuild
-      log('[FeedCard] Save update failed: $e');
-    }
+    // } catch (e) {
+    //   // Silent error handling - UI will revert automatically on state rebuild
+    //   log('[FeedCard] Save update failed: $e');
+    // }
   }
 
   void _showCollectionSelectionSheet() {

@@ -171,18 +171,21 @@ class _HomePageState extends ConsumerState<HomePage> with RouteAware {
     _saveAllData();
   }
 
-  bool get _isNewDay => !isToday(_lastActiveDate) || r.shouldForceReloadDigest;
+  bool get _isNewDay => (_lastActiveDate != null && !isToday(_lastActiveDate)) || r.shouldForceReloadDigest;
 
   bool _onActive() {
     log('🧾 [init] _onActive _isNewDay: $_isNewDay');
+    log('🧾 [init] _onActive _lastActiveDate: $_lastActiveDate');
+    log('🧾 [init] _onActive r.shouldForceReloadDigest: ${r.shouldForceReloadDigest}');
     log('🧾 [init] _onActive r.shouldShowDigest: ${r.shouldShowDigest}');
+    log('🧾 [init] _onActive r.ingestLastDate: ${r.ingestLastDate}');
     
     if (_isNewDay) {
       log("[home] 👋 Welcome back! It's a new day since you left, we'll load your digest");
       _openFeed(force: true);
       
       // Ensure digest summary shows on new day (idempotent)
-      _showDigestSummaryIdempotent();
+      // _showDigestSummaryIdempotent();
       return true;
     }
     
@@ -332,7 +335,7 @@ class _HomePageState extends ConsumerState<HomePage> with RouteAware {
       ref.read(feedTypeProvider.notifier).setValue(currentFeedType),
     ]);
 
-    _checkNewDigest();
+    _checkNewDigest(force: force);
 
     if (currentFeedType.isDigest) return;
 
@@ -436,10 +439,9 @@ class _HomePageState extends ConsumerState<HomePage> with RouteAware {
       final isNewDay = readLastDate == null || !isToday(readLastDate);
       final isNewDayBasedOnActive = _isNewDay;
       
-      log('[HomePage] Feed loaded: isNewDay=$isNewDay, isNewDayBasedOnActive=$isNewDayBasedOnActive, isDigest=${_currentFeedType.isDigest}');
+      log('[HomePage] 🧩 Feed loaded: isNewDay=$isNewDay, isNewDayBasedOnActive=$isNewDayBasedOnActive, isDigest=${_currentFeedType.isDigest}');
       
-      // Trigger digest summary from feed listener (idempotent - safe to call multiple times)
-      // (New day scenarios are handled by _onActive and feed type change listener)
+      // Show today's digest summary
       if (_currentFeedType.isDigest) {
         _digestLoadDebounce.run(_showDigestSummaryIdempotent);
       }
@@ -453,9 +455,9 @@ class _HomePageState extends ConsumerState<HomePage> with RouteAware {
       final readCount = _currentReadCount;
       final isNewDay = _isNewDay;
       
-      log('[HomePage] Feed type changed to digest: readCount=$readCount, isNewDay=$isNewDay');
+      log('[HomePage] 🧩 Feed type changed to digest: readCount=$readCount, isNewDay=$isNewDay');
       
-      // Show digest summary if it's digest (idempotent - safe to call multiple times)
+      // Show today's digest summary
       if (next.isDigest) {
         _digestLoadDebounce.run(_showDigestSummaryIdempotent);
       }

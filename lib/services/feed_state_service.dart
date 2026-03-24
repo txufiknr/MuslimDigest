@@ -11,7 +11,6 @@ import 'package:muslimdigest/utils/secure_feed_cache.dart';
 import 'package:muslimdigest/providers/user/preferences.dart';
 import 'package:muslimdigest/providers/user/user.dart';
 import 'package:muslimdigest/utils/dialogs.dart';
-import 'package:muslimdigest/utils/extensions.dart';
 import 'package:muslimdigest/variables/feed.dart';
 
 /// Utility functions for feed state management
@@ -136,7 +135,8 @@ class FeedStateService {
       
       final notifier = feedType.getNotifier(ref);
       final currentState = feedType.read(ref);
-      final currentItem = currentState.items?.firstWhereOrNull((item) => item.id == feedId);
+      final matchedItems = currentState.items?.where((item) => item.id == feedId) ?? <FeedItem>[];
+      final currentItem = matchedItems.isEmpty ? null : matchedItems.first;
       if (currentItem != null && currentItem.isLiked != isLiked) {
         // Update the item in this feed type
         final updatedItems = currentState.items?.map((item) {
@@ -194,7 +194,8 @@ class FeedStateService {
       
       final notifier = feedType.getNotifierWithRef(ref);
       final currentState = feedType.readWithRef(ref);
-      final currentItem = currentState.items?.firstWhereOrNull((item) => item.id == feedItem.id);
+      final matchedItems = currentState.items?.where((item) => item.id == feedItem.id) ?? <FeedItem>[];
+      final currentItem = matchedItems.isEmpty ? null : matchedItems.first;
       
       if (currentItem != null && currentItem.isLiked != isLiked) {
         // Update the item in this feed type with pre-calculated like count
@@ -352,10 +353,11 @@ class FeedStateService {
       
       final notifier = getNotifier(feedType, ref);
       final currentState = readState(feedType, ref);
-      final currentItem = currentState.items?.firstWhereOrNull((item) => item.id == feedItem.id);
+      final List<FeedItem> matchedItems = currentState.items?.where((item) => item.id == feedItem.id).toList() ?? <FeedItem>[];
+      final FeedItem? currentItem = matchedItems.isEmpty ? null : matchedItems.first;
       if (currentItem != null && currentItem.isSaved != isSaved) {
         // Update the item in this feed type
-        final updatedItems = currentState.items?.map((item) {
+        final List<FeedItem>? updatedItems = currentState.items?.map<FeedItem>((FeedItem item) {
           if (item.id == feedItem.id) {
             return item.copyWith(isSaved: isSaved);
           }
