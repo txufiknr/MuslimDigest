@@ -1,13 +1,13 @@
+import 'dart:math' show max;
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:muslimdigest/api/feeds.dart';
 import 'package:muslimdigest/models/feed.dart';
-import 'package:muslimdigest/providers/feed/feed.dart';
 import 'package:muslimdigest/services/feed_state_service.dart';
 import 'package:muslimdigest/services/dio.dart';
 import 'package:muslimdigest/utils/functions.dart';
 import 'package:muslimdigest/variables/feed.dart';
-import 'package:muslimdigest/widgets/components/icon_button.dart';
 
 /// Base interface for feed action strategies
 abstract class FeedActionStrategy {
@@ -61,12 +61,14 @@ class UnlikeFeedStrategy extends BaseFeedActionStrategy {
   
   @override
   Future<void> updateUI(WidgetRef ref, FeedItem feed) async {
-    // Update like status across all feed types immediately
+    // Update like status across all feed types immediately, but skip liked feed to avoid circular dependency
+    // The liked feed list will be handled by _removeFromCurrentFeed in feed_list_base.dart
     await FeedStateService.updateLikeStatusEverywhere(
       ref, 
       feed, 
       false, 
-      likeCount: (feed.likeCount - 1).clamp(0, double.infinity).toInt(),
+      likeCount: max(0, feed.likeCount - 1),
+      skipFeedType: FeedType.liked,
     );
     
     // Note: totalLiked count is already updated by FeedStateService.updateLikeStatusEverywhere
@@ -92,8 +94,9 @@ class UnsaveFeedStrategy extends BaseFeedActionStrategy {
   
   @override
   Future<void> updateUI(WidgetRef ref, FeedItem feed) async {
-    // Update save status across all feed types immediately
-    await FeedStateService.updateSaveStatusEverywhere(ref, feed, false);
+    // Update save status across all feed types immediately, but skip saved feed to avoid circular dependency
+    // The saved feed list will be handled by _removeFromCurrentFeed in feed_list_base.dart
+    await FeedStateService.updateSaveStatusEverywhere(ref, feed, false, skipFeedType: FeedType.saved);
     
     // Note: totalSaved count is already updated by FeedStateService.updateSaveStatusEverywhere
     // No need for manual update here to avoid double-counting

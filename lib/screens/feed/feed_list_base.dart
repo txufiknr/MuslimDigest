@@ -1,4 +1,5 @@
 import 'dart:developer' show log;
+import 'dart:math' show max;
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -221,12 +222,12 @@ class _FeedListBasePageState extends ConsumerState<FeedListBasePage> {
       // Execute the strategy
       await strategy.execute(ref, feed);
       
-      // For saved and liked feeds, remove from current provider state to update UI immediately
+      // For saved and liked feeds, update and remove feed to show correct counts before removal
       // Note: We use skipCache=true to avoid double cache update since strategy already updated cache via FeedStateService
       if (widget.feedType == FeedType.saved || widget.feedType == FeedType.liked) {
-        await _removeFromCurrentFeed(feed, skipCache: true);
+        await _updateAndRemoveFeed(feed, skipCache: true);
       }
-      // For other feed types (except notInterested), remove from current provider state after strategy execution (no cache skip needed)
+      // For other feed types (except notInterested), just remove feed (no state changes needed)
       else if (widget.feedType != FeedType.notInterested) {
         await _removeFromCurrentFeed(feed);
       }
@@ -251,6 +252,40 @@ class _FeedListBasePageState extends ConsumerState<FeedListBasePage> {
     final currentState = ref.read(widget.provider);
     final currentItems = currentState.items ?? [];
     final updatedItems = currentItems.where((item) => item.id != feed.id).toList();
+    await notifier.setValue(updatedItems, skipCache: skipCache);
+  }
+  
+  /// Helper method to update feed item in current provider state before removing
+  Future<void> _updateAndRemoveFeed(FeedItem feed, {bool skipCache = false}) async {
+    final notifier = ref.read(widget.provider.notifier);
+    final currentState = ref.read(widget.provider);
+    final currentItems = currentState.items ?? [];
+    
+    // Create updated feed item based on feed type
+    FeedItem updatedFeedItem;
+    switch (widget.feedType) {
+      case FeedType.liked:
+        updatedFeedItem = feed.copyWith(
+          isLiked: false,
+          likeCount: max(0, feed.likeCount - 1),
+        );
+        break;
+      case FeedType.saved:
+        updatedFeedItem = feed.copyWith(isSaved: false);
+        break;
+      default:
+        updatedFeedItem = feed; // No changes for other feed types
+        break;
+    }
+    
+    // Update the item being removed, then remove it
+    final updatedItems = currentItems.map((item) {
+      if (item.id == feed.id) {
+        return updatedFeedItem;
+      }
+      return item;
+    }).where((item) => item.id != feed.id).toList();
+        
     await notifier.setValue(updatedItems, skipCache: skipCache);
   }
   
