@@ -8,6 +8,29 @@ import 'package:muslimdigest/services/feed_state_service.dart';
 /// Centralized service for managing feed collections
 /// Provides consistent collection operations across the app
 class CollectionService {
+  
+  /// Get the collection name that a feed item belongs to
+  /// Returns null if feed is not in any collection
+  static Future<String?> getFeedCollection(dynamic ref, FeedItem feed) async {
+    try {
+      final collections = await CollectionApi.getCollections();
+      
+      for (final collection in collections) {
+        final cache = ref.read(feedCacheProvider);
+        final collectionItems = await cache.getFeedItems('feed/saved', queryParams: {'collection': collection});
+        
+        if (collectionItems != null && collectionItems.any((item) => item.id == feed.id)) {
+          return collection;
+        }
+      }
+      
+      return null;
+    } catch (e) {
+      log('[CollectionService] ❌ Error getting feed collection: $e');
+      return null;
+    }
+  }
+
   /// Remove feed item from all collection-specific caches
   /// Used by both BaseFeedNotifier and strategies to avoid code duplication
   static Future<void> removeFromAllCollections(dynamic ref, FeedItem feed) async {

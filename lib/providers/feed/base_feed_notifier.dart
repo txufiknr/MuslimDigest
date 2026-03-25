@@ -221,7 +221,17 @@ abstract class BaseFeedNotifier extends Notifier<BaseFeedState> {
     
     // Handle save operation
     if (isSaved != null && isSaved != currentItem.isSaved) {
-      fireAndForget(() => save(feedId, isSaved));
+      // For unsave operations, determine which collection the feed belongs to
+      if (!isSaved) {
+        fireAndForget(() async {
+          // Get the collection this feed belongs to
+          final collection = await CollectionService.getFeedCollection(ref, currentItem);
+          await save(feedId, isSaved, collection: collection);
+        });
+      } else {
+        // For save operations, don't specify collection (will be handled by collection selection)
+        fireAndForget(() => save(feedId, isSaved));
+      }
       
       // Update current feed type state immediately for UI responsiveness
       final updatedItems = state.items?.map((item) {

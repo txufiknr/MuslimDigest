@@ -84,6 +84,8 @@ class UnlikeFeedStrategy extends BaseFeedActionStrategy {
 
 /// Strategy for unsaving a feed item
 class UnsaveFeedStrategy extends BaseFeedActionStrategy {
+  String? _cachedCollection; // Cache the collection to avoid re-fetching
+  
   @override
   String get actionLabel => 'Unsave';
   
@@ -95,6 +97,9 @@ class UnsaveFeedStrategy extends BaseFeedActionStrategy {
   
   @override
   Future<void> updateUI(WidgetRef ref, FeedItem feed) async {
+    // Cache the collection for later use in makeAPICall
+    _cachedCollection = await CollectionService.getFeedCollection(ref, feed);
+    
     // Update save status across all feed types immediately, but skip saved feed to avoid circular dependency
     // The saved feed list will be handled by _removeFromCurrentFeed in feed_list_base.dart
     await FeedStateService.updateSaveStatusEverywhere(
@@ -113,7 +118,11 @@ class UnsaveFeedStrategy extends BaseFeedActionStrategy {
   
   @override
   void makeAPICall(FeedItem feed) {
-    fireAndForget(() => ApiService.post('feed/save', {'clusterId': feed.id, 'value': false}));
+    fireAndForget(() => ApiService.post('feed/save', {
+      'clusterId': feed.id, 
+      'value': false,
+      if (_cachedCollection != null) 'collection': _cachedCollection,
+    }));
   }
 }
 
