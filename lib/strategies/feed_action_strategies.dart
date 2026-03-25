@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:muslimdigest/api/feeds.dart';
 import 'package:muslimdigest/models/feed.dart';
 import 'package:muslimdigest/services/feed_state_service.dart';
+import 'package:muslimdigest/services/collection_service.dart';
 import 'package:muslimdigest/services/dio.dart';
 import 'package:muslimdigest/utils/functions.dart';
 import 'package:muslimdigest/variables/feed.dart';
@@ -96,7 +97,15 @@ class UnsaveFeedStrategy extends BaseFeedActionStrategy {
   Future<void> updateUI(WidgetRef ref, FeedItem feed) async {
     // Update save status across all feed types immediately, but skip saved feed to avoid circular dependency
     // The saved feed list will be handled by _removeFromCurrentFeed in feed_list_base.dart
-    await FeedStateService.updateSaveStatusEverywhere(ref, feed, false, skipFeedType: FeedType.saved);
+    await FeedStateService.updateSaveStatusEverywhere(
+      ref, 
+      feed, 
+      false, 
+      skipFeedType: FeedType.saved,
+    );
+    
+    // Remove from all collections using centralized service
+    await CollectionService.removeFromAllCollections(ref, feed);
     
     // Note: totalSaved count is already updated by FeedStateService.updateSaveStatusEverywhere
     // No need for manual update here to avoid double-counting

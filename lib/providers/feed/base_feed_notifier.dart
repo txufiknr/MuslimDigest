@@ -10,6 +10,7 @@ import 'package:muslimdigest/providers/topic.dart';
 import 'package:muslimdigest/services/dio.dart';
 import 'package:muslimdigest/providers/feed/feed_cache.dart';
 import 'package:muslimdigest/services/feed_state_service.dart';
+import 'package:muslimdigest/services/collection_service.dart';
 import 'package:muslimdigest/variables/app.dart';
 import 'package:muslimdigest/variables/feed.dart';
 import 'package:muslimdigest/utils/repository.dart';
@@ -241,6 +242,11 @@ abstract class BaseFeedNotifier extends Notifier<BaseFeedState> {
         skipFeedType: currentFeedType,
         updateCache: true, // Always update cache immediately for better UX
       );
+      
+      // If un-saving, also remove from all collection-specific caches
+      if (!isSaved) {
+        await CollectionService.removeFromAllCollections(ref, currentItem);
+      }
       
       if (isSaved) {
         log('[BaseFeedNotifier] Cache updated immediately for saved item $feedId');
