@@ -1,5 +1,4 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:muslimdigest/config/feeds.dart' show CURSOR_PAGINATION_LIMIT;
 import 'package:muslimdigest/providers/feed/base_feed_notifier.dart';
 
 typedef FeedTrendingState = BaseFeedState;
@@ -11,8 +10,8 @@ class FeedTrendingNotifier extends BaseFeedNotifier {
   String get endpoint => 'feed/trending';
 
   Future<bool> load({int? limit, bool forceRefresh = false, String? requestId}) async {
-    return await loadFromEndpoint(endpoint, queryParams: {
-      'limit': (limit ?? CURSOR_PAGINATION_LIMIT).toString(),
-    }, forceRefresh: forceRefresh, requestId: requestId);
+    // Don't add limit to queryParams to maintain cache key consistency
+    // The limit is handled internally by loadFromEndpoint
+    return await loadFromEndpoint(endpoint, queryParams: null, forceRefresh: forceRefresh, requestId: requestId);
   }
 }

@@ -3,12 +3,14 @@ import 'dart:developer' show log;
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:collection/collection.dart';
 import 'package:muslimdigest/models/feed.dart';
 import 'package:muslimdigest/strategies/feed_action_strategies.dart';
 import 'package:muslimdigest/utils/contents.dart';
 import 'package:muslimdigest/utils/dialogs.dart';
 import 'package:muslimdigest/variables/feed.dart';
 import 'package:muslimdigest/providers/feed/base_feed_notifier.dart';
+import 'package:muslimdigest/providers/feed/feed_cache.dart';
 import 'package:muslimdigest/utils/app_repository.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pull_to_refresh/pull_to_refresh.dart';
@@ -69,6 +71,10 @@ class _FeedListBasePageState extends ConsumerState<FeedListBasePage> {
   List<FeedItem> _filteredFeeds = [];
   String _searchQuery = '';
   
+  // Track content switching to prevent FOUC
+  bool _isContentSwitching = false;
+  Map<String, String>? _lastQueryParams;
+  
   AppRepository get r => ref.read(appRepositoryProvider);
 
   @override
@@ -118,14 +124,49 @@ class _FeedListBasePageState extends ConsumerState<FeedListBasePage> {
 
   Future<void> _loadInitialFeeds() async {
     final state = ref.read(widget.provider);
+    final cache = ref.read(feedCacheProvider);
+    
+    log('[FeedListBase] _loadInitialFeeds called. State isEmpty: ${state.isEmpty}, hasMore: ${state.hasMore}');
+    log('[FeedListBase] _loadInitialFeeds queryParams: ${widget.queryParams}');
 
-    // No cached data, or there might be more items - must load from backend
-    if (state.isEmpty || state.hasMore) {
+    // Check if we're switching between different queryParams
+    final queryParamsChanged = !MapEquality().equals(_lastQueryParams, widget.queryParams);
+    if (queryParamsChanged && state.items?.isNotEmpty == true) {
+      setState(() {
+        _isContentSwitching = true;
+      });
+    }
+
+    // Check if we have cached data for these queryParams
+    final cachedItems = await cache.getFeedItems(widget.feedType.endpoint, queryParams: widget.queryParams);
+    final hasCachedData = cachedItems != null;
+    
+    log('[FeedListBase] Cache check: hasCachedData=$hasCachedData, cachedItems=${cachedItems?.length}');
+    
+    // If we have cached data and state is empty or different, use cached data
+    if (hasCachedData && (state.isEmpty || state.items?.length != cachedItems.length)) {
+      log('[FeedListBase] Using cached data - setting ${cachedItems.length} items');
+      final notifier = ref.read(widget.provider.notifier);
+      await notifier.setValue(cachedItems, skipCache: true); // Skip cache to avoid double caching
+    }
+    // Load if: no state, has more data, or no cached data for current queryParams
+    else if (state.isEmpty || state.hasMore || !hasCachedData) {
+      log('[FeedListBase] Loading from API - state empty: ${state.isEmpty}, hasMore: ${state.hasMore}, noCache: ${!hasCachedData}');
       final notifier = ref.read(widget.provider.notifier);
       await notifier.loadFromEndpoint(
         widget.feedType.endpoint,
         queryParams: widget.queryParams,
       );
+    } else {
+      log('[FeedListBase] Using existing state - state has items: ${state.items?.length}');
+    }
+    
+    // Update tracking and stop switching indicator
+    _lastQueryParams = widget.queryParams;
+    if (mounted) {
+      setState(() {
+        _isContentSwitching = false;
+      });
     }
   }
 
@@ -180,13 +221,13 @@ class _FeedListBasePageState extends ConsumerState<FeedListBasePage> {
       // Execute the strategy
       await strategy.execute(ref, feed);
       
-      // For history feed type, also remove from current provider state
-      if (widget.feedType == FeedType.history) {
-        await _removeFromCurrentFeed(feed);
+      // For saved and liked feeds, remove from current provider state to update UI immediately
+      // Note: We use skipCache=true to avoid double cache update since strategy already updated cache via FeedStateService
+      if (widget.feedType == FeedType.saved || widget.feedType == FeedType.liked) {
+        await _removeFromCurrentFeed(feed, skipCache: true);
       }
-      
-      // For other feed types, remove from current provider state after strategy execution
-      if (widget.feedType != FeedType.notInterested) {
+      // For other feed types (except notInterested), remove from current provider state after strategy execution (no cache skip needed)
+      else if (widget.feedType != FeedType.notInterested) {
         await _removeFromCurrentFeed(feed);
       }
       
@@ -205,12 +246,12 @@ class _FeedListBasePageState extends ConsumerState<FeedListBasePage> {
   }
   
   /// Helper method to remove feed from current provider state
-  Future<void> _removeFromCurrentFeed(FeedItem feed) async {
+  Future<void> _removeFromCurrentFeed(FeedItem feed, {bool skipCache = false}) async {
     final notifier = ref.read(widget.provider.notifier);
     final currentState = ref.read(widget.provider);
     final currentItems = currentState.items ?? [];
     final updatedItems = currentItems.where((item) => item.id != feed.id).toList();
-    await notifier.setValue(updatedItems);
+    await notifier.setValue(updatedItems, skipCache: skipCache);
   }
   
   /// Build action button using strategy pattern
@@ -340,6 +381,10 @@ class _FeedListBasePageState extends ConsumerState<FeedListBasePage> {
                   padding: const EdgeInsets.symmetric(vertical: 16, horizontal: AppThemes.contentPadding),
                   itemCount: feeds.length + (feeds.isEmpty || state.hasMore ? 1 : 0),
                   itemBuilder: (context, index) {
+                    // Show loader when switching content (FOUC prevention)
+                    if (_isContentSwitching && index == 0) {
+                      return _buildLoadingIndicator().sized(height: maxHeight);
+                    }
                     // Empty state
                     if (state.isGetting) {
                       return _buildLoadingIndicator().sized(height: maxHeight);
@@ -353,7 +398,9 @@ class _FeedListBasePageState extends ConsumerState<FeedListBasePage> {
                       return CupertinoActivityIndicator().squared(24).center();
                     }
                     
-                    return _buildFeedItem(h, feeds[index]);
+                    // Adjust index when showing switching loader
+                    final adjustedIndex = _isContentSwitching ? index - 1 : index;
+                    return _buildFeedItem(h, feeds[adjustedIndex]);
                   },
                 ),
               ),

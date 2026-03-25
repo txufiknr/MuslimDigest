@@ -2,11 +2,12 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:muslimdigest/api/feeds.dart';
 import 'package:muslimdigest/models/feed.dart';
-import 'package:muslimdigest/providers/user/user.dart';
+import 'package:muslimdigest/providers/feed/feed.dart';
 import 'package:muslimdigest/services/feed_state_service.dart';
 import 'package:muslimdigest/services/dio.dart';
 import 'package:muslimdigest/utils/functions.dart';
 import 'package:muslimdigest/variables/feed.dart';
+import 'package:muslimdigest/widgets/components/icon_button.dart';
 
 /// Base interface for feed action strategies
 abstract class FeedActionStrategy {
@@ -60,20 +61,16 @@ class UnlikeFeedStrategy extends BaseFeedActionStrategy {
   
   @override
   Future<void> updateUI(WidgetRef ref, FeedItem feed) async {
-    // Update user liked count immediately
-    final currentUser = ref.read(userProvider);
-    final newLikedCount = (currentUser.totalLiked - 1).clamp(0, double.infinity).toInt();
-    await ref.read(userProvider.notifier).setValue(
-      currentUser.copyWith(totalLiked: newLikedCount)
-    );
-    
     // Update like status across all feed types immediately
     await FeedStateService.updateLikeStatusEverywhere(
       ref, 
-      feed.id, 
+      feed, 
       false, 
       likeCount: (feed.likeCount - 1).clamp(0, double.infinity).toInt(),
     );
+    
+    // Note: totalLiked count is already updated by FeedStateService.updateLikeStatusEverywhere
+    // No need for manual update here to avoid double-counting
   }
   
   @override
@@ -98,12 +95,8 @@ class UnsaveFeedStrategy extends BaseFeedActionStrategy {
     // Update save status across all feed types immediately
     await FeedStateService.updateSaveStatusEverywhere(ref, feed, false);
     
-    // Update user saved count immediately
-    final currentUser = ref.read(userProvider);
-    final newSavedCount = (currentUser.totalSaved - 1).clamp(0, double.infinity).toInt();
-    await ref.read(userProvider.notifier).setValue(
-      currentUser.copyWith(totalSaved: newSavedCount)
-    );
+    // Note: totalSaved count is already updated by FeedStateService.updateSaveStatusEverywhere
+    // No need for manual update here to avoid double-counting
   }
   
   @override

@@ -1,5 +1,4 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:muslimdigest/config/feeds.dart' show CURSOR_PAGINATION_LIMIT;
 import 'package:muslimdigest/models/feed.dart';
 import 'package:muslimdigest/providers/feed/base_feed_notifier.dart';
 
@@ -12,9 +11,9 @@ class FeedNotInterestedNotifier extends BaseFeedNotifier {
   String get endpoint => 'feed/not_interested';
 
   Future<bool> load({int? limit, bool forceRefresh = false, String? requestId}) async {
-    return await loadFromEndpoint(endpoint, queryParams: {
-      'limit': (limit ?? CURSOR_PAGINATION_LIMIT).toString(),
-    }, forceRefresh: forceRefresh, requestId: requestId);
+    // Don't add limit to queryParams to maintain cache key consistency
+    // The limit is handled internally by loadFromEndpoint
+    return await loadFromEndpoint(endpoint, queryParams: null, forceRefresh: forceRefresh, requestId: requestId);
   }
 
   /// Prepend a feed item to the top of the not interested list

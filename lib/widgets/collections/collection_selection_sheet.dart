@@ -4,27 +4,23 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:muslimdigest/config/colors.dart';
 import 'package:muslimdigest/config/themes.dart';
+import 'package:muslimdigest/models/feed.dart';
 import 'package:muslimdigest/utils/helpers.dart';
 import 'package:muslimdigest/utils/extensions.dart';
 import 'package:muslimdigest/widgets/animations/loader.dart';
 import 'package:muslimdigest/widgets/components/button.dart';
-// import 'package:muslimdigest/widgets/components/icon_button.dart';
 import 'package:muslimdigest/api/collections.dart';
 import 'package:muslimdigest/widgets/components/placeholder.dart';
 
 /// Collection selection bottom sheet for saving feeds to collections
 class CollectionSelectionSheet extends ConsumerStatefulWidget {
-  final String feedId;
-  final String feedTitle;
-  // final VoidCallback? onClose;
+  final FeedItem feedItem;
   final Function(String)? onCollectionSelected;
   final Future Function(String)? onCollectionCreated;
 
   const CollectionSelectionSheet({
     super.key,
-    required this.feedId,
-    required this.feedTitle,
-    // this.onClose,
+    required this.feedItem,
     this.onCollectionSelected,
     this.onCollectionCreated,
   });
@@ -139,38 +135,12 @@ class _CollectionSelectionSheetState extends ConsumerState<CollectionSelectionSh
               borderRadius: BorderRadius.circular(2),
             ),
           ).center(),
-          const SizedBox(height: 16),
 
           // Header
           Text(
             'Save to Collection',
             style: h.currentTextTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600),
           ),
-          // const SizedBox(height: 8),
-
-          // Feed title preview
-          // Container(
-          //   padding: EdgeInsets.all(12),
-          //   decoration: BoxDecoration(
-          //     color: h.currentTheme.colorScheme.surfaceContainerHighest,
-          //     borderRadius: BorderRadius.circular(8),
-          //   ),
-          //   child: Row(
-          //     children: [
-          //       Icon(CupertinoIcons.doc_text, size: 16, color: h.currentTheme.colorScheme.tertiary),
-          //       const SizedBox(width: 8),
-          //       Text(
-          //         widget.feedTitle,
-          //         style: h.currentTextTheme.bodySmall?.copyWith(
-          //           color: h.currentTheme.colorScheme.tertiary,
-          //         ),
-          //         maxLines: 1,
-          //         overflow: TextOverflow.ellipsis,
-          //       ).expand(),
-          //     ],
-          //   ),
-          // ),
-          const SizedBox(height: 16),
 
           // Search input
           TextField(
@@ -191,41 +161,36 @@ class _CollectionSelectionSheetState extends ConsumerState<CollectionSelectionSh
             enableInteractiveSelection: !_isLoading,
             enabled: !_isLoading,
           ),
-          const SizedBox(height: 16),
 
           // Content area
-          if (_showCreateButton)
-            _buildCreateCollectionSection(h)
-          else if (_isLoading)
-            MyLoader().center()
-          else if (_filteredCollections.isEmpty)
-            _buildEmptyState(h)
-          else
-            _buildCollectionsList(h),
+          SingleChildScrollView(
+            child: _buildListContent(h),
+          ).flexible(),
 
           // Action buttons
-          const SizedBox(height: 16),
-          Column(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              if (_showCreateButton) MyButton(
-                text: 'Create Collection',
-                onPressed: _createNewCollection,
-                icon: Icon(CupertinoIcons.check_mark_circled),
-                variant: MyButtonVariant.success,
-                isLoading: _isLoading,
-              ),
-              MyButton(
-                text: _showCreateButton ? 'Cancel' : 'Close',
-                outlined: true,
-                onPressed: Navigator.of(context).pop,
-              ),
-            ].addItemInBetween(SizedBox(height: 16,)),
+          if (_showCreateButton) MyButton(
+            text: 'Create Collection',
+            onPressed: _createNewCollection,
+            icon: Icon(CupertinoIcons.check_mark_circled),
+            variant: MyButtonVariant.success,
+            isLoading: _isLoading,
           ),
-          const SizedBox(height: 12),
-        ],
+
+          MyButton(
+            text: _showCreateButton ? 'Cancel' : 'Close',
+            outlined: true,
+            onPressed: Navigator.of(context).pop,
+          ).withPadding(bottom: 12),
+        ].addItemInBetween(SizedBox(height: 16,)),
       ),
     );
+  }
+
+  Widget _buildListContent(MyHelper h) {
+    if (_showCreateButton) return _buildCreateCollectionSection(h);
+    if (_isLoading) return MyLoader().center();
+    if (_filteredCollections.isEmpty) return _buildEmptyState(h);
+    return _buildCollectionsList(h);
   }
 
   Widget _buildCreateCollectionSection(MyHelper h) {

@@ -256,6 +256,7 @@ class FeedItem {
     int? likeCount,
     FeedbackCategory? feedbackCategory,
     IslamicEventData? relatedEvent,
+    DateTime? createdAt,
   }) {
     return FeedItem(
       id: id ?? this.id,
@@ -281,6 +282,7 @@ class FeedItem {
       likeCount: likeCount ?? this.likeCount,
       feedbackCategory: feedbackCategory ?? this.feedbackCategory,
       relatedEvent: relatedEvent ?? this.relatedEvent,
+      createdAt: createdAt ?? this.createdAt,
     );
   }
 

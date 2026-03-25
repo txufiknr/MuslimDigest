@@ -3,18 +3,16 @@ import 'package:jhijri/_src/_jHijri.dart';
 import 'package:muslimdigest/utils/extensions.dart';
 import 'package:muslimdigest/variables/time.dart';
 
-/// Check if two dates are the same day (UTC)
+/// Check if two dates are the same day
 bool isSameDay(DateTime? date1, DateTime? date2) {
   if (date1 == null || date2 == null) return false;
-  final date1UTC = date1.toUtc();
-  final date2UTC = date2.toUtc();
-  return date1UTC.year == date2UTC.year &&
-         date1UTC.month == date2UTC.month &&
-         date1UTC.day == date2UTC.day;
+  return date1.year == date2.year &&
+         date1.month == date2.month &&
+         date1.day == date2.day;
 }
 
 /// Check if a date is today (UTC)
-bool isToday(DateTime? date) => isSameDay(date, today);
+bool isToday(DateTime? dateUTC) => isSameDay(dateUTC, todayUTC);
 
 /// Get current hijri date
 JHijri get hijriDate => JHijri.now();

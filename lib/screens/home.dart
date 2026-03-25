@@ -26,6 +26,7 @@ import 'package:muslimdigest/api/feeds.dart';
 import 'package:muslimdigest/utils/extensions.dart';
 import 'package:muslimdigest/utils/functions.dart';
 import 'package:muslimdigest/utils/helpers.dart';
+import 'package:muslimdigest/utils/route.dart';
 import 'package:muslimdigest/utils/time.dart';
 import 'package:muslimdigest/variables/app.dart';
 import 'package:muslimdigest/variables/feed.dart';
@@ -95,6 +96,7 @@ class _HomePageState extends ConsumerState<HomePage> with RouteAware {
 
   /// Idempotent digest summary display (safe to call multiple times, only shows once)
   void _showDigestSummaryIdempotent() async {
+    if (currentRoute != 'home') return;
     if (_isDigestSummaryShowing) {
       log('[HomePage] 👀 Digest summary already showing, skipping duplicate call');
       return;

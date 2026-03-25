@@ -1,5 +1,6 @@
 /// Returns the current date and time as a [DateTime] object.
 DateTime get today => DateTime.now();
+DateTime get todayUTC => today.toUtc();
 
 /// Returns the current date as a string in the format 'yyyy-mm-dd'.
 String get todayString =>

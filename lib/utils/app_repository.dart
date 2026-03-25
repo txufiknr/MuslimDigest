@@ -130,8 +130,11 @@ class AppRepository {
         return false;
       }
     } else {
+      log('[loadUserFeed] [digest] 🌟 Silently loading digest feed (force = $shouldForceReloadDigest, ingestLastDate = $ingestLastDate)');
       // Always load digest feed silently
       unawaited(loadFeed(feedType: FeedType.digest, force: shouldForceReloadDigest));
+      // Only load digest feed if explicitly requested, not for other feed types
+      // log('[loadUserFeed] Non-digest feed type requested: $feedType, skipping digest load');
     }
 
     // Check internet connectivity

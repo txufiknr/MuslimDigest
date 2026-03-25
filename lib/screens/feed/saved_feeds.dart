@@ -4,6 +4,7 @@ import 'package:muslimdigest/providers/feed/base_feed_notifier.dart';
 import 'package:muslimdigest/providers/feed/feed_saved.dart';
 import 'package:muslimdigest/screens/feed/feed_list_base.dart';
 import 'package:muslimdigest/variables/feed.dart';
+import 'dart:developer' show log;
 
 class SavedFeedsPage extends FeedListBasePage {
   final String? collection;
@@ -24,5 +25,9 @@ class SavedFeedsPage extends FeedListBasePage {
   NotifierProvider<BaseFeedNotifier, BaseFeedState> get provider => feedSavedProvider;
   
   @override
-  Map<String, String>? get queryParams => collection != null ? {'collection': collection!} : null;
+  Map<String, String>? get queryParams {
+    final params = collection != null ? {'collection': collection!} : null;
+    log('[SavedFeedsPage] QueryParams: $params for collection: $collection');
+    return params;
+  }
 }

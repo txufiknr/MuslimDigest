@@ -104,7 +104,7 @@ class _FeedCardState extends ConsumerState<FeedCard> with AutomaticKeepAliveClie
     // Predefine the new save state to avoid ambiguity
     final isSaved = !_isSaved;
     
-    // try {
+    try {
       // Step 1: Save immediately (fire and forget, uncategorized)
       await _notifier.update(_feedId, isSaved: isSaved);
       
@@ -112,10 +112,10 @@ class _FeedCardState extends ConsumerState<FeedCard> with AutomaticKeepAliveClie
       if (isSaved && mounted) {
         _showCollectionSelectionSheet();
       }
-    // } catch (e) {
-    //   // Silent error handling - UI will revert automatically on state rebuild
-    //   log('[FeedCard] Save update failed: $e');
-    // }
+    } catch (e) {
+      // Silent error handling - UI will revert automatically on state rebuild
+      log('[FeedCard] Save update failed: $e');
+    }
   }
 
   void _showCollectionSelectionSheet() {
@@ -125,8 +125,7 @@ class _FeedCardState extends ConsumerState<FeedCard> with AutomaticKeepAliveClie
       context: context,
       isScrollControlled: true,
       builder: (context) => CollectionSelectionSheet(
-        feedId: _feedId,
-        feedTitle: widget.feedItem!.displayTitle,
+        feedItem: widget.feedItem!,
         onCollectionSelected: (collection) {
           _updateFeedCollection(collection);
         },
@@ -185,25 +184,18 @@ class _FeedCardState extends ConsumerState<FeedCard> with AutomaticKeepAliveClie
     
     try {
       // Collections are created implicitly when saving with a new collection name
-      // Just save directly to the new collection - backend will handle creation
-      final success = await save(_feedId, true, collection: collection);
-      if (!mounted) return;
-      if (success) {
-        showSnackBarSuccess(context, 'Created and saved to "$collection"');
-        
-        // Update cache with collection information using FeedStateService
-        await FeedStateService.updateSaveStatusEverywhere(
-          ref, 
-          widget.feedItem!,
-          true,
-          specificCollection: collection,
-          updateCache: true, // Enable cache updates now that collection is known
-        );
-      } else {
-        showSnackBarError(context, 'Failed to save to new collection');
-      }
+      // Update cache once with collection information
+      await FeedStateService.updateSaveStatusEverywhere(
+        ref,
+        widget.feedItem!,
+        true,
+        specificCollection: collection,
+        updateCache: true, // Single cache update
+      );
+      
+      log('[FeedCard] Created collection "$collection" and updated cache');
     } catch (e) {
-      log('[FeedCard] Create collection and save failed: $e');
+      log('[FeedCard] Create collection failed: $e');
       if (mounted) {
         showSnackBarError(context, 'Failed to create collection');
       }

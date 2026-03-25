@@ -111,6 +111,9 @@ abstract class BaseFeedNotifier extends Notifier<BaseFeedState> {
   /// Get the endpoint for this feed type - must be implemented by subclasses
   String get endpoint;
   
+  /// Track the current queryParams for caching
+  Map<String, String>? _currentQueryParams;
+  
   @override
   BaseFeedState build() {
     // Feed cache data is now handled by SecureFeedCache, initialized with empty state
@@ -124,12 +127,15 @@ abstract class BaseFeedNotifier extends Notifier<BaseFeedState> {
     // This ensures cache stays in sync with user interactions
     if (value != null && !skipCache) {
       final cache = ref.read(feedCacheProvider);
-      await cache.setFeedItems(endpoint, value);
+      await cache.setFeedItems(endpoint, value, queryParams: _currentQueryParams);
     }
   }
 
   Future<void> clear() async {
     state = const BaseFeedState();
+    
+    // Reset tracked queryParams when clearing
+    _currentQueryParams = null;
     
     // Clear the cache for this endpoint from secure storage
     final cache = ref.read(feedCacheProvider);
@@ -185,6 +191,18 @@ abstract class BaseFeedNotifier extends Notifier<BaseFeedState> {
       final calculatedLikeCount = isLiked ? currentItem.likeCount + 1 : max(0, currentItem.likeCount - 1);
       fireAndForget(() => like(feedId, isLiked));
       
+      // Update current provider state immediately for better UX
+      final updatedItems = state.items?.map((item) {
+        if (item.id == feedId) {
+          return item.copyWith(
+            isLiked: isLiked,
+            likeCount: calculatedLikeCount,
+          );
+        }
+        return item;
+      }).toList();
+      state = state.copyWith(items: updatedItems);
+      
       // Update like status across all feed types with immediate cache updates
       final currentFeedType = FeedType.fromEndpoint(endpoint);
       await FeedStateService.updateLikeStatusEverywhereWithRef(
@@ -221,13 +239,13 @@ abstract class BaseFeedNotifier extends Notifier<BaseFeedState> {
         currentItem,
         isSaved,
         skipFeedType: currentFeedType,
-        updateCache: !isSaved, // Update cache immediately when un-saving, defer when saving
+        updateCache: true, // Always update cache immediately for better UX
       );
       
       if (isSaved) {
-        log('[BaseFeedNotifier] Deferring cache update for saved item $feedId until collection is selected');
+        log('[BaseFeedNotifier] Cache updated immediately for saved item $feedId');
       } else {
-        log('[BaseFeedNotifier] Updating cache immediately for unsaved item $feedId');
+        log('[BaseFeedNotifier] Updated cache immediately for unsaved item $feedId');
       }
     }
 
@@ -273,14 +291,17 @@ abstract class BaseFeedNotifier extends Notifier<BaseFeedState> {
     log('[BaseFeedNotifier] loadFromEndpoint called: endpoint=$endpoint, forceRefresh=$forceRefresh, isLoadMore=$isLoadMore');
     log('[BaseFeedNotifier] queryParams: $queryParams');
 
+    // Track current queryParams for caching
+    _currentQueryParams = queryParams;
+
     if (forceRefresh) resetPagination();
     
     // Try to load from cache first (unless force refresh or load more)
     if (!forceRefresh && !isLoadMore) {
-      log('[BaseFeedNotifier] Checking cache for endpoint: $endpoint');
+      log('[BaseFeedNotifier] Checking cache for endpoint: $endpoint with queryParams: $queryParams');
       final cachedItems = await cache.getFeedItems(endpoint, queryParams: queryParams);
       if (cachedItems != null) {
-        log('[BaseFeedNotifier] Cache hit! Found ${cachedItems.length} items');
+        log('[BaseFeedNotifier] Cache hit! Found ${cachedItems.length} items for endpoint: $endpoint, queryParams: $queryParams');
         await setValue(cachedItems);
         // Set pagination state for cached data
         // Set pagination state for cached data
@@ -293,7 +314,7 @@ abstract class BaseFeedNotifier extends Notifier<BaseFeedState> {
         );
         return true;
       } else {
-        log('[BaseFeedNotifier] 🍪 Cache miss, proceeding to API call');
+        log('[BaseFeedNotifier] 🍪 Cache miss, proceeding to API call for endpoint: $endpoint, queryParams: $queryParams');
       }
     } else {
       log('[BaseFeedNotifier] ⏩ Skipping cache check (forceRefresh=$forceRefresh, isLoadMore=$isLoadMore)');
@@ -307,9 +328,16 @@ abstract class BaseFeedNotifier extends Notifier<BaseFeedState> {
     
     try {
       log('[BaseFeedNotifier] 🌐 Making API call to: $endpoint');
+      
+      // Add limit parameter for API calls (but not for cache keys)
+      final apiQueryParams = <String, String>{
+        'limit': CURSOR_PAGINATION_LIMIT.toString(),
+        ...?queryParams,
+      };
+      
       final response = await ApiService.get(
         endpoint,
-        queryParams: queryParams,
+        queryParams: apiQueryParams,
         options: options,
         requestId: requestId,
       );
@@ -322,11 +350,11 @@ abstract class BaseFeedNotifier extends Notifier<BaseFeedState> {
         log('[BaseFeedNotifier] 🔥 API response: received ${feedItems.length} items, isLoadMore: $isLoadMore');
         log('[BaseFeedNotifier] 📊 Current state items: ${state.items?.length ?? 0}');
         log('[BaseFeedNotifier] 👀 Response items count: ${response.result?['items']?.length}');
-        if (response.result?['items']?.isNotEmpty == true) {
-          log('[BaseFeedNotifier] 👀 First result: ${response.result?['items'].first}');
-        } else {
-          log('[BaseFeedNotifier] 👀 No result');
-        }
+        // if (response.result?['items']?.isNotEmpty == true) {
+        //   log('[BaseFeedNotifier] 👀 First result: ${response.result?['items'].first}');
+        // } else {
+        //   log('[BaseFeedNotifier] 👀 No result');
+        // }
         // log('[BaseFeedNotifier] Response result: ${response.result}');
         
         // Extract pagination info from response
@@ -389,11 +417,13 @@ abstract class BaseFeedNotifier extends Notifier<BaseFeedState> {
         if (endpoint == 'feed') {
           final lastIngestDate = response.result?['lastIngestDate'] as String?;
           if (lastIngestDate != null) {
+            log('[BaseFeedNotifier] [digest] 🌟 Last ingest date: $lastIngestDate');
             await Future.wait([
               ref.read(ingestLastDateProvider.notifier).setValue(DateTime.parse(lastIngestDate)),
               ref.read(preferencesRepositoryProvider).remove('read_count_states'),
               prefs.setString('ingest_last_fetch', DateTime.now().toUtc().toIso8601String())
             ]);
+            log('[BaseFeedNotifier] [digest] 🌟 Ingest last date updated: ${ref.read(ingestLastDateProvider)}');
           }
         }
 
