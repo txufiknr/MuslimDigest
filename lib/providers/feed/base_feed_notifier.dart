@@ -206,7 +206,7 @@ abstract class BaseFeedNotifier extends Notifier<BaseFeedState> {
       
       // Update like status across all feed types with immediate cache updates
       final currentFeedType = FeedType.fromEndpoint(endpoint);
-      await FeedStateService.updateLikeStatusEverywhereWithRef(
+      await FeedStateService.updateLikeStatusEverywhere(
         ref, 
         currentItem, // Pass the full FeedItem as expected by updated method
         isLiked, 
@@ -215,7 +215,7 @@ abstract class BaseFeedNotifier extends Notifier<BaseFeedState> {
         updateCache: true, // Keep immediate cache updates for better UX
       );
       
-      // Cache updates are now handled by FeedStateService.updateLikeStatusEverywhereWithRef
+      // Cache updates are now handled by FeedStateService.updateLikeStatusEverywhere
       // No need to schedule redundant cache updates here
     }
     
@@ -235,7 +235,7 @@ abstract class BaseFeedNotifier extends Notifier<BaseFeedState> {
       
       // Update save status across all other feed types (skip current to avoid circular dependency)
       final currentFeedType = FeedType.fromEndpoint(endpoint);
-      await FeedStateService.updateSaveStatusEverywhereWithRef(
+      await FeedStateService.updateSaveStatusEverywhere(
         ref, 
         currentItem,
         isSaved,
@@ -244,8 +244,12 @@ abstract class BaseFeedNotifier extends Notifier<BaseFeedState> {
       );
       
       // If un-saving, also remove from all collection-specific caches
+      // Note: Delay collection cleanup to avoid circular dependency with current update
       if (!isSaved) {
-        await CollectionService.removeFromAllCollections(ref, currentItem);
+        // Schedule collection cleanup after current update completes
+        Future.microtask(() async {
+          await CollectionService.removeFromAllCollections(ref, currentItem);
+        });
       }
       
       if (isSaved) {
@@ -354,6 +358,7 @@ abstract class BaseFeedNotifier extends Notifier<BaseFeedState> {
         );
         
         log('[BaseFeedNotifier] 🔥 API response: received ${feedItems.length} items, isLoadMore: $isLoadMore');
+        log('[BaseFeedNotifier] 🔥 API response items: ${feedItems.map((item) => item.id).toList()}');
         log('[BaseFeedNotifier] 📊 Current state items: ${state.items?.length ?? 0}');
         log('[BaseFeedNotifier] 👀 Response items count: ${response.result?['items']?.length}');
         // if (response.result?['items']?.isNotEmpty == true) {

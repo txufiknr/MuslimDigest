@@ -126,10 +126,8 @@ class _FeedCardState extends ConsumerState<FeedCard> with AutomaticKeepAliveClie
       isScrollControlled: true,
       builder: (context) => CollectionSelectionSheet(
         feedItem: widget.feedItem!,
-        onCollectionSelected: (collection) {
-          _updateFeedCollection(collection);
-        },
-        onCollectionCreated: _createCollectionAndSave,
+        onCollectionSelected: _updateFeedCollection,
+        // onCollectionCreated: _createCollectionAndSave,
       ),
     );
   }
@@ -137,70 +135,57 @@ class _FeedCardState extends ConsumerState<FeedCard> with AutomaticKeepAliveClie
   void _updateFeedCollection(String collection) async {
     if (_feedId == null) return;
     
-    try {
-      final success = await updateCollection(_feedId, collection);
-      if (!mounted) return;
-      if (success) {
-        showSnackBarSuccess(context, 'Saved to "$collection"');
-        
-        // Update cache with collection information
-        await FeedStateService.updateSaveStatusEverywhere(
-          ref, 
-          widget.feedItem!, 
-          true, 
-          specificCollection: collection,
-          updateCache: true, // Enable cache updates now that collection is known
-        );
-      } else {
-        showSnackBarError(context, 'Failed to update collection');
-        // CRITICAL: Update cache even on API failure to maintain consistency
-        // UI shows item as saved, so cache must reflect it
-        await FeedStateService.updateSaveStatusEverywhere(
-          ref, 
-          widget.feedItem!, 
-          true, 
-          updateCache: true, // Ensure cache reflects UI state
-        );
-        log('[FeedCard] API failed but cache updated to maintain UI consistency');
-      }
-    } catch (e) {
-      log('[FeedCard] Update collection failed: $e');
-      if (mounted) {
-        showSnackBarError(context, 'Failed to update collection');
-      }
-      // CRITICAL: Update cache even on exception to maintain consistency
+    // try {
+      fireAndForget(() => updateCollection(_feedId, collection));
+      
+      // Update cache with collection information
       await FeedStateService.updateSaveStatusEverywhere(
         ref, 
         widget.feedItem!, 
         true, 
-        updateCache: true, // Ensure cache reflects UI state
+        specificCollection: collection,
+        updateCache: true, // Enable cache updates now that collection is known
       );
-      log('[FeedCard] Exception but cache updated to maintain UI consistency');
-    }
+
+      if (mounted) showSnackBarSuccess(context, 'Saved to "$collection"');
+      log('[FeedCard] ✅ Saved to collection "$collection"');
+    // } catch (e) {
+    //   log('[FeedCard] ❌ Save to collection failed: $e');
+    //   if (mounted) {
+    //     showSnackBarError(context, 'Failed to save to collection');
+    //   }
+    //   // CRITICAL: Update cache even on exception to maintain consistency
+    //   await FeedStateService.updateSaveStatusEverywhere(
+    //     ref, 
+    //     widget.feedItem!, 
+    //     true, 
+    //     updateCache: true, // Ensure cache reflects UI state
+    //   );
+    // }
   }
 
-  Future<void> _createCollectionAndSave(String collection) async {
-    if (_feedId == null) return;
+  // Future<void> _createCollectionAndSave(String collection) async {
+  //   if (_feedId == null) return;
     
-    try {
-      // Collections are created implicitly when saving with a new collection name
-      // Update cache once with collection information
-      await FeedStateService.updateSaveStatusEverywhere(
-        ref,
-        widget.feedItem!,
-        true,
-        specificCollection: collection,
-        updateCache: true, // Single cache update
-      );
+  //   try {
+  //     // Collections are created implicitly when saving with a new collection name
+  //     // Update cache once with collection information
+  //     await FeedStateService.updateSaveStatusEverywhere(
+  //       ref,
+  //       widget.feedItem!,
+  //       true,
+  //       specificCollection: collection,
+  //       updateCache: true, // Single cache update
+  //     );
       
-      log('[FeedCard] Created collection "$collection" and updated cache');
-    } catch (e) {
-      log('[FeedCard] Create collection failed: $e');
-      if (mounted) {
-        showSnackBarError(context, 'Failed to create collection');
-      }
-    }
-  }
+  //     log('[FeedCard] ✅ Created collection "$collection" and updated cache');
+  //   } catch (e) {
+  //     log('[FeedCard] ❌ Create collection failed: $e');
+  //     if (mounted) {
+  //       showSnackBarError(context, 'Failed to create collection');
+  //     }
+  //   }
+  // }
 
   Future<void> _share() async {
     setState(() => _isTakingScreenshot = true);
@@ -768,7 +753,7 @@ class _FeedFooter extends ConsumerWidget {
 
       // Mark as not interested across all feed types
       if (context.mounted) {
-        await FeedStateService.markNotInterestedEverywhere(ref, feedItem);
+        await FeedStateService.markAsNotInterestedEverywhere(ref, feedItem);
       }
     } catch (e) {
       log("[_notInterested] 🔥 ERROR! $e");

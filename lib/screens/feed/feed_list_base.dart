@@ -227,8 +227,8 @@ class _FeedListBasePageState extends ConsumerState<FeedListBasePage> {
       if (widget.feedType == FeedType.saved || widget.feedType == FeedType.liked) {
         await _updateAndRemoveFeed(feed, skipCache: true);
       }
-      // For other feed types (except notInterested), just remove feed (no state changes needed)
-      else if (widget.feedType != FeedType.notInterested) {
+      // For other feed types, just remove feed (no state changes needed)
+      else {
         await _removeFromCurrentFeed(feed);
       }
       

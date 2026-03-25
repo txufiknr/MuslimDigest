@@ -18,29 +18,29 @@ import 'package:muslimdigest/variables/feed.dart';
 class FeedStateService {
 
   /// Mark feed as not interested across all feed types
-  static Future<void> markNotInterestedEverywhere(
+  static Future<void> markAsNotInterestedEverywhere(
     WidgetRef ref,
     FeedItem feedItem, {
     FeedbackCategory? reason,
   }) async {
-    final feedId = feedItem.id;
-    
-    for (final feedType in FeedType.values) {
-      // Skip notInterested feed type to avoid circular dependency
-      if (feedType == FeedType.notInterested) continue;
-
-      // Mark feed item as not interested
-      try {
-        final notifier = feedType.getNotifier(ref);
-        await notifier.markAsNotInterested(feedId, reason: reason);
-      } catch (_) {}
-    }
-
-    // Prepend feed item to the not interested feed
     try {
-      final notInterestedNotifier = ref.read(feedNotInterestedProvider.notifier);
-      await notInterestedNotifier.prependItem(feedItem);
-    } catch (_) {}
+      // Update all feed types to mark item as not interested
+      for (final feedType in FeedType.values) {
+        // Skip notInterested feed type to avoid circular dependency
+        if (feedType == FeedType.notInterested) continue;
+        
+        final notifier = feedType.getNotifier(ref);
+        await notifier.markAsNotInterested(feedItem.id, reason: reason);
+      }
+
+      // Prepend feed item to the not interested feed
+      try {
+        final notInterestedNotifier = ref.read(feedNotInterestedProvider.notifier);
+        await notInterestedNotifier.prependItem(feedItem);
+      } catch (_) {}
+    } catch (e) {
+      log('[FeedStateService] Error marking as not interested: $e');
+    }
   }
 
   /// Unmark feed as not interested across all feed types
@@ -124,7 +124,7 @@ class FeedStateService {
 
   /// Update like status across all feed types
   static Future<void> updateLikeStatusEverywhere(
-    WidgetRef ref,
+    dynamic ref,
     FeedItem feedItem,
     bool isLiked, {
     int? likeCount,
@@ -138,89 +138,6 @@ class FeedStateService {
       likeCount: likeCount,
       skipFeedType: skipFeedType,
       updateCache: updateCache,
-      getNotifier: (feedType, ref) => feedType.getNotifier(ref),
-      readState: (feedType, ref) => feedType.read(ref),
-    );
-  }
-
-  /// Updates the like status of a feed item across all feed types.
-  /// 
-  /// This method ensures that when an item is liked or unliked, the change
-  /// is reflected everywhere the item appears - in all feed lists and caches.
-  /// Also updates user state to maintain consistency.
-  /// 
-  /// Parameters:
-  /// - [ref] - The Ref for accessing providers and state
-  /// - [feedItem] - The feed item to update
-  /// - [isLiked] - The new like status (true = liked, false = unliked)
-  /// - [skipFeedType] - Optional feed type to skip (prevents circular updates)
-  /// - [likeCount] - Optional pre-calculated like count (ensures consistency across feed types)
-  /// - [updateCache] - Whether to update cache (default: true)
-  static Future<void> updateLikeStatusEverywhereWithRef(
-    Ref ref,
-    FeedItem feedItem,
-    bool isLiked, {
-    int? likeCount,
-    FeedType? skipFeedType,
-    bool updateCache = true,
-  }) async {
-    // // Update user state first to maintain consistency
-    // final currentUser = ref.read(userProvider);
-    // final newTotalLiked = isLiked ? currentUser.totalLiked + 1 : currentUser.totalLiked - 1;
-    // await ref.read(userProvider.notifier).setValue(currentUser.copyWith(
-    //   totalLiked: max(0, newTotalLiked),
-    // ));
-    // log('[FeedStateService] ❤️ Updated user totalLiked: $newTotalLiked (like: $isLiked)');
-    
-    // // Calculate like count once to ensure consistency across all feed types
-    // final calculatedLikeCount = likeCount ?? (isLiked ? feedItem.likeCount + 1 : max(0, feedItem.likeCount - 1));
-    // log('[FeedStateService] ❤️ Calculated likeCount for ${feedItem.id}: $calculatedLikeCount ${likeCount != null ? '(provided)' : '(calculated)'}');
-    
-    // // Update all feed types atomically (optimistic approach)
-    // for (final feedType in FeedType.values) {
-    //   // Skip the specified feed type to avoid circular dependency
-    //   if (skipFeedType != null && feedType == skipFeedType) continue;
-      
-    //   final notifier = feedType.getNotifierWithRef(ref);
-    //   final currentState = feedType.readWithRef(ref);
-    //   final matchedItems = currentState.items?.where((item) => item.id == feedItem.id) ?? <FeedItem>[];
-    //   final currentItem = matchedItems.isEmpty ? null : matchedItems.first;
-      
-    //   if (currentItem != null && currentItem.isLiked != isLiked) {
-    //     // Update the item in this feed type with pre-calculated like count
-    //     final updatedItems = currentState.items?.map((item) {
-    //       if (item.id == feedItem.id) {
-    //         return item.copyWith(
-    //           isLiked: isLiked,
-    //           likeCount: calculatedLikeCount,
-    //         );
-    //       }
-    //       return item;
-    //     }).toList();
-        
-    //     await notifier.setValue(updatedItems);
-    //   }
-    // }
-    
-    // // Update cache for liked feeds if requested
-    // if (updateCache) {
-    //   final cache = ref.read(feedCacheProvider);
-    //   await _updateLikedFeedsCache(cache, feedItem.copyWith(isLiked: isLiked, likeCount: calculatedLikeCount), isLiked);
-      
-    //   log('[FeedStateService] ❤️ Updated liked feeds cache: ${isLiked ? 'added' : 'removed'} item ${feedItem.id}');
-    // } else {
-    //   log('[FeedStateService] ⏸️ Skipping cache update for liked item ${feedItem.id} (updateCache=false)');
-    // }
-
-    await _updateStatusEverywhereImpl(
-      ref: ref,
-      feedItem: feedItem,
-      isLiked: isLiked,
-      likeCount: likeCount,
-      skipFeedType: skipFeedType,
-      updateCache: updateCache,
-      getNotifier: (feedType, ref) => feedType.getNotifierWithRef(ref),
-      readState: (feedType, ref) => feedType.readWithRef(ref),
     );
   }
 
@@ -270,14 +187,14 @@ class FeedStateService {
   /// is reflected everywhere the item appears - in all feed lists and cache entries.
   /// 
   /// Parameters:
-  /// - [ref] - The WidgetRef for accessing providers and state
+  /// - [ref] - The Ref or WidgetRef for accessing providers and state
   /// - [feedItem] - The feed item to update
   /// - [isSaved] - The new save status (true = saved, false = unsaved)
   /// - [skipFeedType] - Optional feed type to skip (prevents circular updates)
   /// - [specificCollection] - Optional collection name for targeted cache updates
   /// - [updateCache] - Whether to update cache (default: true)
   static Future<void> updateSaveStatusEverywhere(
-    WidgetRef ref,
+    dynamic ref,
     FeedItem feedItem,
     bool isSaved, {
     FeedType? skipFeedType,
@@ -291,40 +208,6 @@ class FeedStateService {
       skipFeedType: skipFeedType,
       specificCollection: specificCollection,
       updateCache: updateCache,
-      getNotifier: (feedType, ref) => feedType.getNotifier(ref),
-      readState: (feedType, ref) => feedType.read(ref),
-    );
-  }
-
-  /// Updates the save status of a feed item across all feed types and caches.
-  /// 
-  /// This is the Ref version that works with any Ref type (not just WidgetRef).
-  /// See [updateSaveStatusEverywhere] for full documentation.
-  /// 
-  /// Parameters:
-  /// - [ref] - The Ref for accessing providers and state
-  /// - [feedItem] - The feed item to update
-  /// - [isSaved] - The new save status (true = saved, false = unsaved)
-  /// - [skipFeedType] - Optional feed type to skip (prevents circular updates)
-  /// - [specificCollection] - Optional collection name for targeted cache updates
-  /// - [updateCache] - Whether to update cache (default: true)
-  static Future<void> updateSaveStatusEverywhereWithRef(
-    Ref ref,
-    FeedItem feedItem,
-    bool isSaved, {
-    FeedType? skipFeedType,
-    String? specificCollection,
-    bool updateCache = true,
-  }) async {
-    await _updateStatusEverywhereImpl(
-      ref: ref,
-      feedItem: feedItem,
-      isSaved: isSaved,
-      skipFeedType: skipFeedType,
-      specificCollection: specificCollection,
-      updateCache: updateCache,
-      getNotifier: (feedType, ref) => feedType.getNotifierWithRef(ref),
-      readState: (feedType, ref) => feedType.readWithRef(ref),
     );
   }
 
@@ -342,9 +225,15 @@ class FeedStateService {
     FeedType? skipFeedType,
     String? specificCollection,
     bool updateCache = true,
-    required Function getNotifier,
-    required Function readState,
   }) async {
+
+    getNotifier(feedType, ref) {
+      return ref is Ref ? feedType.getNotifierWithRef(ref) : feedType.getNotifier(ref);
+    }
+    readState(feedType, ref) {
+      return ref is Ref ? feedType.readWithRef(ref) : feedType.read(ref);
+    }
+
     // Update user state first to maintain consistency
     final User currentUser = ref.read(userProvider);
     final newTotalSaved = isSaved == true ? currentUser.totalSaved + 1 : isSaved == false ? currentUser.totalSaved - 1 : currentUser.totalSaved;
@@ -372,13 +261,16 @@ class FeedStateService {
       final currentState = readState(feedType, ref);
       final List<FeedItem> matchedItems = currentState.items?.where((item) => item.id == feedItem.id).toList() ?? <FeedItem>[];
       final FeedItem? currentItem = matchedItems.isEmpty ? null : matchedItems.first;
-      if (currentItem != null && currentItem.isSaved != isSaved) {
+      
+      // Check if item needs updating (either saved status or liked status changed)
+      if (currentItem != null && (currentItem.isSaved != isSaved || currentItem.isLiked != isLiked)) {
         // Update the item in this feed type
         final List<FeedItem>? updatedItems = currentState.items?.map<FeedItem>((FeedItem item) {
           if (item.id == feedItem.id) {
             return item.copyWith(
               isSaved: isSaved ?? item.isSaved,
               isLiked: isLiked ?? item.isLiked,
+              likeCount: likeCount ?? item.likeCount,
             );
           }
           return item;
@@ -409,6 +301,18 @@ class FeedStateService {
     } else {
       log('[FeedStateService] ⏸️ Skipping cache update for item ${feedItem.id} (updateCache=false)');
     }
+
+    // if (isSaved != null && specificCollection != null) {
+    //   // Also update the general "All Saved" cache
+    //   await _updateStatusEverywhereImpl(
+    //     ref: ref,
+    //     feedItem: feedItem,
+    //     isSaved: isSaved,
+    //     isLiked: null,
+    //     skipFeedType: skipFeedType,
+    //     updateCache: updateCache,
+    //   );
+    // }
   }
 
   /// Safe API execution with consistent error handling

@@ -1,6 +1,5 @@
 import 'dart:developer' show log;
 
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:muslimdigest/api/collections.dart';
 import 'package:muslimdigest/models/feed.dart';
 import 'package:muslimdigest/providers/feed/feed_cache.dart';
@@ -23,54 +22,39 @@ class CollectionService {
         
         // If the feed is in this collection, remove it
         if (collectionItems != null && collectionItems.any((item) => item.id == feed.id)) {
-          if (ref is WidgetRef) {
-            await FeedStateService.updateSaveStatusEverywhere(
-              ref,
-              feed,
-              false,
-              specificCollection: collection,
-              updateCache: true,
-            );
-          } else {
-            await FeedStateService.updateSaveStatusEverywhereWithRef(
-              ref,
-              feed,
-              false,
-              specificCollection: collection,
-              updateCache: true,
-            );
-          }
-          log('[CollectionService] Removed feed ${feed.id} from collection "$collection"');
+          // Remove from collection cache directly to avoid circular dependency
+          final updatedCollectionItems = collectionItems.where((item) => item.id != feed.id).toList();
+          await cache.setFeedItems('feed/saved', updatedCollectionItems, queryParams: {'collection': collection});
+          log('[CollectionService] ✨ Removed feed ${feed.id} from collection "$collection"');
         }
       }
+
+      // ALSO remove from general "All Saved" cache
+      final cache = ref.read(feedCacheProvider);
+      final generalCacheItems = await cache.getFeedItems('feed/saved');
+      if (generalCacheItems != null && generalCacheItems.any((item) => item.id == feed.id)) {
+        final updatedGeneralItems = generalCacheItems.where((item) => item.id != feed.id).toList();
+        await cache.setFeedItems('feed/saved', updatedGeneralItems);
+      }
+      log('[CollectionService] ✨ Removed feed ${feed.id} from saved feeds');
     } catch (e) {
-      log('[CollectionService] Error removing from collections: $e');
+      log('[CollectionService] ❌ Error removing from collections: $e');
     }
   }
   
   /// Add feed item to a specific collection
   static Future<void> addToCollection(dynamic ref, FeedItem feed, String collection) async {
     try {
-      if (ref is WidgetRef) {
-        await FeedStateService.updateSaveStatusEverywhere(
-          ref,
-          feed,
-          true,
-          specificCollection: collection,
-          updateCache: true,
-        );
-      } else {
-        await FeedStateService.updateSaveStatusEverywhereWithRef(
-          ref,
-          feed,
-          true,
-          specificCollection: collection,
-          updateCache: true,
-        );
-      }
-      log('[CollectionService] Added feed ${feed.id} to collection "$collection"');
+      await FeedStateService.updateSaveStatusEverywhere(
+        ref,
+        feed,
+        true,
+        specificCollection: collection,
+        updateCache: true,
+      );
+      log('[CollectionService] ✅ Added feed ${feed.id} to collection "$collection"');
     } catch (e) {
-      log('[CollectionService] Error adding to collection: $e');
+      log('[CollectionService] ❌ Error adding to collection: $e');
     }
   }
   
@@ -90,7 +74,7 @@ class CollectionService {
       
       return false;
     } catch (e) {
-      log('[CollectionService] Error checking collections: $e');
+      log('[CollectionService] ❌ Error checking collections: $e');
       return false;
     }
   }
@@ -112,7 +96,7 @@ class CollectionService {
       
       return containingCollections;
     } catch (e) {
-      log('[CollectionService] Error getting collections containing feed: $e');
+      log('[CollectionService] ❌ Error getting collections containing feed: $e');
       return [];
     }
   }

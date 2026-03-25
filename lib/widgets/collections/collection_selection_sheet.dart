@@ -16,13 +16,13 @@ import 'package:muslimdigest/widgets/components/placeholder.dart';
 class CollectionSelectionSheet extends ConsumerStatefulWidget {
   final FeedItem feedItem;
   final Function(String)? onCollectionSelected;
-  final Future Function(String)? onCollectionCreated;
+  // final Future Function(String)? onCollectionCreated;
 
   const CollectionSelectionSheet({
     super.key,
     required this.feedItem,
     this.onCollectionSelected,
-    this.onCollectionCreated,
+    // this.onCollectionCreated,
   });
 
   @override
@@ -103,15 +103,20 @@ class _CollectionSelectionSheetState extends ConsumerState<CollectionSelectionSh
     Navigator.pop(context);
   }
 
+  // void _createNewCollection() async {
+  //   if (_searchQuery.isEmpty) return;
+  //   setState(() {
+  //     _isLoading = true;
+  //   });
+  //   await widget.onCollectionCreated?.call(_searchQuery);
+
+  //   // widget.onClose?.call();
+  //   if (mounted) Navigator.pop(context);
+  // }
+
   void _createNewCollection() async {
     if (_searchQuery.isEmpty) return;
-    setState(() {
-      _isLoading = true;
-    });
-    await widget.onCollectionCreated?.call(_searchQuery);
-
-    // widget.onClose?.call();
-    if (mounted) Navigator.pop(context);
+    _selectCollection(_searchQuery);
   }
 
   @override

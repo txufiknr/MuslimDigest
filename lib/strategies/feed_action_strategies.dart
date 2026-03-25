@@ -130,8 +130,9 @@ class DeleteHistoryStrategy extends BaseFeedActionStrategy {
   
   @override
   Future<void> updateUI(WidgetRef ref, FeedItem feed) async {
-    // This will be implemented in the feed_list_base.dart context
-    // since it needs access to the specific provider
+    // History items are typically only in the history feed, so no cross-feed updates needed
+    // The current provider state will be handled by _removeFromCurrentFeed in feed_list_base.dart
+    // This is intentional - history deletion is a simple removal operation
   }
   
   @override
@@ -154,6 +155,7 @@ class UnmarkNotInterestedStrategy extends BaseFeedActionStrategy {
   @override
   Future<void> updateUI(WidgetRef ref, FeedItem feed) async {
     // Unmark feed as not interested across all feed types
+    // Note: The not interested feed list doesn't remove items, so no circular dependency issue
     await FeedStateService.unmarkNotInterestedEverywhere(ref, feed.id);
   }
   
