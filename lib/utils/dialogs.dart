@@ -286,6 +286,14 @@ void showSnackBarSuccess(BuildContext context, String message) {
   );
 }
 
+void showSnackBarWarning(BuildContext context, String message) {
+  showSnackBarMessage(
+    context,
+    message,
+    Icon(CupertinoIcons.exclamationmark_triangle_fill, color: AppColors.warning),
+  );
+}
+
 void showSnackBarError(BuildContext context, String message) {
   showSnackBarMessage(
     context,

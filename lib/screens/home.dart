@@ -18,6 +18,7 @@ import 'package:muslimdigest/providers/user/preferences.dart';
 import 'package:muslimdigest/providers/user/streaks.dart';
 import 'package:muslimdigest/providers/user/user.dart';
 import 'package:muslimdigest/utils/app.dart';
+import 'package:muslimdigest/utils/updater.dart';
 import 'package:muslimdigest/utils/app_repository.dart';
 import 'package:muslimdigest/utils/debounce.dart';
 import 'package:muslimdigest/services/notifications/notification_scheduler.dart';
@@ -66,7 +67,6 @@ class _HomePageState extends ConsumerState<HomePage> with RouteAware {
   int get _currentReadCount => ref.read(readCountProvider);
   bool get _isFeedLoading => ref.watch(feedTypeProvider).watch(ref).isLoading;
   String? get _currentTopic => ref.read(topicProvider);
-  // bool get _isDigest => _currentFeedType.isDigest;
 
   /// Init feed loading with duplicate prevention
   void _initFeed() {
@@ -96,13 +96,13 @@ class _HomePageState extends ConsumerState<HomePage> with RouteAware {
 
   /// Idempotent digest summary display (safe to call multiple times, only shows once)
   void _showDigestSummaryIdempotent() async {
-    if (currentRoute != 'home') return;
+    // Early skips
+    if (!mounted || currentRoute != 'home' || _currentReadCount > 0) return;
+
     if (_isDigestSummaryShowing) {
       log('[HomePage] 👀 Digest summary already showing, skipping duplicate call');
       return;
     }
-    
-    if (!mounted) return;
     
     _isDigestSummaryShowing = true;
     log("[HomePage] 🌟 Showing today's digest summary");
@@ -181,6 +181,9 @@ class _HomePageState extends ConsumerState<HomePage> with RouteAware {
     log('🧾 [init] _onActive r.shouldForceReloadDigest: ${r.shouldForceReloadDigest}');
     log('🧾 [init] _onActive r.shouldShowDigest: ${r.shouldShowDigest}');
     log('🧾 [init] _onActive r.ingestLastDate: ${r.ingestLastDate}');
+    
+    // Check for in-app updates using utility
+    AppUpdater.checkForAppUpdate(context);
     
     if (_isNewDay) {
       log("[home] 👋 Welcome back! It's a new day since you left, we'll load your digest");

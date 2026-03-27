@@ -1,3 +1,8 @@
+v1.0.5
+added in app update check
+fixed bug today's digest summary that always shows up
+fixed home header text to be consistent with the actual content
+
 v1.0.4
 search liked and saved feed
 save feed to collection

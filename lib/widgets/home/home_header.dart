@@ -152,11 +152,10 @@ class _HomeHeaderState extends ConsumerState<HomeHeader> {
     });
 
     final h = MyHelper(context);
-    final r = ref.read(appRepositoryProvider);
+    final homeFeedType = ref.read(appRepositoryProvider).homeFeedType;
     final feedType = ref.watch(feedTypeProvider);
     final trendingCount = ref.watch(feedTrendingProvider).total;
     final isTrending = feedType == FeedType.trending;
-    final activeHomeFeedType = feedType.isHomeFeed && _currentTopic == null ? feedType : r.homeFeedType;
 
     return Container(
       height: TAB_HEIGHT,
@@ -192,9 +191,9 @@ class _HomeHeaderState extends ConsumerState<HomeHeader> {
 
               // Home feed
               _TopicTab(
-                title: activeHomeFeedType.label,
-                icon: activeHomeFeedType.icon,
-                isSelected: feedType == activeHomeFeedType && _currentTopic == null,
+                title: homeFeedType.label,
+                icon: homeFeedType.icon,
+                isSelected: feedType == homeFeedType && _currentTopic == null,
                 onTap: widget.onSeeHome,
               ),
 
