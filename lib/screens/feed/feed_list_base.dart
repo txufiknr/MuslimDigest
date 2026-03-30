@@ -246,6 +246,15 @@ class _FeedListBasePageState extends ConsumerState<FeedListBasePage> {
     }
   }
   
+  Future<void> _onActionLongPressed(FeedItem feed, FeedActionStrategy strategy) async {
+    try {
+      // Execute the long press strategy
+      await strategy.executeLongPress(ref, feed, context);
+    } catch (e) {
+      log('[FeedListBase] Error executing long press action: $e');
+    }
+  }
+  
   /// Helper method to remove feed from current provider state
   Future<void> _removeFromCurrentFeed(FeedItem feed, {bool skipCache = false}) async {
     final notifier = ref.read(widget.provider.notifier);
@@ -311,6 +320,7 @@ class _FeedListBasePageState extends ConsumerState<FeedListBasePage> {
     return MyIconButton(
       icon: strategy.actionIcon,
       onPressed: () => _onActionPressed(feed),
+      onLongPress: () => _onActionLongPressed(feed, strategy),
       tooltip: strategy.actionTooltip,
       backgroundColor: iconColor.withValues(alpha: .1),
       iconColor: iconColor,

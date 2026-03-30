@@ -6,6 +6,7 @@ class MyIconButton extends StatelessWidget {
   final IconData icon;
   final String? tooltip;
   final VoidCallback? onPressed;
+  final VoidCallback? onLongPress;
   final Color? backgroundColor;
   final double? size;
   final double? iconSize;
@@ -18,6 +19,7 @@ class MyIconButton extends StatelessWidget {
     required this.icon,
     this.tooltip,
     this.onPressed,
+    this.onLongPress,
     this.backgroundColor,
     this.size,
     this.iconSize,
@@ -32,6 +34,7 @@ class MyIconButton extends StatelessWidget {
 
     return IconButton(
       onPressed: onPressed,
+      onLongPress: onLongPress,
       icon: Icon(icon, color: iconColor ?? h.currentTheme.colorScheme.onSurface),
       iconSize: iconSize,
       tooltip: tooltip,

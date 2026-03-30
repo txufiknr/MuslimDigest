@@ -4,7 +4,7 @@ import 'package:muslimdigest/services/notifications/notification_service.dart';
 import 'package:muslimdigest/services/notifications/notification_controller.dart';
 import 'package:muslimdigest/variables/user.dart';
 import 'package:muslimdigest/variables/settings.dart';
-import 'package:muslimdigest/config/notification_config.dart';
+import 'package:muslimdigest/config/notification.dart';
 import 'package:muslimdigest/config/constants.dart';
 
 /// Helper class for managing notification scheduling and lifecycle

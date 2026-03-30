@@ -2,7 +2,7 @@ import 'dart:math' show Random;
 import 'package:flutter/foundation.dart';
 import 'package:awesome_notifications/awesome_notifications.dart';
 import 'package:muslimdigest/config/constants.dart';
-import 'package:muslimdigest/config/notification_config.dart';
+import 'package:muslimdigest/config/notification.dart';
 import 'package:muslimdigest/config/notification_content.dart';
 
 /// Service for managing daily notifications

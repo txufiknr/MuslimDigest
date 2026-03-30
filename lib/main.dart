@@ -43,21 +43,20 @@ Future<void> main() async {
         'topics', // List of available topics (JSON string)
         'feed_type', // Active feed type (string)
         'notification_type', // Active notification type (string)
-        'offline_api_queue', // Pending API calls
       },
     ),
   );
 
-  // Initialize secure storage for feed cache
-  const secureStorage = FlutterSecureStorage(
+  // Initialize secure storage for all app components (feed cache, offline queue, etc.)
+  secureStorage = const FlutterSecureStorage(
     aOptions: AndroidOptions(
-      // encryptedSharedPreferences: true, // Deprecated - using custom ciphers
+      // encryptedSharedPreferences: true, // Use encrypted shared preferences for better security
     ),
     iOptions: IOSOptions(
       accessibility: KeychainAccessibility.first_unlock_this_device,
     ),
   );
-  
+
   // Initialize notification system (permissions will be requested from home page)
   await NotificationScheduler.initialize();
   

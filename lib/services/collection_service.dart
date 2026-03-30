@@ -4,6 +4,7 @@ import 'package:muslimdigest/api/collections.dart';
 import 'package:muslimdigest/models/feed.dart';
 import 'package:muslimdigest/providers/feed/feed_cache.dart';
 import 'package:muslimdigest/services/feed_state_service.dart';
+import 'package:muslimdigest/utils/secure_feed_cache.dart';
 
 /// Centralized service for managing feed collections
 /// Provides consistent collection operations across the app
@@ -13,10 +14,16 @@ class CollectionService {
   /// Returns null if feed is not in any collection
   static Future<String?> getFeedCollection(dynamic ref, FeedItem feed) async {
     try {
+      // Early return if collectionName is already available from backend
+      if (feed.collectionName != null) {
+        return feed.collectionName;
+      }
+      
+      // Fallback to searching through collections if not available
       final collections = await CollectionApi.getCollections();
       
       for (final collection in collections) {
-        final cache = ref.read(feedCacheProvider);
+        final SecureFeedCache cache = ref.read(feedCacheProvider);
         final collectionItems = await cache.getFeedItems('feed/saved', queryParams: {'collection': collection});
         
         if (collectionItems != null && collectionItems.any((item) => item.id == feed.id)) {
@@ -40,7 +47,7 @@ class CollectionService {
       
       // Check each collection to see if this feed is in it
       for (final collection in collections) {
-        final cache = ref.read(feedCacheProvider);
+        final SecureFeedCache cache = ref.read(feedCacheProvider);
         final collectionItems = await cache.getFeedItems('feed/saved', queryParams: {'collection': collection});
         
         // If the feed is in this collection, remove it
@@ -53,7 +60,7 @@ class CollectionService {
       }
 
       // ALSO remove from general "All Saved" cache
-      final cache = ref.read(feedCacheProvider);
+      final SecureFeedCache cache = ref.read(feedCacheProvider);
       final generalCacheItems = await cache.getFeedItems('feed/saved');
       if (generalCacheItems != null && generalCacheItems.any((item) => item.id == feed.id)) {
         final updatedGeneralItems = generalCacheItems.where((item) => item.id != feed.id).toList();
@@ -87,7 +94,7 @@ class CollectionService {
       final collections = await CollectionApi.getCollections();
       
       for (final collection in collections) {
-        final cache = ref.read(feedCacheProvider);
+        final SecureFeedCache cache = ref.read(feedCacheProvider);
         final collectionItems = await cache.getFeedItems('feed/saved', queryParams: {'collection': collection});
         
         if (collectionItems != null && collectionItems.any((item) => item.id == feed.id)) {
@@ -109,7 +116,7 @@ class CollectionService {
       final containingCollections = <String>[];
       
       for (final collection in collections) {
-        final cache = ref.read(feedCacheProvider);
+        final SecureFeedCache cache = ref.read(feedCacheProvider);
         final collectionItems = await cache.getFeedItems('feed/saved', queryParams: {'collection': collection});
         
         if (collectionItems != null && collectionItems.any((item) => item.id == feed.id)) {

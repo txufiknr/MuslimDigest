@@ -31,6 +31,7 @@ class FeedItem {
   final DateTime? createdAt;
   final FeedbackCategory? feedbackCategory; // For not interested reason
   final IslamicEventData? relatedEvent;
+  final String? collectionName; // Collection name if feed is saved
 
   FeedItem({
     required this.id,
@@ -57,6 +58,7 @@ class FeedItem {
     this.alsoRead = const [],
     this.feedbackCategory,
     this.relatedEvent,
+    this.collectionName,
   });
 
   bool matchSearchTerm(String keyword) => [title, displayTitle, summary, topic, ...keywords].containsAnyIgnoreCase([keyword]);
@@ -200,6 +202,7 @@ class FeedItem {
       isSaved: json['isSaved'] ?? false,
       feedbackCategory: FeedbackCategory.fromString(json['feedbackCategory']),
       relatedEvent: json['relatedEvent'] == null ? null : IslamicEventData.fromJson(json['relatedEvent']),
+      collectionName: json['collectionName'],
     );
   }
 
@@ -229,6 +232,7 @@ class FeedItem {
       'likeCount': likeCount,
       'feedbackCategory': feedbackCategory?.name,
       'relatedEvent': relatedEvent?.toJson(),
+      'collectionName': collectionName,
     };
   }
 
@@ -257,6 +261,7 @@ class FeedItem {
     FeedbackCategory? feedbackCategory,
     IslamicEventData? relatedEvent,
     DateTime? createdAt,
+    String? collectionName,
   }) {
     return FeedItem(
       id: id ?? this.id,
@@ -283,6 +288,7 @@ class FeedItem {
       feedbackCategory: feedbackCategory ?? this.feedbackCategory,
       relatedEvent: relatedEvent ?? this.relatedEvent,
       createdAt: createdAt ?? this.createdAt,
+      collectionName: collectionName ?? this.collectionName,
     );
   }
 

@@ -1,19 +1,26 @@
+import 'dart:developer' show log;
 import 'dart:math' show max;
 
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:muslimdigest/api/feeds.dart';
 import 'package:muslimdigest/models/feed.dart';
 import 'package:muslimdigest/services/feed_state_service.dart';
 import 'package:muslimdigest/services/collection_service.dart';
 import 'package:muslimdigest/services/dio.dart';
+import 'package:muslimdigest/utils/dialogs.dart';
 import 'package:muslimdigest/utils/functions.dart';
 import 'package:muslimdigest/variables/feed.dart';
+import 'package:muslimdigest/widgets/collections/collection_selection_sheet.dart';
 
 /// Base interface for feed action strategies
 abstract class FeedActionStrategy {
   /// Execute the action for the given feed item
   Future<void> execute(WidgetRef ref, FeedItem feed);
+  
+  /// Execute long press action for the given feed item
+  Future<void> executeLongPress(WidgetRef ref, FeedItem feed, BuildContext context);
   
   /// Get the label for the action button
   String get actionLabel;
@@ -40,6 +47,12 @@ abstract class BaseFeedActionStrategy implements FeedActionStrategy {
     
     // Fire-and-forget API call
     makeAPICall(feed);
+  }
+  
+  @override
+  Future<void> executeLongPress(WidgetRef ref, FeedItem feed, BuildContext context) async {
+    // Default implementation - do nothing for most strategies
+    // Only specific strategies (like UnsaveFeedStrategy) will override this
   }
   
   /// Remove feed item from current provider state
@@ -94,6 +107,83 @@ class UnsaveFeedStrategy extends BaseFeedActionStrategy {
   
   @override
   String get actionTooltip => 'Remove from saved feeds';
+  
+  @override
+  Future<void> executeLongPress(WidgetRef ref, FeedItem feed, BuildContext context) async {
+    // Get current collection for this feed
+    final currentCollection = await CollectionService.getFeedCollection(ref, feed);
+    if (!context.mounted) return;
+
+    // Show collection selection sheet to change collection
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => CollectionSelectionSheet(
+        feedItem: feed,
+        isSaved: feed.isSaved,
+        currentCollection: currentCollection,
+        onCollectionSelected: (newCollection) {
+          _updateFeedCollection(ref, feed, newCollection, context);
+        },
+        onUnsave: () {
+          _unsaveFeed(ref, feed, context);
+        },
+      ),
+    );
+  }
+  
+  void _unsaveFeed(WidgetRef ref, FeedItem feed, BuildContext context) async {
+    try {
+      // Execute normal unsave action
+      await updateUI(ref, feed);
+      makeAPICall(feed);
+      
+      // Update collection name to null across all feed types
+      await FeedStateService.updateCollectionNameEverywhere(
+        ref, 
+        feed, 
+        null, // Set collectionName to null when un-saving
+        skipFeedType: FeedType.saved, // Skip saved feed to avoid circular dependency
+        updateCache: true,
+      );
+      
+      if (context.mounted) {
+        showSnackBarSuccess(context, 'Removed from saved feeds');
+      }
+      log('[UnsaveFeedStrategy] ✅ Unsaved feed "${feed.id}"');
+    } catch (e) {
+      log('[UnsaveFeedStrategy] ❌ Unsave failed: $e');
+      if (context.mounted) {
+        showSnackBarError(context, 'Failed to unsave feed');
+      }
+    }
+  }
+  
+  void _updateFeedCollection(WidgetRef ref, FeedItem feed, String collection, BuildContext context) async {
+    try {
+      fireAndForget(() => updateCollection(feed.id, collection));
+      
+      // Update collection name across all feed types using new method
+      await FeedStateService.updateCollectionNameEverywhere(
+        ref, 
+        feed, 
+        collection,
+        skipFeedType: FeedType.saved, // Skip saved feed to avoid circular dependency
+        updateCache: true,
+      );
+
+      if (context.mounted) {
+        showSnackBarSuccess(context, 'Moved to "$collection"');
+      }
+      log('[UnsaveFeedStrategy] ✅ Moved to collection "$collection"');
+    } catch (e) {
+      log('[UnsaveFeedStrategy] ❌ Move to collection failed: $e');
+      if (context.mounted) {
+        showSnackBarError(context, 'Failed to move to collection');
+      }
+    }
+  }
   
   @override
   Future<void> updateUI(WidgetRef ref, FeedItem feed) async {

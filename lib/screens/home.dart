@@ -185,12 +185,9 @@ class _HomePageState extends ConsumerState<HomePage> with RouteAware {
     // Check for in-app updates using utility
     AppUpdater.checkForAppUpdate(context);
     
-    if (_isNewDay) {
+    if (_isNewDay && isExistingUser) {
       log("[home] 👋 Welcome back! It's a new day since you left, we'll load your digest");
       _openFeed(force: true);
-      
-      // Ensure digest summary shows on new day (idempotent)
-      // _showDigestSummaryIdempotent();
       return true;
     }
     
@@ -205,6 +202,7 @@ class _HomePageState extends ConsumerState<HomePage> with RouteAware {
 
   void _saveUserPreferences() {
     _lastUserPreferences = ref.read(preferencesProvider);
+    _saveAllData();
   }
 
   void _reloadFeed() {

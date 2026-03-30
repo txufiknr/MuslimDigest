@@ -211,6 +211,34 @@ class FeedStateService {
     );
   }
 
+  /// Updates the save status and collection name of a feed item across all feed types and caches.
+  /// 
+  /// This method ensures that when an item's collection is changed, the change
+  /// is reflected everywhere the item appears - in all feed lists and cache entries.
+  /// 
+  /// Parameters:
+  /// - [ref] - The Ref or WidgetRef for accessing providers and state
+  /// - [feedItem] - The feed item to update
+  /// - [collectionName] - The new collection name (null if unsaved)
+  /// - [skipFeedType] - Optional feed type to skip (prevents circular updates)
+  /// - [updateCache] - Whether to update cache (default: true)
+  static Future<void> updateCollectionNameEverywhere(
+    dynamic ref,
+    FeedItem feedItem,
+    String? collectionName, {
+    FeedType? skipFeedType,
+    bool updateCache = true,
+  }) async {
+    await _updateStatusEverywhereImpl(
+      ref: ref,
+      feedItem: feedItem,
+      isSaved: collectionName != null,
+      collectionName: collectionName,
+      skipFeedType: skipFeedType,
+      updateCache: updateCache,
+    );
+  }
+
   /// Common implementation for updating save status across all feed types.
   /// 
   /// This private method contains the shared logic to avoid code duplication
@@ -222,6 +250,7 @@ class FeedStateService {
     bool? isSaved,
     bool? isLiked,
     int? likeCount,
+    String? collectionName,
     FeedType? skipFeedType,
     String? specificCollection,
     bool updateCache = true,
@@ -235,7 +264,12 @@ class FeedStateService {
     }
 
     // Update user state first to maintain consistency
-    final User currentUser = ref.read(userProvider);
+    final User? currentUser = ref.read(userProvider);
+    if (currentUser == null) {
+      log('[FeedStateService] ❌ User not available, skipping user state update');
+      return;
+    }
+    
     final newTotalSaved = isSaved == true ? currentUser.totalSaved + 1 : isSaved == false ? currentUser.totalSaved - 1 : currentUser.totalSaved;
     final newTotalLiked = isLiked == true ? currentUser.totalLiked + 1 : isLiked == false ? currentUser.totalLiked - 1 : currentUser.totalLiked;
     await ref.read(userProvider.notifier).setValue(currentUser.copyWith(
@@ -262,8 +296,8 @@ class FeedStateService {
       final List<FeedItem> matchedItems = currentState.items?.where((item) => item.id == feedItem.id).toList() ?? <FeedItem>[];
       final FeedItem? currentItem = matchedItems.isEmpty ? null : matchedItems.first;
       
-      // Check if item needs updating (either saved status or liked status changed)
-      if (currentItem != null && (currentItem.isSaved != isSaved || currentItem.isLiked != isLiked)) {
+      // Check if item needs updating (saved status, liked status, or collection name changed)
+      if (currentItem != null && (currentItem.isSaved != isSaved || currentItem.isLiked != isLiked || currentItem.collectionName != collectionName)) {
         // Update the item in this feed type
         final List<FeedItem>? updatedItems = currentState.items?.map<FeedItem>((FeedItem item) {
           if (item.id == feedItem.id) {
@@ -271,6 +305,7 @@ class FeedStateService {
               isSaved: isSaved ?? item.isSaved,
               isLiked: isLiked ?? item.isLiked,
               likeCount: likeCount ?? item.likeCount,
+              collectionName: collectionName ?? item.collectionName,
             );
           }
           return item;

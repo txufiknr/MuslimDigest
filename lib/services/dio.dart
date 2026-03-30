@@ -2,14 +2,16 @@ import 'dart:developer' show log;
 import 'dart:io' show Platform;
 
 import 'package:dio/dio.dart';
+import 'package:muslimdigest/config/api.dart';
 import 'package:muslimdigest/config/constants.dart';
 import 'package:muslimdigest/variables/app.dart';
 import 'package:muslimdigest/variables/user.dart';
-import 'package:muslimdigest/utils/offline_queue.dart';
+import 'package:muslimdigest/utils/offline_queue/offline_queue.dart';
+import 'package:muslimdigest/utils/offline_queue/api_pattern_detector.dart';
 
 /// HTTP content type constant for JSON requests
-const String contentType = 'application/json';
-const Duration timeout = Duration(seconds: 30);
+const String contentType = API_CONTENT_TYPE;
+const Duration timeout = API_REQUEST_TIMEOUT;
 
 /// Represents a standardized API response wrapper
 /// 
@@ -203,6 +205,15 @@ class ApiService {
     
     // If Dio exception occurs and offline queuing is enabled
     if (queueOffline && _isNetworkError(apiResponse)) {
+      // Record the network failure for pattern analysis (most important for offline optimization)
+      ApiPatternDetector.recordRequest(
+        method: method,
+        endpoint: path,
+        data: data ?? {},
+        success: false,
+        statusCode: e.response?.statusCode,
+      );
+      
       log('[ApiService] DioException occurred, queuing $method /$path: ${e.message}');
       await OfflineQueueService.queueRequest(
         method: method,
@@ -228,6 +239,15 @@ class ApiService {
     
     // If exception occurs and offline queuing is enabled
     if (queueOffline) {
+      // Record the exception for pattern analysis (important for understanding failure patterns)
+      ApiPatternDetector.recordRequest(
+        method: method,
+        endpoint: path,
+        data: data ?? {},
+        success: false,
+        statusCode: null, // Exceptions don't have HTTP status codes
+      );
+      
       log('[ApiService] Exception occurred, queuing $method /$path: $e');
       await OfflineQueueService.queueRequest(
         method: method,
@@ -308,10 +328,30 @@ class ApiService {
       
       if (isSuccess) {
         // Parse the successful JSON response and return success result
-        return ApiResponse.success(result, response.statusCode!);
+        final apiResponse = ApiResponse.success(result, response.statusCode!);
+        
+        // Record the successful request for pattern analysis
+        ApiPatternDetector.recordRequest(
+          method: 'POST',
+          endpoint: path,
+          data: cleanedBody,
+          success: true,
+          statusCode: response.statusCode,
+        );
+        
+        return apiResponse;
       } else {
         // Handle HTTP error responses with status code information
         final apiResponse = ApiResponse.error('create', path, response.statusCode!, result);
+        
+        // Record the failed request for pattern analysis (critical for offline queue optimization)
+        ApiPatternDetector.recordRequest(
+          method: 'POST',
+          endpoint: path,
+          data: cleanedBody,
+          success: false,
+          statusCode: response.statusCode,
+        );
         
         // If request failed due to network issues and offline queuing is enabled
         if (queueOffline && _isNetworkError(apiResponse)) {
@@ -371,18 +411,41 @@ class ApiService {
       
       if (isSuccess) {
         // Parse the successful JSON response and return success result
-        return ApiResponse.success(result, response.statusCode!);
+        final apiResponse = ApiResponse.success(result, response.statusCode!);
+        
+        // Record the successful request for pattern analysis
+        ApiPatternDetector.recordRequest(
+          method: 'PUT',
+          endpoint: path,
+          data: cleanedBody,
+          success: true,
+          statusCode: response.statusCode,
+        );
+        
+        return apiResponse;
       } else {
         // Handle HTTP error responses with status code information
         final apiResponse = ApiResponse.error('update', path, response.statusCode!, result);
         
-        if (queueOffline && _isNetworkError(apiResponse)) {
-          log('[ApiService] Network error detected, queuing PUT /$path');
+        // Record the failed request for pattern analysis (critical for offline queue optimization)
+        ApiPatternDetector.recordRequest(
+          method: 'PUT',
+          endpoint: path,
+          data: cleanedBody,
+          success: false,
+          statusCode: response.statusCode,
+        );
+        
+        // Determine if this error should be queued for retry
+        if (queueOffline && _shouldQueueForRetry(apiResponse)) {
+          log('[ApiService] Queueable error detected, queuing PUT /$path (status: ${response.statusCode})');
           await OfflineQueueService.queueRequest(
             method: 'PUT',
             endpoint: path,
             data: cleanedBody,
           );
+        } else {
+          log('[ApiService] Non-queueable error, not queuing PUT /$path (status: ${response.statusCode})');
         }
         
         return apiResponse;
@@ -428,10 +491,30 @@ class ApiService {
       
       if (isSuccess) {
         // Parse the successful JSON response and return success result
-        return ApiResponse.success(result, response.statusCode!);
+        final apiResponse = ApiResponse.success(result, response.statusCode!);
+        
+        // Record the successful request for pattern analysis
+        ApiPatternDetector.recordRequest(
+          method: 'DELETE',
+          endpoint: path,
+          data: {}, // DELETE requests typically have no body
+          success: true,
+          statusCode: response.statusCode,
+        );
+        
+        return apiResponse;
       } else {
         // Handle HTTP error responses with status code information
         final apiResponse = ApiResponse.error('delete', path, response.statusCode!, result);
+        
+        // Record the failed request for pattern analysis (critical for offline queue optimization)
+        ApiPatternDetector.recordRequest(
+          method: 'DELETE',
+          endpoint: path,
+          data: {}, // DELETE requests typically have no body
+          success: false,
+          statusCode: response.statusCode,
+        );
         
         if (queueOffline && _isNetworkError(apiResponse)) {
           log('[ApiService] Network error detected, queuing DELETE /$path');
@@ -560,6 +643,39 @@ class ApiService {
            response.error?.toLowerCase().contains('network') == true ||
            response.error?.toLowerCase().contains('connection') == true ||
            response.error?.toLowerCase().contains('timeout') == true;
+  }
+
+  /// Determine if an API response should be queued for retry based on HTTP status code
+  static bool _shouldQueueForRetry(ApiResponse response) {
+    // Always queue network errors
+    if (_isNetworkError(response)) {
+      return true;
+    }
+    
+    // Don't queue client errors (4xx) except for specific retryable ones
+    if (response.statusCode >= 400 && response.statusCode < 500) {
+      switch (response.statusCode) {
+        case 408: // Request Timeout
+        case 429: // Too Many Requests (rate limiting)
+          return true;
+        case 400: // Bad Request
+        case 401: // Unauthorized
+        case 403: // Forbidden
+        case 404: // Not Found
+        case 422: // Unprocessable Entity
+          return false; // Don't retry these client errors
+        default:
+          return false; // Default to not retrying client errors
+      }
+    }
+    
+    // Queue server errors (5xx) as they might be temporary
+    if (response.statusCode >= 500 && response.statusCode < 600) {
+      return true;
+    }
+    
+    // Default to not queuing unknown status codes
+    return false;
   }
 
   /// Get offline queue statistics

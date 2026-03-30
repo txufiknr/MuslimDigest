@@ -1,7 +1,11 @@
-v1.0.5
-added in app update check
-fixed bug today's digest summary that always shows up
-fixed home header text to be consistent with the actual content
+v1.0.6
+What's new in this update:
+
+• In-app update checker to keep you up to date
+• Fixed today's digest summary display issue
+• Improved home header text consistency
+• Double-tap feed cards to like posts quickly
+• Long press unsave button to change collection
 
 v1.0.4
 search liked and saved feed

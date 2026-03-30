@@ -107,7 +107,6 @@ class _HomeHeaderState extends ConsumerState<HomeHeader> {
     // Conditions
     final currentStreak = streaks.currentStreak;
     final readTarget = ref.read(feedProvider).items?.length ?? DAILY_READ_TARGET;
-    // final isStreak = readCount == readTarget;
     final isStreakToday = isToday(streaks.lastReadAt);
     final isStreakAlive = currentStreak > 0;
 

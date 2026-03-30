@@ -4,6 +4,7 @@ import 'package:muslimdigest/config/constants.dart';
 import 'package:muslimdigest/utils/route.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 /// Application-level variables and singleton instances
 /// 
@@ -47,6 +48,18 @@ var appVersion = '1.0.0';
 /// final value = prefs.getString('key');
 /// ```
 late final SharedPreferencesWithCache prefs;
+
+/// Secure storage singleton instance
+/// 
+/// Global FlutterSecureStorage instance for secure persistent storage
+/// across the entire application. Must be initialized before use.
+/// 
+/// Example:
+/// ```
+/// await secureStorage.write(key: 'key', value: 'value');
+/// final value = await secureStorage.read(key: 'key');
+/// ```
+late final FlutterSecureStorage secureStorage;
 
 final inAppReview = InAppReview.instance;
 final sharePlus = SharePlus.instance;

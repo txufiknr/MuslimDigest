@@ -16,13 +16,17 @@ import 'package:muslimdigest/widgets/components/placeholder.dart';
 class CollectionSelectionSheet extends ConsumerStatefulWidget {
   final FeedItem feedItem;
   final Function(String)? onCollectionSelected;
-  // final Future Function(String)? onCollectionCreated;
+  final Function()? onUnsave;
+  final bool isSaved;
+  final String? currentCollection;
 
   const CollectionSelectionSheet({
     super.key,
     required this.feedItem,
     this.onCollectionSelected,
-    // this.onCollectionCreated,
+    this.onUnsave,
+    this.isSaved = false,
+    this.currentCollection,
   });
 
   @override
@@ -99,20 +103,8 @@ class _CollectionSelectionSheetState extends ConsumerState<CollectionSelectionSh
 
   void _selectCollection(String collection) {
     widget.onCollectionSelected?.call(collection);
-    // widget.onClose?.call();
     Navigator.pop(context);
   }
-
-  // void _createNewCollection() async {
-  //   if (_searchQuery.isEmpty) return;
-  //   setState(() {
-  //     _isLoading = true;
-  //   });
-  //   await widget.onCollectionCreated?.call(_searchQuery);
-
-  //   // widget.onClose?.call();
-  //   if (mounted) Navigator.pop(context);
-  // }
 
   void _createNewCollection() async {
     if (_searchQuery.isEmpty) return;
@@ -181,6 +173,25 @@ class _CollectionSelectionSheetState extends ConsumerState<CollectionSelectionSh
             isLoading: _isLoading,
           ),
 
+          // Show Unsave button if feed is already saved
+          if (widget.isSaved && !_showCreateButton) MyButton(
+            text: 'Unsave',
+            onPressed: () async {
+              // Check if widget is still mounted before calling callback
+              if (!mounted) return;
+              
+              widget.onUnsave?.call();
+              
+              // Check again before navigation
+              if (mounted) {
+                Navigator.pop(context);
+              }
+            },
+            icon: Icon(CupertinoIcons.bookmark_fill),
+            variant: MyButtonVariant.error,
+            isLoading: _isLoading,
+          ),
+
           MyButton(
             text: _showCreateButton ? 'Cancel' : 'Close',
             outlined: true,
@@ -240,6 +251,8 @@ class _CollectionSelectionSheetState extends ConsumerState<CollectionSelectionSh
   }
 
   Widget _buildCollectionItem(MyHelper h, String collection) {
+    final isCurrentCollection = widget.isSaved && collection == widget.currentCollection;
+    
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -247,33 +260,47 @@ class _CollectionSelectionSheetState extends ConsumerState<CollectionSelectionSh
         borderRadius: BorderRadius.circular(8),
         child: Container(
           padding: EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(8),
+            border: isCurrentCollection ? Border.all(
+              color: h.currentTheme.colorScheme.primary,
+              width: 2,
+            ) : null,
+            color: isCurrentCollection ? h.currentTheme.colorScheme.primaryContainer.withValues(alpha: 0.1) : null,
+          ),
           child: Row(
             children: [
               Container(
                 width: 32,
                 height: 32,
                 decoration: BoxDecoration(
-                  // color: h.currentTheme.colorScheme.primaryContainer,
-                  color: h.currentTheme.colorScheme.outline,
+                  color: isCurrentCollection 
+                    ? h.currentTheme.colorScheme.primary
+                    : h.currentTheme.colorScheme.outline,
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Icon(
-                  CupertinoIcons.folder,
+                  isCurrentCollection ? CupertinoIcons.check_mark_circled : CupertinoIcons.folder,
                   size: 16,
-                  color: h.currentTheme.colorScheme.primary,
+                  color: isCurrentCollection 
+                    ? h.currentTheme.colorScheme.onPrimary
+                    : h.currentTheme.colorScheme.primary,
                 ),
               ),
               const SizedBox(width: 12),
               Text(
                 collection,
                 style: h.currentTextTheme.bodyMedium?.copyWith(
-                  fontWeight: FontWeight.w500,
+                  fontWeight: isCurrentCollection ? FontWeight.w600 : FontWeight.w500,
+                  color: isCurrentCollection ? h.currentTheme.colorScheme.primary : null,
                 ),
               ).expand(),
               Icon(
-                CupertinoIcons.chevron_right,
+                isCurrentCollection ? CupertinoIcons.check_mark : CupertinoIcons.chevron_right,
                 size: 16,
-                color: h.currentTheme.colorScheme.tertiary,
+                color: isCurrentCollection 
+                  ? h.currentTheme.colorScheme.primary 
+                  : h.currentTheme.colorScheme.tertiary,
               ),
             ],
           ),

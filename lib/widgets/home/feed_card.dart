@@ -87,14 +87,20 @@ class _FeedCardState extends ConsumerState<FeedCard> with AutomaticKeepAliveClie
     return currentItem?.isSaved ?? false;
   }
 
+  bool _isLiking = false;
+
   void _like() async {
-    if (_feedId == null) return;
+    if (_feedId == null || _isLiking) return; // Prevent multiple simultaneous calls
+    
+    _isLiking = true;
     
     try {
       await _notifier.update(_feedId, isLiked: !_isLiked);
     } catch (e) {
       // Silent error handling - UI will revert automatically on state rebuild
       log('[FeedCard] Like update failed: $e');
+    } finally {
+      _isLiking = false;
     }
   }
 
@@ -135,57 +141,27 @@ class _FeedCardState extends ConsumerState<FeedCard> with AutomaticKeepAliveClie
   void _updateFeedCollection(String collection) async {
     if (_feedId == null) return;
     
-    // try {
+    try {
       fireAndForget(() => updateCollection(_feedId, collection));
       
-      // Update cache with collection information
-      await FeedStateService.updateSaveStatusEverywhere(
+      // Update collection name across all feed types using new method
+      await FeedStateService.updateCollectionNameEverywhere(
         ref, 
         widget.feedItem!, 
-        true, 
-        specificCollection: collection,
-        updateCache: true, // Enable cache updates now that collection is known
+        collection,
+        skipFeedType: widget.feedType, // Skip current feed type to avoid circular dependency
+        updateCache: true,
       );
 
       if (mounted) showSnackBarSuccess(context, 'Saved to "$collection"');
       log('[FeedCard] ✅ Saved to collection "$collection"');
-    // } catch (e) {
-    //   log('[FeedCard] ❌ Save to collection failed: $e');
-    //   if (mounted) {
-    //     showSnackBarError(context, 'Failed to save to collection');
-    //   }
-    //   // CRITICAL: Update cache even on exception to maintain consistency
-    //   await FeedStateService.updateSaveStatusEverywhere(
-    //     ref, 
-    //     widget.feedItem!, 
-    //     true, 
-    //     updateCache: true, // Ensure cache reflects UI state
-    //   );
-    // }
+    } catch (e) {
+      log('[FeedCard] ❌ Save to collection failed: $e');
+      if (mounted) {
+        showSnackBarError(context, 'Failed to save to collection');
+      }
+    }
   }
-
-  // Future<void> _createCollectionAndSave(String collection) async {
-  //   if (_feedId == null) return;
-    
-  //   try {
-  //     // Collections are created implicitly when saving with a new collection name
-  //     // Update cache once with collection information
-  //     await FeedStateService.updateSaveStatusEverywhere(
-  //       ref,
-  //       widget.feedItem!,
-  //       true,
-  //       specificCollection: collection,
-  //       updateCache: true, // Single cache update
-  //     );
-      
-  //     log('[FeedCard] ✅ Created collection "$collection" and updated cache');
-  //   } catch (e) {
-  //     log('[FeedCard] ❌ Create collection failed: $e');
-  //     if (mounted) {
-  //       showSnackBarError(context, 'Failed to create collection');
-  //     }
-  //   }
-  // }
 
   Future<void> _share() async {
     setState(() => _isTakingScreenshot = true);
@@ -323,7 +299,6 @@ class _FeedCardState extends ConsumerState<FeedCard> with AutomaticKeepAliveClie
             Text(isDigest ? "Another day of beneficial knowledge." : "You've reached the end", textAlign: TextAlign.center, style: h.currentTextTheme.titleLarge),
             Text(MESSAGES[(currentStreak - 1) % MESSAGES.length], textAlign: TextAlign.center, style: h.currentTextTheme.bodyMedium),
             if (isDigest) StreaksCard() else UserReadsRank(textAlign: TextAlign.center,),
-            // Lottie.asset('assets/lottie/streak.json').expand(),
             Lottie.asset('assets/lottie/streak.json').flexible(),
             if (!_isTakingScreenshot) DonateButton(outlined: true,),
             MyButton(
@@ -347,25 +322,28 @@ class _FeedCardState extends ConsumerState<FeedCard> with AutomaticKeepAliveClie
           feedItem: widget.feedItem!,
           reason: reason,
           isSourceAvoided: isSourceAvoided,
-        ).center() : Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header with image and title
-            _FeedHeader(feedItem: widget.feedItem!),
-            
-            // Content with article text and badges
-            _FeedContent(feedItem: widget.feedItem!).expand(),
-            
-            // Footer with source and actions buttons
-            _FeedFooter(
-              feedType: widget.feedType,
-              feedItem: widget.feedItem!,
-              isTakingScreenshot: _isTakingScreenshot,
-              onShare: _share,
-              onSave: _save,
-              onLike: _like,
-            ),
-          ],
+        ).center() : GestureDetector(
+          onDoubleTap: _feedId == null ? null : () => _like(),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header with image and title
+              _FeedHeader(feedItem: widget.feedItem!),
+              
+              // Content with article text and badges
+              _FeedContent(feedItem: widget.feedItem!).expand(),
+              
+              // Footer with source and actions buttons
+              _FeedFooter(
+                feedType: widget.feedType,
+                feedItem: widget.feedItem!,
+                isTakingScreenshot: _isTakingScreenshot,
+                onShare: _share,
+                onSave: _save,
+                onLike: _like,
+              ),
+            ],
+          ),
         ),
       ),
     );
