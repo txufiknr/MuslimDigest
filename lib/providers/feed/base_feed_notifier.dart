@@ -323,10 +323,14 @@ abstract class BaseFeedNotifier extends Notifier<BaseFeedState> {
       if (cachedItems != null) {
         log('[BaseFeedNotifier] Cache hit! Found ${cachedItems.length} items for endpoint: $endpoint, queryParams: $queryParams');
         await setValue(cachedItems);
+
+        // If we have fewer items than the pagination limit, this is likely the last page
+        // final hasMore = cachedItems.length >= CURSOR_PAGINATION_LIMIT;
+
+        // Be conservative: only assume hasMore if we have more than a full page
+        final hasMore = cachedItems.length > CURSOR_PAGINATION_LIMIT;
+
         // Set pagination state for cached data
-        // Set pagination state for cached data
-        // If we have a full page of items, assume there might be more data
-        final hasMore = cachedItems.length % CURSOR_PAGINATION_LIMIT == 0;
         state = state.copyWith(
           isLoading: false,
           isLoadingMore: false,

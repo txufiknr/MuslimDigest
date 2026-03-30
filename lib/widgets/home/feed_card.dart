@@ -48,6 +48,7 @@ import '../../models/feed.dart';
 import 'package:screenshot/screenshot.dart';
 import 'package:share_plus/share_plus.dart';
 import 'dart:io';
+import '../animations/heart_animation.dart';
 
 /// Individual feed card widget
 class FeedCard extends ConsumerStatefulWidget {
@@ -69,6 +70,7 @@ class _FeedCardState extends ConsumerState<FeedCard> with AutomaticKeepAliveClie
   final _screenshotController = ScreenshotController();
   late final _feedId = widget.feedItem?.id;
   bool _isTakingScreenshot = false;
+  bool _showHeartAnimation = false;
 
   @override
   bool get wantKeepAlive => true;
@@ -89,13 +91,30 @@ class _FeedCardState extends ConsumerState<FeedCard> with AutomaticKeepAliveClie
 
   bool _isLiking = false;
 
-  void _like() async {
+  void _like([bool? value]) async {
     if (_feedId == null || _isLiking) return; // Prevent multiple simultaneous calls
+    final isLikedValue = value ?? !_isLiked;
+    
+    // Show heart animation
+    if (mounted && isLikedValue) {
+      setState(() {
+        _showHeartAnimation = true;
+      });
+      
+      // Hide animation after it completes
+      Future.delayed(const Duration(milliseconds: 800), () {
+        if (mounted) {
+          setState(() {
+            _showHeartAnimation = false;
+          });
+        }
+      });
+    }
     
     _isLiking = true;
     
     try {
-      await _notifier.update(_feedId, isLiked: !_isLiked);
+      if (isLikedValue != _isLiked) await _notifier.update(_feedId, isLiked: isLikedValue);
     } catch (e) {
       // Silent error handling - UI will revert automatically on state rebuild
       log('[FeedCard] Like update failed: $e');
@@ -322,28 +341,35 @@ class _FeedCardState extends ConsumerState<FeedCard> with AutomaticKeepAliveClie
           feedItem: widget.feedItem!,
           reason: reason,
           isSourceAvoided: isSourceAvoided,
-        ).center() : GestureDetector(
-          onDoubleTap: _feedId == null ? null : () => _like(),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header with image and title
-              _FeedHeader(feedItem: widget.feedItem!),
-              
-              // Content with article text and badges
-              _FeedContent(feedItem: widget.feedItem!).expand(),
-              
-              // Footer with source and actions buttons
-              _FeedFooter(
-                feedType: widget.feedType,
-                feedItem: widget.feedItem!,
-                isTakingScreenshot: _isTakingScreenshot,
-                onShare: _share,
-                onSave: _save,
-                onLike: _like,
+        ).center() : Stack(
+          children: [
+            GestureDetector(
+              onDoubleTap: () => _like(true),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Header with image and title
+                  _FeedHeader(feedItem: widget.feedItem!),
+                  
+                  // Content with article text and badges
+                  _FeedContent(feedItem: widget.feedItem!).expand(),
+                  
+                  // Footer with source and actions buttons
+                  _FeedFooter(
+                    feedType: widget.feedType,
+                    feedItem: widget.feedItem!,
+                    isTakingScreenshot: _isTakingScreenshot,
+                    onShare: _share,
+                    onSave: _save,
+                    onLike: _like,
+                  ),
+                ],
               ),
-            ],
-          ),
+            ),
+            // Heart animation overlay (ensure to restart animation when like triggered again)
+            if (_showHeartAnimation)
+              HeartAnimation(key: UniqueKey()).center().ignore().fill(),
+          ],
         ),
       ),
     );
@@ -643,6 +669,10 @@ class _FeedFooter extends ConsumerWidget {
     final isLiked = currentFeedItem.isLiked;
     final isSaved = currentFeedItem.isSaved;
     final likeCount = currentFeedItem.likeCount;
+
+    log('[_FeedFooter] 🎯 isLiked = $isLiked');
+    log('[_FeedFooter] 🎯 isSaved = $isSaved');
+    log('[_FeedFooter] 🎯 likeCount = $likeCount');
     
     return Column(
       mainAxisSize: MainAxisSize.min,

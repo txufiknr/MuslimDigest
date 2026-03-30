@@ -16,6 +16,7 @@ class CollectionListWidget extends ConsumerWidget {
   final bool showCreateButton;
   final String? newCollectionName;
   final VoidCallback? onAllSavedTap;
+  final String? searchQuery;
 
   const CollectionListWidget({
     super.key,
@@ -25,12 +26,17 @@ class CollectionListWidget extends ConsumerWidget {
     this.showCreateButton = false,
     this.newCollectionName,
     this.onAllSavedTap,
+    this.searchQuery,
   });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Always include "All Saved" as the first item
-    final allItems = ['All Saved', ...collections];
+    // Include "All Saved" only when not searching or when search query matches
+    final shouldShowAllSaved = searchQuery == null || 
+        searchQuery!.isEmpty || 
+        'All Saved'.toLowerCase().contains(searchQuery!.toLowerCase());
+    
+    final allItems = shouldShowAllSaved ? ['All Saved', ...collections] : collections;
     
     return ListView.builder(
       padding: const EdgeInsets.symmetric(vertical: 8),

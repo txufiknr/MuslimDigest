@@ -27,6 +27,7 @@ import 'package:muslimdigest/widgets/components/cached_image.dart';
 import 'package:muslimdigest/widgets/components/icon_button.dart';
 import 'package:muslimdigest/widgets/components/placeholder.dart';
 import 'package:muslimdigest/widgets/collections/collection_search.dart';
+import 'package:muslimdigest/config/feeds.dart' show CURSOR_PAGINATION_LIMIT;
 
 abstract class FeedListBasePage extends ConsumerStatefulWidget {
   final String title;
@@ -76,6 +77,9 @@ class _FeedListBasePageState extends ConsumerState<FeedListBasePage> {
   bool _isContentSwitching = false;
   Map<String, String>? _lastQueryParams;
   
+  // Track if we've verified pagination state for cached data
+  bool _hasVerifiedPagination = false;
+  
   AppRepository get r => ref.read(appRepositoryProvider);
 
   @override
@@ -85,8 +89,11 @@ class _FeedListBasePageState extends ConsumerState<FeedListBasePage> {
     _searchController.addListener(_onSearchChanged);
     
     // Delay the initial load to avoid modifying provider during build cycle
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _loadInitialFeeds();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await _loadInitialFeeds();
+      
+      // Check if we need to verify pagination state after initial load
+      _verifyPaginationIfNeeded();
     });
   }
 
@@ -174,6 +181,20 @@ class _FeedListBasePageState extends ConsumerState<FeedListBasePage> {
   Future<void> _loadMoreFeeds() async {
     final notifier = ref.read(widget.provider.notifier);
     await notifier.loadMore();
+  }
+
+  Future<void> _verifyPaginationIfNeeded() async {
+    if (_hasVerifiedPagination) return;
+    
+    final state = ref.read(widget.provider);
+    final feeds = state.items ?? [];
+    
+    // If we have exactly 15 items and hasMore is true, verify by refreshing
+    if (feeds.length == CURSOR_PAGINATION_LIMIT && state.hasMore) {
+      log('[FeedListBase] Verifying pagination state for exactly ${feeds.length} items');
+      await _onRefresh();
+      _hasVerifiedPagination = true;
+    }
   }
 
   Future<void> _onRefresh() async {

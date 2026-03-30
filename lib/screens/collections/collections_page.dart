@@ -108,6 +108,7 @@ class _CollectionsPageState extends ConsumerState<CollectionsPage> {
                       showCreateButton: _searchQuery.isNotEmpty && _filteredCollections.isEmpty,
                       onCreateCollection: _createCollection,
                       onAllSavedTap: _navigateToAllSaved,
+                      searchQuery: _searchQuery,
                     ),
             ),
           ],
