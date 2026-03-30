@@ -15,7 +15,7 @@ import 'package:muslimdigest/variables/app.dart';
 import 'package:muslimdigest/variables/feed.dart';
 import 'package:muslimdigest/utils/repository.dart';
 import 'package:muslimdigest/utils/functions.dart';
-import 'package:muslimdigest/config/feeds.dart' show CURSOR_PAGINATION_LIMIT;
+import 'package:muslimdigest/config/feeds.dart' show CURSOR_PAGINATION_LIMIT, DAILY_READ_TARGET;
 
 class BaseFeedState {
   final List<FeedItem>? items;
@@ -115,6 +115,9 @@ abstract class BaseFeedNotifier extends Notifier<BaseFeedState> {
   /// Track the current queryParams for caching
   Map<String, String>? _currentQueryParams;
   
+  /// Get the current query parameters for this feed (used for cache consistency)
+  Map<String, String>? get currentQueryParams => _currentQueryParams;
+  
   @override
   BaseFeedState build() {
     // Feed cache data is now handled by SecureFeedCache, initialized with empty state
@@ -128,6 +131,7 @@ abstract class BaseFeedNotifier extends Notifier<BaseFeedState> {
     // This ensures cache stays in sync with user interactions
     if (value != null && !skipCache) {
       final cache = ref.read(feedCacheProvider);
+      log('[BaseFeedNotifier] 🔄 Updating cache for endpoint: $endpoint with queryParams: $_currentQueryParams');
       await cache.setFeedItems(endpoint, value, queryParams: _currentQueryParams);
     }
   }
@@ -217,6 +221,23 @@ abstract class BaseFeedNotifier extends Notifier<BaseFeedState> {
       
       // Cache updates are now handled by FeedStateService.updateLikeStatusEverywhere
       // No need to schedule redundant cache updates here
+
+      // 💌 CRITICAL: Update digest feed cache separately since it was skipped above
+      if (currentFeedType == FeedType.digest) {
+        final cache = ref.read(feedCacheProvider);
+        final currentItems = await cache.getFeedItems('feed', queryParams: {'limit': '30'}) ?? <FeedItem>[];
+        final updatedItems = currentItems.map((item) {
+          if (item.id == feedId) {
+            return item.copyWith(
+              isLiked: isLiked,
+              likeCount: calculatedLikeCount,
+            );
+          }
+          return item;
+        }).toList();
+        await cache.setFeedItems('feed', updatedItems, queryParams: {'limit': '30'});
+        log('[BaseFeedNotifier] 🔄 Updated digest feed cache for like status: item $feedId, isLiked=$isLiked, likeCount=$calculatedLikeCount');
+      }
     }
     
     // Handle save operation
@@ -252,6 +273,20 @@ abstract class BaseFeedNotifier extends Notifier<BaseFeedState> {
         skipFeedType: currentFeedType,
         updateCache: true, // Always update cache immediately for better UX
       );
+      
+      // 💌 CRITICAL: Update digest feed cache separately since it was skipped above
+      if (currentFeedType == FeedType.digest) {
+        final cache = ref.read(feedCacheProvider);
+        final currentItems = await cache.getFeedItems(endpoint, queryParams: {'limit': DAILY_READ_TARGET.toString()}) ?? <FeedItem>[];
+        final updatedItems = currentItems.map((item) {
+          if (item.id == feedId) {
+            return item.copyWith(isSaved: isSaved);
+          }
+          return item;
+        }).toList();
+        await cache.setFeedItems(endpoint, updatedItems, queryParams: {'limit': DAILY_READ_TARGET.toString()});
+        log('[BaseFeedNotifier] 🔄 Updated digest feed cache for save status: item $feedId, isSaved=$isSaved');
+      }
       
       // If un-saving, also remove from all collection-specific caches
       // Note: Delay collection cleanup to avoid circular dependency with current update
@@ -322,6 +357,19 @@ abstract class BaseFeedNotifier extends Notifier<BaseFeedState> {
       final cachedItems = await cache.getFeedItems(endpoint, queryParams: queryParams);
       if (cachedItems != null) {
         log('[BaseFeedNotifier] Cache hit! Found ${cachedItems.length} items for endpoint: $endpoint, queryParams: $queryParams');
+        
+        // // CRITICAL: Check if cache was recently updated (within last 5 seconds) to prevent overwrites
+        // final cacheMetadata = await cache.getCacheMetadata(endpoint, queryParams: queryParams);
+        // final now = DateTime.now();
+        // final wasRecentlyUpdated = cacheMetadata != null && 
+        //     now.difference(DateTime.parse(cacheMetadata['timestamp']!)).inSeconds < 5;
+        
+        // if (wasRecentlyUpdated) {
+        //   log('[BaseFeedNotifier] 🛡️ Cache was recently updated, skipping load to preserve user changes');
+        //   await setValue(cachedItems);
+        //   return true;
+        // }
+        
         await setValue(cachedItems);
 
         // If we have fewer items than the pagination limit, this is likely the last page

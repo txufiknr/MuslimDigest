@@ -36,7 +36,7 @@ class SecureFeedCache {
     Map<String, String>? queryParams,
   }) async {
     final cacheKey = _generateCacheKey(endpoint, queryParams: queryParams);
-    log('[SecureFeedCache] Getting cache for key: $cacheKey');
+    log('[SecureFeedCache] 💌 Getting cache for key: $cacheKey');
     final cacheJson = await _storage.read(key: cacheKey);
     
     if (cacheJson == null) {
@@ -94,7 +94,7 @@ class SecureFeedCache {
     final cacheDuration = expiration ?? (endpoint == 'feed' ? _digestCacheDuration : _defaultCacheDuration);
     final expiresAt = now.add(cacheDuration);
 
-    log('[SecureFeedCache] Setting cache for key: $cacheKey, items: ${items.length}, expires: $expiresAt');
+    log('[SecureFeedCache] 💌 Setting cache for key: $cacheKey, items: ${items.length}, expires: $expiresAt');
 
     // Convert FeedItems to List<dynamic> for JSON serialization
     final itemsData = items.map((item) => item.toJson()).toList();

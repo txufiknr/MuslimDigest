@@ -141,8 +141,25 @@ class FeedStateService {
     );
   }
 
-  /// Update cache for a specific endpoint with optional query parameters
-  static Future<void> _updateFeedItemsCache(
+  /// Updates collection feed caches by adding or removing items from lists.
+/// 
+/// This method is specifically designed for collection feeds like 'feed/liked' and 'feed/saved'
+/// where items are added to the beginning of the list when active (liked/saved) or removed
+/// when inactive (unliked/unsaved). It is NOT intended for updating existing items in-place
+/// (like digest feed items).
+/// 
+/// **Parameters:**
+/// - [cache]: The cache instance to update
+/// - [endpoint]: The collection endpoint (e.g., 'feed/liked', 'feed/saved')
+/// - [feedItem]: The feed item to add or remove
+/// - [isActive]: If true, item is added to list; if false, item is removed from list
+/// - [queryParams]: Optional query parameters for cache key generation
+/// 
+/// **Behavior:**
+/// - When [isActive] is true: Prepends item to list (avoiding duplicates)
+/// - When [isActive] is false: Removes item from list
+/// - Updates cache with modified list and appropriate expiration
+  static Future<void> updateCollectionFeedCache(
     SecureFeedCache cache,
     String endpoint,
     FeedItem feedItem,
@@ -326,28 +343,16 @@ class FeedStateService {
       
       // Update the appropriate cache (single operation)
       if (isSaved != null) {
-        await _updateFeedItemsCache(cache, 'feed/saved', feedItem, isSaved, queryParams: queryParams);
-        // log('[FeedStateService] 💾 Updated saved feeds cache: ${isSaved ? 'added' : 'removed'} item ${feedItem.id} ${specificCollection != null ? 'to/from "$specificCollection"' : '(all)'}');
+        await updateCollectionFeedCache(cache, 'feed/saved', feedItem, isSaved, queryParams: queryParams);
+        log('[FeedStateService] 💾 Updated saved feeds cache: ${isSaved ? 'added' : 'removed'} item ${feedItem.id} ${specificCollection != null ? 'to/from "$specificCollection"' : '(all)'}');
       }
       if (isLiked != null) {
-        await _updateFeedItemsCache(cache, 'feed/liked', feedItem, isLiked);
-        // log('[FeedStateService] ❤️ Updated liked feeds cache: ${isLiked ? 'added' : 'removed'} item ${feedItem.id}');
+        await updateCollectionFeedCache(cache, 'feed/liked', feedItem, isLiked);
+        log('[FeedStateService] ❤️ Updated liked feeds cache: ${isLiked ? 'added' : 'removed'} item ${feedItem.id}');
       }
     } else {
       log('[FeedStateService] ⏸️ Skipping cache update for item ${feedItem.id} (updateCache=false)');
     }
-
-    // if (isSaved != null && specificCollection != null) {
-    //   // Also update the general "All Saved" cache
-    //   await _updateStatusEverywhereImpl(
-    //     ref: ref,
-    //     feedItem: feedItem,
-    //     isSaved: isSaved,
-    //     isLiked: null,
-    //     skipFeedType: skipFeedType,
-    //     updateCache: updateCache,
-    //   );
-    // }
   }
 
   /// Safe API execution with consistent error handling
