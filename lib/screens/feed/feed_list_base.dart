@@ -27,7 +27,7 @@ import 'package:muslimdigest/widgets/components/cached_image.dart';
 import 'package:muslimdigest/widgets/components/icon_button.dart';
 import 'package:muslimdigest/widgets/components/placeholder.dart';
 import 'package:muslimdigest/widgets/collections/collection_search.dart';
-import 'package:muslimdigest/config/feeds.dart' show CURSOR_PAGINATION_LIMIT;
+import 'package:muslimdigest/providers/user/user.dart';
 
 abstract class FeedListBasePage extends ConsumerStatefulWidget {
   final String title;
@@ -92,7 +92,10 @@ class _FeedListBasePageState extends ConsumerState<FeedListBasePage> {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await _loadInitialFeeds();
       
-      // Check if we need to verify pagination state after initial load
+      // Check count mismatch first (for liked/saved feeds) as it has priority
+      await _checkAndRefreshIfNeeded();
+      
+      // Only check pagination if we haven't already done a full refresh
       _verifyPaginationIfNeeded();
     });
   }
@@ -190,10 +193,37 @@ class _FeedListBasePageState extends ConsumerState<FeedListBasePage> {
     final feeds = state.items ?? [];
     
     // If we have exactly 15 items and hasMore is true, verify by refreshing
-    if (feeds.length == CURSOR_PAGINATION_LIMIT && state.hasMore) {
-      log('[FeedListBase] Verifying pagination state for exactly ${feeds.length} items');
+    // if (feeds.length == CURSOR_PAGINATION_LIMIT && state.hasMore) {
+    if (state.hasMore) {
+      log('[FeedListBase] Verifying pagination state (current items: ${feeds.length})');
       await _onRefresh();
       _hasVerifiedPagination = true;
+    }
+  }
+
+  Future<void> _checkAndRefreshIfNeeded() async {
+    // Only apply this logic to liked and saved feeds
+    if (widget.feedType != FeedType.liked && widget.feedType != FeedType.saved) {
+      return;
+    }
+    
+    final state = ref.read(widget.provider);
+    final feeds = state.items ?? [];
+    final user = ref.read(userProvider);
+    
+    // Get expected count based on feed type
+    final expectedCount = widget.feedType == FeedType.liked ? user.totalLiked : user.totalSaved;
+    
+    // Check if we need to force refresh
+    final needsRefresh = feeds.isEmpty || (expectedCount > 0 && feeds.length != expectedCount);
+    
+    if (needsRefresh) {
+      log('[FeedListBase] Count mismatch detected: feeds=${feeds.length}, expected=$expectedCount. Forcing refresh.');
+      await _onRefresh();
+      // Mark pagination as verified since we're doing a full refresh
+      _hasVerifiedPagination = true;
+    } else {
+      log('[FeedListBase] Feed count matches user data: feeds=${feeds.length}, expected=$expectedCount');
     }
   }
 

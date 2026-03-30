@@ -15,7 +15,7 @@ import 'package:muslimdigest/variables/app.dart';
 import 'package:muslimdigest/variables/feed.dart';
 import 'package:muslimdigest/utils/repository.dart';
 import 'package:muslimdigest/utils/functions.dart';
-import 'package:muslimdigest/config/feeds.dart' show CURSOR_PAGINATION_LIMIT, DAILY_READ_TARGET;
+import 'package:muslimdigest/config/feeds.dart' show CURSOR_PAGINATION_LIMIT;
 
 class BaseFeedState {
   final List<FeedItem>? items;
@@ -115,9 +115,6 @@ abstract class BaseFeedNotifier extends Notifier<BaseFeedState> {
   /// Track the current queryParams for caching
   Map<String, String>? _currentQueryParams;
   
-  /// Get the current query parameters for this feed (used for cache consistency)
-  Map<String, String>? get currentQueryParams => _currentQueryParams;
-  
   @override
   BaseFeedState build() {
     // Feed cache data is now handled by SecureFeedCache, initialized with empty state
@@ -190,8 +187,11 @@ abstract class BaseFeedNotifier extends Notifier<BaseFeedState> {
     final currentItem = state.items?.firstWhere((item) => item.id == feedId);
     if (currentItem == null) return;
 
+    final shouldHandleLike = isLiked != null && isLiked != currentItem.isLiked;
+    final shouldHandleSave = isSaved != null && isSaved != currentItem.isSaved;
+
     // Handle like operation
-    if (isLiked != null && isLiked != currentItem.isLiked) {
+    if (shouldHandleLike) {
       // Calculate like count once to ensure consistency across all feed types
       final calculatedLikeCount = isLiked ? currentItem.likeCount + 1 : max(0, currentItem.likeCount - 1);
       fireAndForget(() => like(feedId, isLiked));
@@ -214,7 +214,7 @@ abstract class BaseFeedNotifier extends Notifier<BaseFeedState> {
         ref, 
         currentItem, // Pass the full FeedItem as expected by updated method
         isLiked, 
-        skipFeedType: currentFeedType,
+        skipFeedType: currentFeedType, // Prevent [log] [FeedCard] Like update failed: 'package:riverpod/src/core/ref.dart': Failed assertion: line 143 pos 12: 'dependency != origin': A provider cannot depend on itself
         likeCount: calculatedLikeCount, // Pass pre-calculated count for consistency
         updateCache: true, // Keep immediate cache updates for better UX
       );
@@ -222,26 +222,16 @@ abstract class BaseFeedNotifier extends Notifier<BaseFeedState> {
       // Cache updates are now handled by FeedStateService.updateLikeStatusEverywhere
       // No need to schedule redundant cache updates here
 
-      // 💌 CRITICAL: Update digest feed cache separately since it was skipped above
-      if (currentFeedType == FeedType.digest) {
-        final cache = ref.read(feedCacheProvider);
-        final currentItems = await cache.getFeedItems('feed', queryParams: {'limit': '30'}) ?? <FeedItem>[];
-        final updatedItems = currentItems.map((item) {
-          if (item.id == feedId) {
-            return item.copyWith(
-              isLiked: isLiked,
-              likeCount: calculatedLikeCount,
-            );
-          }
-          return item;
-        }).toList();
-        await cache.setFeedItems('feed', updatedItems, queryParams: {'limit': '30'});
-        log('[BaseFeedNotifier] 🔄 Updated digest feed cache for like status: item $feedId, isLiked=$isLiked, likeCount=$calculatedLikeCount');
-      }
+      // 💌 CRITICAL: Update current feed cache separately since it was skipped above
+      log('[update] 🥞 _currentQueryParams = $_currentQueryParams');
+      final cache = ref.read(feedCacheProvider);
+      final cacheQueryParams = _currentQueryParams;
+      if (updatedItems != null) await cache.setFeedItems(endpoint, updatedItems, queryParams: cacheQueryParams);
+      log('[BaseFeedNotifier] 🔄 Updated $currentFeedType feed cache for like status: item $feedId, isLiked=$isLiked, likeCount=$calculatedLikeCount');
     }
     
     // Handle save operation
-    if (isSaved != null && isSaved != currentItem.isSaved) {
+    if (shouldHandleSave) {
       // For unsave operations, determine which collection the feed belongs to
       if (!isSaved) {
         fireAndForget(() async {
@@ -270,23 +260,16 @@ abstract class BaseFeedNotifier extends Notifier<BaseFeedState> {
         ref, 
         currentItem,
         isSaved,
-        skipFeedType: currentFeedType,
+        skipFeedType: currentFeedType, // Prevent [log] [FeedCard] Save update failed: 'package:riverpod/src/core/ref.dart': Failed assertion: line 143 pos 12: 'dependency != origin': A provider cannot depend on itself
         updateCache: true, // Always update cache immediately for better UX
       );
       
-      // 💌 CRITICAL: Update digest feed cache separately since it was skipped above
-      if (currentFeedType == FeedType.digest) {
-        final cache = ref.read(feedCacheProvider);
-        final currentItems = await cache.getFeedItems(endpoint, queryParams: {'limit': DAILY_READ_TARGET.toString()}) ?? <FeedItem>[];
-        final updatedItems = currentItems.map((item) {
-          if (item.id == feedId) {
-            return item.copyWith(isSaved: isSaved);
-          }
-          return item;
-        }).toList();
-        await cache.setFeedItems(endpoint, updatedItems, queryParams: {'limit': DAILY_READ_TARGET.toString()});
-        log('[BaseFeedNotifier] 🔄 Updated digest feed cache for save status: item $feedId, isSaved=$isSaved');
-      }
+      // 💌 CRITICAL: Update current feed cache separately since it was skipped above
+      log('[update] 🥞 _currentQueryParams = $_currentQueryParams');
+      final cache = ref.read(feedCacheProvider);
+      final cacheQueryParams = _currentQueryParams;
+      if (updatedItems != null) await cache.setFeedItems(endpoint, updatedItems, queryParams: cacheQueryParams);
+      log('[BaseFeedNotifier] 🔄 Updated $currentFeedType feed cache for save status: item $feedId, isSaved=$isSaved');
       
       // If un-saving, also remove from all collection-specific caches
       // Note: Delay collection cleanup to avoid circular dependency with current update
@@ -357,26 +340,10 @@ abstract class BaseFeedNotifier extends Notifier<BaseFeedState> {
       final cachedItems = await cache.getFeedItems(endpoint, queryParams: queryParams);
       if (cachedItems != null) {
         log('[BaseFeedNotifier] Cache hit! Found ${cachedItems.length} items for endpoint: $endpoint, queryParams: $queryParams');
-        
-        // // CRITICAL: Check if cache was recently updated (within last 5 seconds) to prevent overwrites
-        // final cacheMetadata = await cache.getCacheMetadata(endpoint, queryParams: queryParams);
-        // final now = DateTime.now();
-        // final wasRecentlyUpdated = cacheMetadata != null && 
-        //     now.difference(DateTime.parse(cacheMetadata['timestamp']!)).inSeconds < 5;
-        
-        // if (wasRecentlyUpdated) {
-        //   log('[BaseFeedNotifier] 🛡️ Cache was recently updated, skipping load to preserve user changes');
-        //   await setValue(cachedItems);
-        //   return true;
-        // }
-        
         await setValue(cachedItems);
 
-        // If we have fewer items than the pagination limit, this is likely the last page
-        // final hasMore = cachedItems.length >= CURSOR_PAGINATION_LIMIT;
-
-        // Be conservative: only assume hasMore if we have more than a full page
-        final hasMore = cachedItems.length > CURSOR_PAGINATION_LIMIT;
+        // If we have a full page of items, assume there might be more data
+        final hasMore = cachedItems.length % CURSOR_PAGINATION_LIMIT == 0;
 
         // Set pagination state for cached data
         state = state.copyWith(

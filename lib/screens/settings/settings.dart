@@ -218,7 +218,6 @@ class PersonalSettingsSection extends ConsumerWidget {
             title: 'Saved Feeds',
             total: savedCount,
             onTap: () {
-              // context.push('/saved_feeds');
               context.push('/collections');
             },
           ),
