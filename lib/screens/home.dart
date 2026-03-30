@@ -205,8 +205,8 @@ class _HomePageState extends ConsumerState<HomePage> with RouteAware {
     _saveAllData();
   }
 
-  void _reloadFeed() {
-    final feedType = _currentFeedType;
+  void _reloadFeed([FeedType? feedType]) {
+    feedType ??= _currentFeedType;
     if (feedType.isDigest) {
       _checkNewDigest(force: true);
       return;
@@ -257,17 +257,18 @@ class _HomePageState extends ConsumerState<HomePage> with RouteAware {
     
     // Offer to reload the feed after preferences update
     WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!r.shouldShowDigest) return; // Skip if presonalized feed is currently not showing
       final reload = await showBottomModalConfirm(
         context,
         title: "Preferences Updated",
-        message: "Would you like to refresh your feed with the new recommendations?",
+        message: "Would you like to refresh your daily digest feed with the new recommendations?",
         confirmButtonText: "Yes, please refresh",
         confirmButtonIcon: Icon(CupertinoIcons.refresh),
         cancelButtonText: "Continue reading",
         cancelButtonIcon: Icon(CupertinoIcons.book),
       );
       if (mounted && reload == true) {
-        _reloadFeed();
+        _reloadFeed(FeedType.digest);
       }
     });
   }
