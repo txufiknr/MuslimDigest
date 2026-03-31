@@ -109,10 +109,13 @@ abstract class BaseFeedNotifier extends Notifier<BaseFeedState> {
     );
   }
   
-  /// Get the endpoint for this feed type - must be implemented by subclasses
+  /// Get endpoint for this feed type - must be implemented by subclasses
   String get endpoint;
+
+  /// Get current [FeedType] based on the endpoint
+  FeedType get _currentFeedType => FeedType.fromEndpoint(endpoint);
   
-  /// Track the current queryParams for caching
+  /// Track current queryParams for caching
   Map<String, String>? _currentQueryParams;
   
   @override
@@ -209,7 +212,7 @@ abstract class BaseFeedNotifier extends Notifier<BaseFeedState> {
       state = state.copyWith(items: updatedItems);
       
       // Update like status across all feed types with immediate cache updates
-      final currentFeedType = FeedType.fromEndpoint(endpoint);
+      final currentFeedType = _currentFeedType;
       await FeedStateService.updateLikeStatusEverywhere(
         ref, 
         currentItem, // Pass the full FeedItem as expected by updated method
@@ -223,10 +226,8 @@ abstract class BaseFeedNotifier extends Notifier<BaseFeedState> {
       // No need to schedule redundant cache updates here
 
       // 💌 CRITICAL: Update current feed cache separately since it was skipped above
-      log('[update] 🥞 _currentQueryParams = $_currentQueryParams');
       final cache = ref.read(feedCacheProvider);
-      final cacheQueryParams = _currentQueryParams;
-      if (updatedItems != null) await cache.setFeedItems(endpoint, updatedItems, queryParams: cacheQueryParams);
+      if (updatedItems != null) await cache.setFeedItems(endpoint, updatedItems, queryParams: _currentQueryParams);
       log('[BaseFeedNotifier] 🔄 Updated $currentFeedType feed cache for like status: item $feedId, isLiked=$isLiked, likeCount=$calculatedLikeCount');
     }
     
@@ -255,7 +256,7 @@ abstract class BaseFeedNotifier extends Notifier<BaseFeedState> {
       state = state.copyWith(items: updatedItems);
       
       // Update save status across all other feed types (skip current to avoid circular dependency)
-      final currentFeedType = FeedType.fromEndpoint(endpoint);
+      final currentFeedType = _currentFeedType;
       await FeedStateService.updateSaveStatusEverywhere(
         ref, 
         currentItem,
@@ -265,10 +266,8 @@ abstract class BaseFeedNotifier extends Notifier<BaseFeedState> {
       );
       
       // 💌 CRITICAL: Update current feed cache separately since it was skipped above
-      log('[update] 🥞 _currentQueryParams = $_currentQueryParams');
       final cache = ref.read(feedCacheProvider);
-      final cacheQueryParams = _currentQueryParams;
-      if (updatedItems != null) await cache.setFeedItems(endpoint, updatedItems, queryParams: cacheQueryParams);
+      if (updatedItems != null) await cache.setFeedItems(endpoint, updatedItems, queryParams: _currentQueryParams);
       log('[BaseFeedNotifier] 🔄 Updated $currentFeedType feed cache for save status: item $feedId, isSaved=$isSaved');
       
       // If un-saving, also remove from all collection-specific caches
@@ -425,7 +424,7 @@ abstract class BaseFeedNotifier extends Notifier<BaseFeedState> {
         await setValue(updatedItems, skipCache: isLoadMore);
 
         // Check current page index
-        final feedType = FeedType.fromEndpoint(endpoint);
+        final feedType = _currentFeedType;
         final currentReadCountStates = ref.read(readCountStatesProvider);
         final currentTopic = ref.read(topicProvider);
         final readCountStateKey = currentTopic ?? feedType.name;

@@ -6,6 +6,8 @@ What's new in this update:
 • Improved home header text consistency
 • Double-tap feed cards to like posts quickly
 • Long press unsave button to change collection
+• Reload digest feed when preferences are updated
+• Fixed saved and liked feeds to properly sync
 
 v1.0.4
 search liked and saved feed

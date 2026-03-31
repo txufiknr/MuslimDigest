@@ -42,6 +42,7 @@ import 'package:muslimdigest/api/feeds.dart';
 import 'package:muslimdigest/providers/user/preferences.dart';
 import 'package:muslimdigest/services/feed_state_service.dart';
 import 'package:muslimdigest/widgets/collections/collection_selection_sheet.dart';
+import 'package:muslimdigest/services/collection_service.dart';
 import 'package:muslimdigest/widgets/user/reads_rank.dart';
 import 'package:path_provider/path_provider.dart';
 import '../../models/feed.dart';
@@ -123,11 +124,11 @@ class _FeedCardState extends ConsumerState<FeedCard> with AutomaticKeepAliveClie
     }
   }
 
-  void _save() async {
+  void _save([bool? value]) async {
     if (_feedId == null) return;
     
     // Predefine the new save state to avoid ambiguity
-    final isSaved = !_isSaved;
+    final isSaved = value ?? !_isSaved;
     
     try {
       // Step 1: Save immediately (fire and forget, uncategorized)
@@ -143,16 +144,34 @@ class _FeedCardState extends ConsumerState<FeedCard> with AutomaticKeepAliveClie
     }
   }
 
-  void _showCollectionSelectionSheet() {
+  void _saveLongPress() async {
     if (_feedId == null || widget.feedItem == null) return;
     
+    if (_isSaved) {
+      // When active (already saved), show collection selection sheet
+      _showCollectionSelectionSheet();
+    } else {
+      // When inactive (not saved), just call onSave
+      _save();
+    }
+  }
+
+  void _showCollectionSelectionSheet() async {
+    if (!mounted || _feedId == null || widget.feedItem == null) return;
+    final currentCollection = await CollectionService.getFeedCollection(ref, widget.feedItem!);
+    if (!mounted) return;
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       builder: (context) => CollectionSelectionSheet(
         feedItem: widget.feedItem!,
+        isSaved: widget.feedItem!.isSaved,
         onCollectionSelected: _updateFeedCollection,
-        // onCollectionCreated: _createCollectionAndSave,
+        currentCollection: currentCollection,
+        onUnsave: () {
+          _save(false);
+        },
       ),
     );
   }
@@ -361,6 +380,7 @@ class _FeedCardState extends ConsumerState<FeedCard> with AutomaticKeepAliveClie
                     isTakingScreenshot: _isTakingScreenshot,
                     onShare: _share,
                     onSave: _save,
+                    onSaveLongPress: _saveLongPress,
                     onLike: _like,
                   ),
                 ],
@@ -649,6 +669,7 @@ class _FeedFooter extends ConsumerWidget {
   final bool isTakingScreenshot;
   final VoidCallback onShare;
   final VoidCallback onSave;
+  final VoidCallback onSaveLongPress;
   final VoidCallback onLike;
 
   const _FeedFooter({
@@ -657,6 +678,7 @@ class _FeedFooter extends ConsumerWidget {
     required this.isTakingScreenshot,
     required this.onShare,
     required this.onSave,
+    required this.onSaveLongPress,
     required this.onLike,
   });
 
@@ -670,10 +692,6 @@ class _FeedFooter extends ConsumerWidget {
     final isSaved = currentFeedItem.isSaved;
     final likeCount = currentFeedItem.likeCount;
 
-    log('[_FeedFooter] 🎯 isLiked = $isLiked');
-    log('[_FeedFooter] 🎯 isSaved = $isSaved');
-    log('[_FeedFooter] 🎯 likeCount = $likeCount');
-    
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -718,7 +736,7 @@ class _FeedFooter extends ConsumerWidget {
           if (isTakingScreenshot) Logo(size: 50,) else ...<Widget>[
             if (likeCount > 0) Text(formatNumber(likeCount), textAlign: TextAlign.right, style: h.currentTextTheme.bodySmall,).withPadding(right: 4),
             MyIconButton(icon: isLiked ? CupertinoIcons.heart_fill : CupertinoIcons.heart, size: 50, outlined: true, onPressed: onLike, iconColor: isLiked ? Colors.red : null),
-            MyIconButton(icon: isSaved ? CupertinoIcons.bookmark_fill : CupertinoIcons.bookmark, size: 50, outlined: true, onPressed: onSave, iconColor: isSaved ? AppColors.primary : null),
+            MyIconButton(icon: isSaved ? CupertinoIcons.bookmark_fill : CupertinoIcons.bookmark, size: 50, outlined: true, onPressed: onSave, onLongPress: onSaveLongPress, iconColor: isSaved ? AppColors.primary : null),
             MyIconButton(icon: CupertinoIcons.share, size: 50, outlined: true, onPressed: onShare,),
           ].addItemInBetween(SizedBox(width: 8)),
         ],),

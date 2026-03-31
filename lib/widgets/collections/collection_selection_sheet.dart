@@ -171,10 +171,10 @@ class _CollectionSelectionSheetState extends ConsumerState<CollectionSelectionSh
             icon: Icon(CupertinoIcons.check_mark_circled),
             variant: MyButtonVariant.success,
             isLoading: _isLoading,
-          ),
+          )
 
           // Show Unsave button if feed is already saved
-          if (widget.isSaved && !_showCreateButton) MyButton(
+          else if (widget.isSaved) MyButton(
             text: 'Unsave',
             onPressed: () async {
               // Check if widget is still mounted before calling callback
@@ -188,8 +188,7 @@ class _CollectionSelectionSheetState extends ConsumerState<CollectionSelectionSh
               }
             },
             icon: Icon(CupertinoIcons.bookmark_fill),
-            variant: MyButtonVariant.error,
-            isLoading: _isLoading,
+            variant: MyButtonVariant.secondary,
           ),
 
           MyButton(
