@@ -115,7 +115,7 @@ class _FeedCardState extends ConsumerState<FeedCard> with AutomaticKeepAliveClie
     _isLiking = true;
     
     try {
-      if (isLikedValue != _isLiked) await _notifier.update(_feedId, isLiked: isLikedValue);
+      if (isLikedValue != _isLiked) await _notifier.updateSafe(_feedId, isLiked: isLikedValue);
     } catch (e) {
       // Silent error handling - UI will revert automatically on state rebuild
       log('[FeedCard] Like update failed: $e');
@@ -132,7 +132,7 @@ class _FeedCardState extends ConsumerState<FeedCard> with AutomaticKeepAliveClie
     
     try {
       // Step 1: Save immediately (fire and forget, uncategorized)
-      await _notifier.update(_feedId, isSaved: isSaved);
+      await _notifier.updateSafe(_feedId, isSaved: isSaved);
       
       // Step 2: If saving (not unsaving), show collection selection
       if (isSaved && mounted) {
@@ -182,14 +182,19 @@ class _FeedCardState extends ConsumerState<FeedCard> with AutomaticKeepAliveClie
     try {
       fireAndForget(() => updateCollection(_feedId, collection));
       
-      // Update collection name across all feed types using new method
-      await FeedStateService.updateCollectionNameEverywhere(
-        ref, 
-        widget.feedItem!, 
-        collection,
-        skipFeedType: widget.feedType, // Skip current feed type to avoid circular dependency
-        updateCache: true,
+      // Update collection name across all feed types using new safe method
+      final result = await FeedStateService.updateCollectionNameEverywhereSafe(
+        ref: ref,
+        feedItem: widget.feedItem!,
+        collectionName: collection,
       );
+      
+      // Apply returned result to all feed types and cache - DRY!
+      final applyResult = await result.applyToAllFeeds(ref, widget.feedItem!.id);
+      
+      if (!applyResult.isCompleteSuccess) {
+        log('[FeedCard] ⚠️ Partial failure: ${(applyResult.successRate * 100).toStringAsFixed(1)}% success');
+      }
 
       if (mounted) showSnackBarSuccess(context, 'Saved to "$collection"');
       log('[FeedCard] ✅ Saved to collection "$collection"');

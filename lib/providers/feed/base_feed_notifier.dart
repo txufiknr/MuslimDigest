@@ -186,109 +186,79 @@ abstract class BaseFeedNotifier extends Notifier<BaseFeedState> {
     return state.notInterestedReasons[feedId];
   }
 
-  Future<void> update(String feedId, {bool? isLiked, bool? isSaved}) async {
+  /// Updates the like/save status of a feed item across all feed types
+  /// 
+  /// This method has circular dependency issues and manual cache management.
+  /// Migrate to updateSafe() for cleaner, dependency-free operation.
+  /// 
+  /// Parameters:
+  /// - [feedId] - The ID of the feed item to update
+  /// - [isLiked] - Optional new like status
+  /// - [isSaved] - Optional new save status
+  Future<void> updateSafe(String feedId, {bool? isLiked, bool? isSaved}) async {
     final currentItem = state.items?.firstWhere((item) => item.id == feedId);
     if (currentItem == null) return;
 
     final shouldHandleLike = isLiked != null && isLiked != currentItem.isLiked;
     final shouldHandleSave = isSaved != null && isSaved != currentItem.isSaved;
 
-    // Handle like operation
+    // Handle like operation with new safe approach
     if (shouldHandleLike) {
-      // Calculate like count once to ensure consistency across all feed types
+      // Calculate like count once to ensure consistency
       final calculatedLikeCount = isLiked ? currentItem.likeCount + 1 : max(0, currentItem.likeCount - 1);
-      fireAndForget(() => like(feedId, isLiked));
       
-      // Update current provider state immediately for better UX
-      final updatedItems = state.items?.map((item) {
-        if (item.id == feedId) {
-          return item.copyWith(
-            isLiked: isLiked,
-            likeCount: calculatedLikeCount,
-          );
-        }
-        return item;
-      }).toList();
-      state = state.copyWith(items: updatedItems);
-      
-      // Update like status across all feed types with immediate cache updates
-      final currentFeedType = _currentFeedType;
-      await FeedStateService.updateLikeStatusEverywhere(
-        ref, 
-        currentItem, // Pass the full FeedItem as expected by updated method
-        isLiked, 
-        skipFeedType: currentFeedType, // Prevent [log] [FeedCard] Like update failed: 'package:riverpod/src/core/ref.dart': Failed assertion: line 143 pos 12: 'dependency != origin': A provider cannot depend on itself
-        likeCount: calculatedLikeCount, // Pass pre-calculated count for consistency
-        updateCache: true, // Keep immediate cache updates for better UX
+      // Use the new return-based method - no circular dependencies!
+      final result = await FeedStateService.updateLikeStatusEverywhereSafe(
+        ref: ref,
+        feedItem: currentItem,
+        isLiked: isLiked,
+        likeCount: calculatedLikeCount,
       );
       
-      // Cache updates are now handled by FeedStateService.updateLikeStatusEverywhere
-      // No need to schedule redundant cache updates here
-
-      // 💌 CRITICAL: Update current feed cache separately since it was skipped above
-      final cache = ref.read(feedCacheProvider);
-      if (updatedItems != null) await cache.setFeedItems(endpoint, updatedItems, queryParams: _currentQueryParams);
-      log('[BaseFeedNotifier] 🔄 Updated $currentFeedType feed cache for like status: item $feedId, isLiked=$isLiked, likeCount=$calculatedLikeCount');
+      // Apply returned result to all feed types and cache - DRY!
+      await result.applyToAllFeeds(ref, feedId);
+      
+      log('[BaseFeedNotifier] ✅ Safe like update completed: item $feedId, isLiked=$isLiked, likeCount=$result.updatedLikeCount');
     }
     
-    // Handle save operation
+    // Handle save operation with new safe approach
     if (shouldHandleSave) {
-      // For unsave operations, determine which collection the feed belongs to
+      // For save operations, determine which collection the feed belongs to
       if (!isSaved) {
+        final currentCollection = await CollectionService.getFeedCollection(ref, currentItem);
         fireAndForget(() async {
-          // Get the collection this feed belongs to
-          final collection = await CollectionService.getFeedCollection(ref, currentItem);
-          await save(feedId, isSaved, collection: collection);
+          await save(feedId, isSaved, collection: currentCollection);
         });
       } else {
-        // For save operations, don't specify collection (will be handled by collection selection)
         fireAndForget(() => save(feedId, isSaved));
       }
       
-      // Update current feed type state immediately for UI responsiveness
-      final updatedItems = state.items?.map((item) {
-        if (item.id == feedId) {
-          return item.copyWith(isSaved: isSaved);
-        }
-        return item;
-      }).toList();
-      
-      state = state.copyWith(items: updatedItems);
-      
-      // Update save status across all other feed types (skip current to avoid circular dependency)
-      final currentFeedType = _currentFeedType;
-      await FeedStateService.updateSaveStatusEverywhere(
-        ref, 
-        currentItem,
-        isSaved,
-        skipFeedType: currentFeedType, // Prevent [log] [FeedCard] Save update failed: 'package:riverpod/src/core/ref.dart': Failed assertion: line 143 pos 12: 'dependency != origin': A provider cannot depend on itself
-        updateCache: true, // Always update cache immediately for better UX
+      // Use the new return-based method - no circular dependencies!
+      // For save operations, we need to handle collection name properly
+      final collectionName = isSaved ? await CollectionService.getFeedCollection(ref, currentItem) : null;
+      final result = await FeedStateService.updateSaveStatusEverywhereSafe(
+        ref: ref,
+        feedItem: currentItem,
+        isSaved: isSaved,
+        collectionName: collectionName,
       );
       
-      // 💌 CRITICAL: Update current feed cache separately since it was skipped above
-      final cache = ref.read(feedCacheProvider);
-      if (updatedItems != null) await cache.setFeedItems(endpoint, updatedItems, queryParams: _currentQueryParams);
-      log('[BaseFeedNotifier] 🔄 Updated $currentFeedType feed cache for save status: item $feedId, isSaved=$isSaved');
+      // Apply returned result to all feed types and cache - DRY!
+      final applyResult = await result.applyToAllFeeds(ref, feedId);
       
-      // If un-saving, also remove from all collection-specific caches
-      // Note: Delay collection cleanup to avoid circular dependency with current update
+      if (!applyResult.isCompleteSuccess) {
+        log('[BaseFeedNotifier] ⚠️ Partial failure: ${(applyResult.successRate * 100).toStringAsFixed(1)}% success');
+      }
+      
+      log('[BaseFeedNotifier] ✅ Safe save update completed: item $feedId, isSaved=$isSaved, collectionName=$result.collectionName');
+      
+      // Handle collection cleanup for unsave operations
       if (!isSaved) {
-        // Schedule collection cleanup after current update completes
         Future.microtask(() async {
           await CollectionService.removeFromAllCollections(ref, currentItem);
         });
       }
-      
-      if (isSaved) {
-        log('[BaseFeedNotifier] Cache updated immediately for saved item $feedId');
-      } else {
-        log('[BaseFeedNotifier] Updated cache immediately for unsaved item $feedId');
-      }
     }
-
-    // Feed item state is already updated by FeedStateService across all feed types
-    // User state updates are also centralized in FeedStateService to ensure consistency
-    // No separate state updates needed here
   }
 
   /// Loads feed items from a specified API endpoint with caching and pagination support.

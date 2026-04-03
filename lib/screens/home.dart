@@ -182,9 +182,6 @@ class _HomePageState extends ConsumerState<HomePage> with RouteAware {
     log('🧾 [init] _onActive r.shouldShowDigest: ${r.shouldShowDigest}');
     log('🧾 [init] _onActive r.ingestLastDate: ${r.ingestLastDate}');
     
-    // Check for in-app updates using utility
-    AppUpdater.checkForAppUpdate(context);
-    
     if (_isNewDay && isExistingUser) {
       log("[home] 👋 Welcome back! It's a new day since you left, we'll load your digest");
       _openFeed(force: true);
@@ -286,6 +283,8 @@ class _HomePageState extends ConsumerState<HomePage> with RouteAware {
       _initFeed();
       // Request notification permissions and schedule daily reminder
       NotificationScheduler.requestPermissionsAndSchedule();
+      // Check for in-app updates using utility
+      AppUpdater.checkForAppUpdate(context);
     });
   }
 

@@ -1,5 +1,4 @@
 import 'dart:developer' show log;
-import 'dart:math' show max;
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -75,18 +74,22 @@ class UnlikeFeedStrategy extends BaseFeedActionStrategy {
   
   @override
   Future<void> updateUI(WidgetRef ref, FeedItem feed) async {
-    // Update like status across all feed types immediately, but skip liked feed to avoid circular dependency
-    // The liked feed list will be handled by _removeFromCurrentFeed in feed_list_base.dart
-    await FeedStateService.updateLikeStatusEverywhere(
-      ref, 
-      feed, 
-      false, 
-      likeCount: max(0, feed.likeCount - 1),
-      skipFeedType: FeedType.liked,
+    // Use the new safe method - no circular dependencies!
+    final result = await FeedStateService.updateLikeStatusEverywhereSafe(
+      ref: ref,
+      feedItem: feed,
+      isLiked: false,
     );
     
-    // Note: totalLiked count is already updated by FeedStateService.updateLikeStatusEverywhere
-    // No need for manual update here to avoid double-counting
+    // Apply returned result to update current feed states and cache - DRY!
+    final applyResult = await result.applyToAllFeeds(ref, feed.id);
+    
+    if (!applyResult.isCompleteSuccess) {
+      log('[UnlikeFeedStrategy] ⚠️ Partial failure: ${(applyResult.successRate * 100).toStringAsFixed(1)}% success');
+    }
+    
+    // Note: totalLiked count is already updated by FeedStateService.updateLikeStatusEverywhereSafe
+    log('[UnlikeFeedStrategy] ✅ Applied unlike result to all feed types');
   }
   
   @override
@@ -139,14 +142,19 @@ class UnsaveFeedStrategy extends BaseFeedActionStrategy {
       await updateUI(ref, feed);
       makeAPICall(feed);
       
-      // Update collection name to null across all feed types
-      await FeedStateService.updateCollectionNameEverywhere(
-        ref, 
-        feed, 
-        null, // Set collectionName to null when un-saving
-        skipFeedType: FeedType.saved, // Skip saved feed to avoid circular dependency
-        updateCache: true,
+      // Update collection name to null across all feed types using safe method
+      final result = await FeedStateService.updateCollectionNameEverywhereSafe(
+        ref: ref,
+        feedItem: feed,
+        collectionName: null, // Set collectionName to null when un-saving
       );
+      
+      // Apply returned result to update current feed states and cache - DRY!
+      final applyResult = await result.applyToAllFeeds(ref, feed.id);
+      
+      if (!applyResult.isCompleteSuccess) {
+        log('[UnsaveFeedStrategy] ⚠️ Partial failure: ${(applyResult.successRate * 100).toStringAsFixed(1)}% success');
+      }
       
       if (context.mounted) {
         showSnackBarSuccess(context, 'Removed from saved feeds');
@@ -164,14 +172,19 @@ class UnsaveFeedStrategy extends BaseFeedActionStrategy {
     try {
       fireAndForget(() => updateCollection(feed.id, collection));
       
-      // Update collection name across all feed types using new method
-      await FeedStateService.updateCollectionNameEverywhere(
-        ref, 
-        feed, 
-        collection,
-        skipFeedType: FeedType.saved, // Skip saved feed to avoid circular dependency
-        updateCache: true,
+      // Update collection name across all feed types using safe method
+      final result = await FeedStateService.updateCollectionNameEverywhereSafe(
+        ref: ref,
+        feedItem: feed,
+        collectionName: collection,
       );
+      
+      // Apply returned result to update current feed states and cache - DRY!
+      final applyResult = await result.applyToAllFeeds(ref, feed.id);
+      
+      if (!applyResult.isCompleteSuccess) {
+        log('[UnsaveFeedStrategy] ⚠️ Partial failure: ${(applyResult.successRate * 100).toStringAsFixed(1)}% success');
+      }
 
       if (context.mounted) {
         showSnackBarSuccess(context, 'Moved to "$collection"');
@@ -190,20 +203,20 @@ class UnsaveFeedStrategy extends BaseFeedActionStrategy {
     // Cache the collection for later use in makeAPICall
     _cachedCollection = await CollectionService.getFeedCollection(ref, feed);
     
-    // Update save status across all feed types immediately, but skip saved feed to avoid circular dependency
-    // The saved feed list will be handled by _removeFromCurrentFeed in feed_list_base.dart
-    await FeedStateService.updateSaveStatusEverywhere(
-      ref, 
-      feed, 
-      false, 
-      skipFeedType: FeedType.saved,
+    // Update save status across all feed types using safe method
+    final result = await FeedStateService.updateSaveStatusEverywhereSafe(
+      ref: ref,
+      feedItem: feed,
+      isSaved: false,
     );
+    
+    // Apply returned result to update current feed states and cache - DRY!
+    await result.applyToAllFeeds(ref, feed.id);
     
     // Remove from all collections using centralized service
     await CollectionService.removeFromAllCollections(ref, feed);
     
-    // Note: totalSaved count is already updated by FeedStateService.updateSaveStatusEverywhere
-    // No need for manual update here to avoid double-counting
+    log('[UnsaveFeedStrategy] ✅ Applied unsave result to all feed types');
   }
   
   @override

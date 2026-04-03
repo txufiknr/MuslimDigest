@@ -75,14 +75,18 @@ class CollectionService {
   /// Add feed item to a specific collection
   static Future<void> addToCollection(dynamic ref, FeedItem feed, String collection) async {
     try {
-      await FeedStateService.updateSaveStatusEverywhere(
-        ref,
-        feed,
-        true,
-        specificCollection: collection,
-        updateCache: true,
+      // Use the new safe method - no circular dependencies!
+      final result = await FeedStateService.updateSaveStatusEverywhereSafe(
+        ref: ref,
+        feedItem: feed,
+        isSaved: true,
+        collectionName: collection,
       );
-      log('[CollectionService] ✅ Added feed ${feed.id} to collection "$collection"');
+      
+      // Apply returned result to update current feed states and cache - DRY!
+      await result.applyToAllFeeds(ref, feed.id);
+      
+      log('[CollectionService] ✅ Added to collection "$collection": ${feed.id}');
     } catch (e) {
       log('[CollectionService] ❌ Error adding to collection: $e');
     }
