@@ -1,4 +1,5 @@
 import 'dart:math' show max;
+import 'dart:async' show Timer;
 import 'dart:developer' show log;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -77,6 +78,8 @@ class BaseFeedState {
 }
 
 abstract class BaseFeedNotifier extends Notifier<BaseFeedState> {
+  /// Track cleanup timers to prevent memory leaks
+  final Map<String, Timer> _cleanupTimers = {};
   /// Load more items using cursor pagination
   Future<bool> loadMore({int? limit}) async {
     log('[BaseFeedNotifier] 🔍 loadMore called. hasMore: ${state.hasMore}, isLoadingMore: ${state.isLoadingMore}, nextCursor: ${state.nextCursor}');
@@ -120,6 +123,11 @@ abstract class BaseFeedNotifier extends Notifier<BaseFeedState> {
   
   @override
   BaseFeedState build() {
+    // Register cleanup callback for when the notifier is disposed
+    ref.onDispose(() {
+      cleanupTimers();
+    });
+    
     // Feed cache data is now handled by SecureFeedCache, initialized with empty state
     return const BaseFeedState();
   }
@@ -186,16 +194,16 @@ abstract class BaseFeedNotifier extends Notifier<BaseFeedState> {
     return state.notInterestedReasons[feedId];
   }
 
-  /// Updates the like/save status of a feed item across all feed types
+  /// Updates the like/save status of a feed item across all feed types safely
   /// 
-  /// This method has circular dependency issues and manual cache management.
-  /// Migrate to updateSafe() for cleaner, dependency-free operation.
+  /// This method uses a return-based architecture to avoid circular dependencies.
   /// 
   /// Parameters:
   /// - [feedId] - The ID of the feed item to update
   /// - [isLiked] - Optional new like status
   /// - [isSaved] - Optional new save status
-  Future<void> updateSafe(String feedId, {bool? isLiked, bool? isSaved}) async {
+  /// - [collectionName] - Optional collection name for save operations
+  Future<void> updateSafe(String feedId, {bool? isLiked, bool? isSaved, String? collectionName}) async {
     final currentItem = state.items?.firstWhere((item) => item.id == feedId);
     if (currentItem == null) return;
 
@@ -223,24 +231,28 @@ abstract class BaseFeedNotifier extends Notifier<BaseFeedState> {
     
     // Handle save operation with new safe approach
     if (shouldHandleSave) {
-      // For save operations, determine which collection the feed belongs to
-      if (!isSaved) {
-        final currentCollection = await CollectionService.getFeedCollection(ref, currentItem);
-        fireAndForget(() async {
-          await save(feedId, isSaved, collection: currentCollection);
-        });
+      // Use the provided collectionName parameter, or fall back to current item's collection
+      String? targetCollectionName = collectionName ?? currentItem.collectionName;
+
+      // Handle API call
+      if (isSaved) {
+        // where to save
+        fireAndForget(() => save(feedId, isSaved, collection: targetCollectionName));
       } else {
-        fireAndForget(() => save(feedId, isSaved));
+        // from where to remove
+        // Use current item's collection first, fallback to service lookup
+        targetCollectionName ??= await CollectionService.getFeedCollection(ref, currentItem);
+        fireAndForget(() async {
+          await save(feedId, isSaved, collection: targetCollectionName);
+        });
       }
       
       // Use the new return-based method - no circular dependencies!
-      // For save operations, we need to handle collection name properly
-      final collectionName = isSaved ? await CollectionService.getFeedCollection(ref, currentItem) : null;
       final result = await FeedStateService.updateSaveStatusEverywhereSafe(
         ref: ref,
         feedItem: currentItem,
         isSaved: isSaved,
-        collectionName: collectionName,
+        collectionName: targetCollectionName,
       );
       
       // Apply returned result to all feed types and cache - DRY!
@@ -254,11 +266,37 @@ abstract class BaseFeedNotifier extends Notifier<BaseFeedState> {
       
       // Handle collection cleanup for unsave operations
       if (!isSaved) {
-        Future.microtask(() async {
-          await CollectionService.removeFromAllCollections(ref, currentItem);
-        });
+        _scheduleCollectionCleanup(currentItem);
       }
     }
+  }
+
+  /// Schedule collection cleanup with timer to prevent memory leaks
+  void _scheduleCollectionCleanup(FeedItem feedItem) {
+    // Cancel any existing cleanup for this item
+    _cleanupTimers[feedItem.id]?.cancel();
+    
+    // Schedule new cleanup with delay
+    _cleanupTimers[feedItem.id] = Timer(const Duration(milliseconds: 100), () async {
+      try {
+        await CollectionService.removeFromAllCollections(ref, feedItem);
+        _cleanupTimers.remove(feedItem.id);
+        log('[BaseFeedNotifier] 🧹 Collection cleanup completed for ${feedItem.id}');
+      } catch (e) {
+        log('[BaseFeedNotifier] ❌ Collection cleanup failed for ${feedItem.id}: $e');
+        _cleanupTimers.remove(feedItem.id);
+      }
+    });
+  }
+
+  /// Clean up timers to prevent memory leaks
+  /// Call this method when the notifier is no longer needed
+  void cleanupTimers() {
+    for (final timer in _cleanupTimers.values) {
+      timer.cancel();
+    }
+    _cleanupTimers.clear();
+    log('[BaseFeedNotifier] 🧹 All cleanup timers cancelled');
   }
 
   /// Loads feed items from a specified API endpoint with caching and pagination support.

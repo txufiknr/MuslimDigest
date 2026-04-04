@@ -1,4 +1,5 @@
 import 'dart:developer' show log;
+import 'dart:async' show Completer;
 
 import 'package:muslimdigest/api/collections.dart';
 import 'package:muslimdigest/models/feed.dart';
@@ -10,31 +11,139 @@ import 'package:muslimdigest/utils/secure_feed_cache.dart';
 /// Provides consistent collection operations across the app
 class CollectionService {
   
+  /// Cache for collection membership to avoid repeated lookups
+  static final Map<String, String?> _collectionMembershipCache = {};
+  static DateTime? _cacheTimestamp;
+  static const Duration _cacheExpiry = Duration(minutes: 5);
+  
+  /// Synchronization lock for cache operations
+  static Completer<void>? _cacheLock;
+  
+  /// Acquire cache lock for thread-safe operations
+  static Future<void> _acquireCacheLock() async {
+    while (_cacheLock != null && !_cacheLock!.isCompleted) {
+      await _cacheLock!.future;
+    }
+    _cacheLock = Completer<void>();
+  }
+  
+  /// Release cache lock
+  static void _releaseCacheLock() {
+    _cacheLock?.complete();
+    _cacheLock = null;
+  }
+  
   /// Get the collection name that a feed item belongs to
   /// Returns null if feed is not in any collection
   static Future<String?> getFeedCollection(dynamic ref, FeedItem feed) async {
     try {
       // Early return if collectionName is already available from backend
       if (feed.collectionName != null) {
+        // Validate collection name format
+        if (feed.collectionName!.trim().isEmpty) {
+          log('[CollectionService] ⚠️ Invalid collection name: empty or whitespace, treating as null');
+          return null;
+        }
         return feed.collectionName;
+      }
+      
+      // Check cache first
+      await _acquireCacheLock();
+      try {
+        if (_isCacheValid()) {
+          final cachedResult = _collectionMembershipCache[feed.id];
+          if (cachedResult != null || _collectionMembershipCache.containsKey(feed.id)) {
+            return cachedResult;
+          }
+        }
+      } finally {
+        _releaseCacheLock();
       }
       
       // Fallback to searching through collections if not available
       final collections = await CollectionApi.getCollections();
+      final cache = ref.read(feedCacheProvider);
+      
+      // Create parallel cache lookups for better performance
+      final List<Future<Map<String, String?>>> collectionChecks = [];
       
       for (final collection in collections) {
-        final SecureFeedCache cache = ref.read(feedCacheProvider);
-        final collectionItems = await cache.getFeedItems('feed/saved', queryParams: {'collection': collection});
-        
-        if (collectionItems != null && collectionItems.any((item) => item.id == feed.id)) {
-          return collection;
+        collectionChecks.add(_checkCollectionMembership(cache, collection, feed.id));
+      }
+      
+      // Execute all checks in parallel
+      final results = await Future.wait(collectionChecks);
+      
+      // Find the first collection that contains the feed
+      for (int i = 0; i < results.length; i++) {
+        final result = results[i];
+        if (result[feed.id] != null) {
+          final foundCollection = collections[i];
+          
+          // Update cache with thread safety
+          await _acquireCacheLock();
+          try {
+            _collectionMembershipCache[feed.id] = foundCollection;
+            _cacheTimestamp = DateTime.now();
+          } finally {
+            _releaseCacheLock();
+          }
+          
+          return foundCollection;
         }
+      }
+      
+      // Update cache with null result (thread-safe)
+      await _acquireCacheLock();
+      try {
+        _collectionMembershipCache[feed.id] = null;
+        _cacheTimestamp = DateTime.now();
+      } finally {
+        _releaseCacheLock();
       }
       
       return null;
     } catch (e) {
       log('[CollectionService] ❌ Error getting feed collection: $e');
       return null;
+    }
+  }
+  
+  /// Check if a specific collection contains the feed item
+  static Future<Map<String, String?>> _checkCollectionMembership(
+    SecureFeedCache cache, 
+    String collection, 
+    String feedId
+  ) async {
+    try {
+      final collectionItems = await cache.getFeedItems('feed/saved', queryParams: {'collection': collection});
+      
+      if (collectionItems != null && collectionItems.any((item) => item.id == feedId)) {
+        return {feedId: collection};
+      }
+      
+      return {feedId: null};
+    } catch (e) {
+      log('[CollectionService] ❌ Error checking collection $collection: $e');
+      return {feedId: null};
+    }
+  }
+  
+  /// Check if the cache is still valid
+  static bool _isCacheValid() {
+    if (_cacheTimestamp == null) return false;
+    return DateTime.now().difference(_cacheTimestamp!) < _cacheExpiry;
+  }
+  
+  /// Clear the collection membership cache
+  static Future<void> clearCache() async {
+    await _acquireCacheLock();
+    try {
+      _collectionMembershipCache.clear();
+      _cacheTimestamp = null;
+      log('[CollectionService] 🗑️ Collection membership cache cleared');
+    } finally {
+      _releaseCacheLock();
     }
   }
 

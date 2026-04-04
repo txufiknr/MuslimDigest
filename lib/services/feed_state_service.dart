@@ -3,6 +3,7 @@ import 'dart:developer' show log;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:muslimdigest/config/feeds.dart';
 import 'package:muslimdigest/models/feed.dart';
 import 'package:muslimdigest/models/feed_update_result.dart';
 import 'package:muslimdigest/models/user.dart';
@@ -442,15 +443,116 @@ class FeedStateService {
   }) async {
     final cache = ref.read(feedCacheProvider);
     
+    // Update digest feed cache (in-place update)
+    if (isSaved != null || isLiked != null) {
+      await _updateDigestFeedCacheInPlace(cache, feedItem, isSaved: isSaved, isLiked: isLiked);
+    }
+    
     if (isSaved != null) {
-      final queryParams = collectionName != null ? {'collection': collectionName} : null;
-      await updateCollectionFeedCache(cache, 'feed/saved', feedItem, isSaved, queryParams: queryParams);
-      log('[FeedStateService] 💾 Updated saved feeds cache: ${isSaved ? 'added' : 'removed'} item ${feedItem.id} ${collectionName != null ? 'to/from "$collectionName"' : '(all)'}');
+      if (isSaved && collectionName != null) {
+        // Save operation: add to specific collection cache
+        final queryParams = {'collection': collectionName};
+        await updateCollectionFeedCache(cache, 'feed/saved', feedItem, isSaved, queryParams: queryParams);
+        log('[FeedStateService] 💾 Added item ${feedItem.id} to collection "$collectionName" cache');
+      } else if (!isSaved) {
+        // Unsave operation: remove from ALL collection caches
+        await _removeFromAllCollectionCaches(cache, feedItem);
+        log('[FeedStateService] 💾 Removed item ${feedItem.id} from all collection caches');
+      }
     }
     
     if (isLiked != null) {
       await updateCollectionFeedCache(cache, 'feed/liked', feedItem, isLiked);
       log('[FeedStateService] ❤️ Updated liked feeds cache: ${isLiked ? 'added' : 'removed'} item ${feedItem.id}');
+    }
+  }
+
+  /// Update digest feed cache in-place (not prepend/remove like collection feeds)
+  /// 
+  /// Digest feed cache (cache:feed:limit=30) needs special handling because:
+  /// 1. It's a paginated feed, not a collection feed
+  /// 2. Items should be updated in-place, not added/removed from lists
+  /// 3. This ensures like/save states persist across app restarts
+  static Future<void> _updateDigestFeedCacheInPlace(
+    SecureFeedCache cache,
+    FeedItem feedItem, {
+    bool? isSaved,
+    bool? isLiked,
+  }) async {
+    try {
+      final digestItems = await cache.getFeedItems('feed', queryParams: {'limit': DAILY_READ_TARGET.toString()});
+      
+      if (digestItems != null) {
+        final updatedItems = digestItems.map((item) {
+          if (item.id == feedItem.id) {
+            return feedItem.copyWith(
+              isSaved: isSaved ?? item.isSaved,
+              isLiked: isLiked ?? item.isLiked,
+              likeCount: isLiked != null ? feedItem.likeCount : item.likeCount,
+              collectionName: isSaved == true ? feedItem.collectionName : (isSaved == false ? null : item.collectionName),
+            );
+          }
+          return item;
+        }).toList();
+        
+        await cache.setFeedItems('feed', updatedItems, queryParams: {'limit': DAILY_READ_TARGET.toString()});
+        log('[FeedStateService] 🍪 Updated digest feed cache in-place for item ${feedItem.id}: isSaved=$isSaved, isLiked=$isLiked');
+      } else {
+        log('[FeedStateService] 🍪 Digest feed cache not found, skipping in-place update for ${feedItem.id}');
+      }
+    } catch (e) {
+      log('[FeedStateService] ❌ Failed to update digest feed cache in-place for ${feedItem.id}: $e');
+      // Invalidate cache on error to prevent inconsistency
+      await cache.invalidateCache('feed', queryParams: {'limit': DAILY_READ_TARGET.toString()});
+    }
+  }
+
+  /// Remove feed item from all collection caches
+  /// This is needed for unsave operations when we don't know the original collection
+  static Future<void> _removeFromAllCollectionCaches(
+    SecureFeedCache cache,
+    FeedItem feedItem,
+  ) async {
+    final List<Future<void>> operations = [];
+    String? originalError;
+    
+    try {
+      // Remove from specific collection cache if we know it
+      if (feedItem.collectionName != null) {
+        operations.add(updateCollectionFeedCache(
+          cache, 
+          'feed/saved', 
+          feedItem, 
+          false, 
+          queryParams: {'collection': feedItem.collectionName!}
+        ));
+      }
+      
+      // Remove from generic saved cache
+      operations.add(updateCollectionFeedCache(cache, 'feed/saved', feedItem, false));
+      
+      // Execute all operations in parallel for better performance
+      await Future.wait(operations);
+      
+      log('[FeedStateService] 🗑️ Removed ${feedItem.id} from collection caches: '
+          '${feedItem.collectionName != null ? '"${feedItem.collectionName}" + ' : ''}generic');
+      
+    } catch (e) {
+      originalError = e.toString();
+      log('[FeedStateService] ❌ Failed to remove from collection caches: $e');
+      
+      // Always invalidate cache on any failure to ensure consistency
+      try {
+        await cache.invalidateAllCacheForEndpoint('feed/saved');
+        log('[FeedStateService] 🔄 Invalidated all saved feed caches due to error: $originalError');
+      } catch (invalidateError) {
+        log('[FeedStateService] ❌ Critical: Failed to invalidate cache: $invalidateError');
+        // Re-throw the invalidate error as it's more critical
+        throw Exception('Cache invalidation failed: $invalidateError (Original error: $originalError)');
+      }
+      
+      // Re-throw the original error for proper error handling upstream
+      throw Exception('Failed to remove from collection caches: $originalError');
     }
   }
 }
