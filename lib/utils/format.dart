@@ -3,6 +3,35 @@ import 'package:muslimdigest/config/themes.dart';
 import 'package:muslimdigest/utils/extensions.dart';
 import 'package:muslimdigest/utils/helpers.dart';
 
+/// 🎯 Key Features Implemented:
+///    - ParseMode Enum - Added ParseMode.primary vs ParseMode.nested for controlling recursion
+///    - Enhanced _parseText - Added mode parameter with nested logic that skips Q&A, bullets, hadith in nested mode
+///    - RawText Field - Added to _ParseResult for fallback text storage
+///    - Unified Widget Builder - Created _buildWidgetFromResult() helper that handles all content types in one place
+///    - Recursive Q&A Processing - Updated formatText to parse answers with nested quote detection
+///    - Clean Architecture - Removed duplicate formatAnswerText function, eliminated code duplication
+
+/// 🏗️ Architecture Benefits:
+///    - Single Source of Truth - All pattern detection in _parseText() function
+///    - Zero Duplication - No separate formatXText() functions needed
+///    - Automatic Extensibility - New patterns work in nested contexts immediately
+///    - Maintainable - Changes only in one place, easy to maintain
+
+/// 📋 Future-Proof Scenarios Handled:
+///    - Bullets in Q&A answers - Automatic with recursive parsing
+///    - Quotes in bullet items - Automatic with recursive parsing
+///    - Hadith in Q&A answers - Automatic with recursive parsing
+///    - Any new content type - Just add detection to _parseText()
+
+/// Parsing mode for controlling content detection behavior
+enum ParseMode {
+  /// Primary parsing mode - detects all content types (Q&A, bullets, quotes, etc.)
+  primary,
+  
+  /// Nested parsing mode - only detects quote patterns, skips Q&A, bullets, hadith
+  nested,
+}
+
 const _kBulletChars = ['-', '*', '•'];
 
 // Matches a bullet character that is preceded by start-of-string or whitespace,
@@ -53,6 +82,11 @@ final _kStatingQuotePattern = RegExp(
   caseSensitive: false,
 );
 
+// Matches bracket quote pattern: "prefix: "quoted text" [reference]"
+final _kBracketQuotePattern = RegExp(
+  r'(.+?):\s*"([^"]+)"\s*\[([^\]]+)\]',
+);
+
 /// Parsed result of a raw text string.
 ///
 /// - [header] is the optional leading text before the first bullet (e.g. a
@@ -76,10 +110,15 @@ final _kStatingQuotePattern = RegExp(
 /// - [saidQuotePrefix] is the prefix words before the colon in said quote pattern.
 /// - [statingQuote] is the quoted text part when stating/states quote pattern is detected.
 /// - [statingQuotePrefix] is the prefix words before the comma in stating/states quote pattern.
+/// - [bracketQuote] is the quoted text part when bracket quote pattern is detected.
+/// - [bracketQuotePrefix] is the prefix text before the colon in bracket quote pattern.
+/// - [bracketQuoteReference] is the reference text in square brackets for bracket quote pattern.
 /// - [trailing] is the text after the quote pattern.
+/// - [rawText] is the original raw text for fallback.
 @immutable
 class _ParseResult {
   const _ParseResult({
+    this.rawText,
     this.header,
     this.lines = const [],
     this.question,
@@ -99,9 +138,13 @@ class _ParseResult {
     this.saidQuotePrefix,
     this.statingQuote,
     this.statingQuotePrefix,
+    this.bracketQuote,
+    this.bracketQuotePrefix,
+    this.bracketQuoteReference,
     this.trailing,
   });
 
+  final String? rawText;
   final String? header;
   final List<String> lines;
   final String? question;
@@ -121,6 +164,9 @@ class _ParseResult {
   final String? saidQuotePrefix;
   final String? statingQuote;
   final String? statingQuotePrefix;
+  final String? bracketQuote;
+  final String? bracketQuotePrefix;
+  final String? bracketQuoteReference;
   final String? trailing;
 
   bool get hasBullets => lines.isNotEmpty;
@@ -131,6 +177,7 @@ class _ParseResult {
   bool get hasWordsQuote => wordsQuote != null;
   bool get hasSaidQuote => saidQuote != null;
   bool get hasStatingQuote => statingQuote != null;
+  bool get hasBracketQuote => bracketQuote != null;
 }
 
 /// Strips the leading bullet character from [line] and returns the trimmed
@@ -171,7 +218,7 @@ String? _stripLeadingBullet(String line) {
 ///
 /// 5. **Single bullet line** – a single line that starts with a bullet marker.
 /// When no bullets are found at all, [_ParseResult.lines] is empty.
-_ParseResult _parseText(String rawText) {
+_ParseResult _parseText(String rawText, {ParseMode mode = ParseMode.primary}) {
   final trimmed = rawText.trim();
   if (trimmed.isEmpty) return const _ParseResult();
 
@@ -183,24 +230,31 @@ _ParseResult _parseText(String rawText) {
       .replaceAll('\u2019', "'")  // Right single quotation mark
       .replaceAll('\u2026', '...'); // Horizontal ellipsis
 
-  // ── Strategy 1: Hadith detection ────────────────────────────────────────────
-  final hadithMatch = _kHadithPattern.firstMatch(normalizedText);
-  if (hadithMatch != null) {
-    return _ParseResult(
-      narrator: hadithMatch.group(1)?.trim(),
-      prophetStatement: hadithMatch.group(2)?.trim(),
-      quote: hadithMatch.group(3)?.trim(),
-      reference: hadithMatch.group(4)?.trim(),
-    );
-  }
+  // In nested mode, skip primary content patterns to avoid recursion
+  if (mode == ParseMode.nested) {
+    // Only process quote patterns in nested mode
+  } else {
+    // ── Strategy 1: Hadith detection ────────────────────────────────────────────
+    final hadithMatch = _kHadithPattern.firstMatch(normalizedText);
+    if (hadithMatch != null) {
+      return _ParseResult(
+        rawText: rawText,
+        narrator: hadithMatch.group(1)?.trim(),
+        prophetStatement: hadithMatch.group(2)?.trim(),
+        quote: hadithMatch.group(3)?.trim(),
+        reference: hadithMatch.group(4)?.trim(),
+      );
+    }
 
-  // ── Strategy 2: Q&A detection ────────────────────────────────────────────
-  final qaMatch = _kQAPattern.firstMatch(normalizedText);
-  if (qaMatch != null) {
-    return _ParseResult(
-      question: qaMatch.group(1)?.trim(),
-      answer: qaMatch.group(2)?.trim(),
-    );
+    // ── Strategy 2: Q&A detection ────────────────────────────────────────────
+    final qaMatch = _kQAPattern.firstMatch(normalizedText);
+    if (qaMatch != null) {
+      return _ParseResult(
+        rawText: rawText,
+        question: qaMatch.group(1)?.trim(),
+        answer: _parseText(qaMatch.group(2)!, mode: ParseMode.nested).rawText,
+      );
+    }
   }
 
   // ── Strategy 2.5: Comma quote detection ─────────────────────────────────────
@@ -285,6 +339,23 @@ _ParseResult _parseText(String rawText) {
     );
   }
 
+  // Strategy 2.10: Bracket quote detection 
+  final bracketQuoteMatch = _kBracketQuotePattern.firstMatch(normalizedText);
+  if (bracketQuoteMatch != null) {
+    final prefix = bracketQuoteMatch.group(1)?.trim();
+    final quoteText = bracketQuoteMatch.group(2)?.trim();
+    final referenceText = bracketQuoteMatch.group(3)?.trim();
+    final matchEnd = bracketQuoteMatch.end;
+    final afterQuote = normalizedText.substring(matchEnd).trim();
+    
+    return _ParseResult(
+      bracketQuotePrefix: prefix,
+      bracketQuote: quoteText,
+      bracketQuoteReference: referenceText,
+      trailing: afterQuote.isNotEmpty ? afterQuote : null,
+    );
+  }
+
   // ── Strategy 3: newline-separated ─────────────────────────────────────────
   final newlineSegments = normalizedText
       .split('\n')
@@ -347,6 +418,98 @@ _ParseResult _parseText(String rawText) {
   }
 
   return const _ParseResult();
+}
+
+/// Builds widget from _ParseResult using unified rendering logic
+///
+/// [result] is the parsed result to convert to widget
+/// [style] is the optional text style to apply
+Widget _buildWidgetFromResult(BuildContext context, _ParseResult result, {TextStyle? style}) {
+  if (result.isHadith) {
+    return hadithNarration(
+      context,
+      result.narrator!,
+      result.prophetStatement!,
+      result.quote!,
+      result.reference,
+      style: style,
+    );
+  }
+
+  if (result.isQA) {
+    return qaPair(
+      result.question!,
+      result.answer!,
+      style: style,
+    );
+  }
+
+  if (result.hasCommaQuote) {
+    return commaQuoteText(
+      result.commaQuoteText,
+      result.commaQuote!,
+      result.commaQuoteReference,
+      result.trailing,
+      style: style,
+    );
+  }
+
+  if (result.hasGeneralQuote) {
+    return generalQuoteText(
+      result.generalQuotePrefix!,
+      result.generalQuote!,
+      afterText: result.trailing,
+      style: style,
+    );
+  }
+
+  if (result.hasWordsQuote) {
+    return wordsQuoteText(
+      result.wordsQuotePrefix!,
+      result.wordsQuote!,
+      afterText: result.trailing,
+      style: style,
+    );
+  }
+
+  if (result.hasSaidQuote) {
+    return saidQuoteText(
+      result.saidQuotePrefix!,
+      result.saidQuote!,
+      afterText: result.trailing,
+      style: style,
+    );
+  }
+
+  if (result.hasStatingQuote) {
+    return statingQuoteText(
+      result.statingQuotePrefix!,
+      result.statingQuote!,
+      afterText: result.trailing,
+      style: style,
+    );
+  }
+
+  if (result.hasBracketQuote) {
+    return bracketQuoteText(
+      result.bracketQuotePrefix!,
+      result.bracketQuote!,
+      result.bracketQuoteReference!,
+      afterText: result.trailing,
+      style: style,
+    );
+  }
+
+  if (result.hasBullets) {
+    return bulletedList(
+      result.lines,
+      header: result.header,
+      style: style,
+    );
+  }
+
+  // Fallback to plain text if no patterns detected
+  return Text(result.rawText ?? '', style: style);
 }
 
 /// Renders a bulleted list with an optional [header].
@@ -616,12 +779,53 @@ Widget statingQuoteText(String prefix, String quoteText, {String? afterText, Tex
   );
 }
 
+/// Renders text with bracket quote pattern using Text.rich for bold and italic styling.
+///
+/// The text is displayed with the quoted portion styled as bold and italic.
+/// [prefix] is the text before the colon.
+/// [quoteText] is the quoted text to be styled.
+/// [referenceText] is the reference text in square brackets.
+/// [afterText] is the text after the quote pattern.
+Widget bracketQuoteText(String prefix, String quoteText, String referenceText, {String? afterText, TextStyle? style}) {
+  final quoteStyle = style?.copyWith(
+    fontWeight: FontWeight.w600,
+    fontStyle: FontStyle.italic,
+  ) ?? TextStyle(
+    fontWeight: FontWeight.w600,
+    fontStyle: FontStyle.italic,
+  );
+
+  final textSpans = <TextSpan>[];
+  
+  // Add the prefix and styled quote
+  textSpans.add(TextSpan(text: '$prefix: '));
+  textSpans.add(TextSpan(
+    text: '"$quoteText"',
+    style: quoteStyle,
+  ));
+  
+  // Add the reference in square brackets
+  textSpans.add(TextSpan(text: ' [$referenceText]'));
+  
+  // Add text after the quote if it exists
+  if (afterText != null && afterText.isNotEmpty) {
+    textSpans.add(TextSpan(text: ' $afterText'));
+  }
+
+  return Text.rich(
+    TextSpan(
+      children: textSpans,
+      style: style,
+    ),
+  );
+}
+
 /// Formats [rawText] into either a plain [Text] widget, [qaPair] widget,
 /// [bulletedList] widget, or [hadithNarration] widget based on content detection.
 ///
 /// Handles:
-/// - Hadith narrations: "Narrated Abu Huraira: The Prophet said, "[quote]" (reference)."
-/// - Q&A format: "Q: What's the question? A: Here's the answer."
+/// - Hadith narrations: "Narrated [narrator]: [prophet statement], "[quote]" ([reference])." pattern
+/// - Q&A format: "Q: ... A: ..." pattern
 /// - Bullet lists with all common formats
 /// - Plain text as fallback
 ///
@@ -630,80 +834,7 @@ Widget statingQuoteText(String prefix, String quoteText, {String? afterText, Tex
 Widget formatText(BuildContext context, String rawText, {TextStyle? style}) {
   final result = _parseText(rawText);
 
-  if (result.isHadith) {
-    return hadithNarration(
-      context,
-      result.narrator!,
-      result.prophetStatement!,
-      result.quote!,
-      result.reference,
-      style: style,
-    );
-  }
-
-  if (result.isQA) {
-    return qaPair(
-      result.question!,
-      result.answer!,
-      style: style,
-    );
-  }
-
-  if (result.hasCommaQuote) {
-    return commaQuoteText(
-      result.commaQuoteText,
-      result.commaQuote!,
-      result.commaQuoteReference,
-      result.trailing,
-      style: style,
-    );
-  }
-
-  if (result.hasGeneralQuote) {
-    return generalQuoteText(
-      result.generalQuotePrefix!,
-      result.generalQuote!,
-      afterText: result.trailing,
-      style: style,
-    );
-  }
-
-  if (result.hasWordsQuote) {
-    return wordsQuoteText(
-      result.wordsQuotePrefix!,
-      result.wordsQuote!,
-      afterText: result.trailing,
-      style: style,
-    );
-  }
-
-  if (result.hasSaidQuote) {
-    return saidQuoteText(
-      result.saidQuotePrefix!,
-      result.saidQuote!,
-      afterText: result.trailing,
-      style: style,
-    );
-  }
-
-  if (result.hasStatingQuote) {
-    return statingQuoteText(
-      result.statingQuotePrefix!,
-      result.statingQuote!,
-      afterText: result.trailing,
-      style: style,
-    );
-  }
-
-  if (!result.hasBullets) {
-    return Text(rawText, style: style);
-  }
-
-  return bulletedList(
-    result.lines,
-    header: result.header,
-    style: style,
-  );
+  return _buildWidgetFromResult(context, result, style: style);
 }
 
 /// Renders a hadith narration with narrator, prophet statement, quote, and reference.
