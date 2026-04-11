@@ -1,12 +1,14 @@
 import 'dart:developer' show log;
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:muslimdigest/config/colors.dart';
 import 'package:muslimdigest/config/themes.dart';
 import 'package:muslimdigest/models/feed.dart';
 import 'package:muslimdigest/utils/helpers.dart';
 import 'package:muslimdigest/utils/extensions.dart';
+import 'package:muslimdigest/utils/input_formatter.dart';
 import 'package:muslimdigest/widgets/animations/loader.dart';
 import 'package:muslimdigest/widgets/components/button.dart';
 import 'package:muslimdigest/api/collections.dart';
@@ -144,6 +146,7 @@ class _CollectionSelectionSheetState extends ConsumerState<CollectionSelectionSh
             controller: _searchController,
             focusNode: _searchFocusNode,
             style: h.inputStyle,
+            inputFormatters: [EmojiFilterFormatter()],
             decoration: InputDecoration(
               hintText: 'Search or create new collection...',
               hintStyle: h.hintStyle,
