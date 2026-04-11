@@ -187,10 +187,11 @@ class _FeedCardState extends ConsumerState<FeedCard> with AutomaticKeepAliveClie
         ref: ref,
         feedItem: widget.feedItem!,
         collectionName: collection,
+        currentFeedType: widget.feedType,
       );
       
       // Apply returned result to all feed types and cache - DRY!
-      final applyResult = await result.applyToAllFeeds(ref, widget.feedItem!.id);
+      final applyResult = await result.applyToAllFeeds(ref, widget.feedItem!.id, currentFeedType: widget.feedType);
       
       if (!applyResult.isCompleteSuccess) {
         log('[FeedCard] ⚠️ Partial failure: ${(applyResult.successRate * 100).toStringAsFixed(1)}% success');

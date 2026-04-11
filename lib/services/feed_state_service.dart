@@ -187,12 +187,14 @@ class FeedStateService {
   /// - [ref] - The Ref or WidgetRef for accessing providers and state
   /// - [feedItem] - The feed item to update
   /// - [collectionName] - The new collection name
+  /// - [currentFeedType] - Optional current feed type to skip (prevents circular dependency)
   /// 
   /// **Returns:** FeedUpdateResult with updated item and user stats
   static Future<FeedUpdateResult> updateCollectionNameEverywhereSafe({
     required dynamic ref,
     required FeedItem feedItem,
     required String? collectionName,
+    FeedType? currentFeedType,
   }) async {
     // Update user stats first for save operations
     final userUpdate = await _updateUserStatsSafely(
@@ -205,7 +207,8 @@ class FeedStateService {
       ref, 
       feedItem, 
       isSaved: collectionName != null, 
-      collectionName: collectionName
+      collectionName: collectionName,
+      currentFeedType: currentFeedType,
     );
     
     // Update collection caches
@@ -258,6 +261,7 @@ class FeedStateService {
   /// - [feedItem] - The feed item to update
   /// - [isLiked] - The new like status (true = liked, false = unliked)
   /// - [likeCount] - Optional pre-calculated like count
+  /// - [currentFeedType] - Optional current feed type to skip (prevents circular dependency)
   /// 
   /// **Returns:** FeedUpdateResult with updated item and user stats
   static Future<FeedUpdateResult> updateLikeStatusEverywhereSafe({
@@ -265,6 +269,7 @@ class FeedStateService {
     required FeedItem feedItem,
     required bool isLiked,
     int? likeCount,
+    FeedType? currentFeedType,
   }) async {
     // Calculate like count if not provided
     likeCount ??= isLiked ? feedItem.likeCount + 1 : max(0, feedItem.likeCount - 1);
@@ -277,7 +282,8 @@ class FeedStateService {
       ref, 
       feedItem, 
       isLiked: isLiked, 
-      likeCount: likeCount
+      likeCount: likeCount,
+      currentFeedType: currentFeedType,
     );
     
     // Update collection caches
@@ -305,6 +311,7 @@ class FeedStateService {
   /// - [feedItem] - The feed item to update
   /// - [isSaved] - The new save status (true = saved, false = unsaved)
   /// - [collectionName] - Optional collection name for saved items
+  /// - [currentFeedType] - Optional current feed type to skip (prevents circular dependency)
   /// 
   /// **Returns:** FeedUpdateResult with updated item and user stats
   static Future<FeedUpdateResult> updateSaveStatusEverywhereSafe({
@@ -312,6 +319,7 @@ class FeedStateService {
     required FeedItem feedItem,
     required bool isSaved,
     String? collectionName,
+    FeedType? currentFeedType,
   }) async {
     // Update user stats first
     final userUpdate = await _updateUserStatsSafely(ref, isSaved: isSaved);
@@ -321,7 +329,8 @@ class FeedStateService {
       ref, 
       feedItem, 
       isSaved: isSaved, 
-      collectionName: collectionName
+      collectionName: collectionName,
+      currentFeedType: currentFeedType,
     );
     
     // Update collection caches
@@ -393,6 +402,7 @@ class FeedStateService {
     bool? isLiked,
     int? likeCount,
     String? collectionName,
+    FeedType? currentFeedType,
   }) async {
     
     getNotifier(feedType, ref) {
@@ -404,8 +414,10 @@ class FeedStateService {
     }
 
     for (final feedType in FeedType.values) {
-      // NOTE: We don't need skipFeedType anymore because this method
-      // only updates OTHER feed types, never the current one
+      // Skip current feed type to prevent circular dependency
+      if (currentFeedType != null && feedType == currentFeedType) {
+        continue;
+      }
       
       final notifier = getNotifier(feedType, ref);
       final currentState = readState(feedType, ref);

@@ -1,5 +1,7 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:muslimdigest/config/feeds.dart';
 import 'package:muslimdigest/models/feed.dart';
+import 'package:muslimdigest/providers/feed/base_feed_notifier.dart';
 import 'package:muslimdigest/providers/feed/feed_cache.dart';
 import 'package:muslimdigest/utils/feed_logger.dart';
 import 'package:muslimdigest/variables/feed.dart';
@@ -118,22 +120,37 @@ class FeedUpdateResult {
   /// Updates both provider state and cache in one go - DRY solution!
   /// 
   /// This eliminates boilerplate code across the codebase by centralizing
-  /// the logic for applying update results to all feed types.
+  /// logic for applying update results to all feed types.
   /// 
   /// **Parameters:**
   /// - [ref] - The Ref or WidgetRef for accessing providers and cache
   /// - [feedId] - The ID of the feed item that was updated
+  /// - [currentFeedType] - Optional current feed type to skip (prevents circular dependency)
   /// 
   /// **Returns:** Future with error count and success status
-  Future<ApplyResult> applyToAllFeeds(dynamic ref, String feedId) async {
+  Future<ApplyResult> applyToAllFeeds(dynamic ref, String feedId, {FeedType? currentFeedType}) async {
     final List<String> errors = [];
     final List<FeedType> successfulFeedTypes = [];
     int successCount = 0;
     
     for (final feedType in FeedType.values) {
+      if (currentFeedType != null && feedType == currentFeedType) {
+        continue;
+      }
+      
       try {
-        final notifier = feedType.getNotifier(ref);
-        final currentState = feedType.read(ref);
+        // Handle both Ref and WidgetRef types for compatibility
+        BaseFeedNotifier notifier;
+        BaseFeedState currentState;
+        
+        if (ref is WidgetRef) {
+          notifier = feedType.getNotifier(ref);
+          currentState = feedType.read(ref);
+        } else {
+          notifier = feedType.getNotifierWithRef(ref);
+          currentState = feedType.readWithRef(ref);
+        }
+        
         final List<FeedItem> matchedItems = currentState.items?.where((item) => item.id == feedId).toList() ?? <FeedItem>[];
         
         if (matchedItems.isNotEmpty) {

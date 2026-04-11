@@ -221,10 +221,24 @@ abstract class BaseFeedNotifier extends Notifier<BaseFeedState> {
         feedItem: currentItem,
         isLiked: isLiked,
         likeCount: calculatedLikeCount,
+        currentFeedType: _currentFeedType,
       );
       
-      // Apply returned result to all feed types and cache - DRY!
-      await result.applyToAllFeeds(ref, feedId);
+      // Apply returned result to all OTHER feed types and cache - DRY!
+      await result.applyToAllFeeds(ref, feedId, currentFeedType: _currentFeedType);
+      
+      // Update current feed state manually (since we skipped it in applyToAllFeeds)
+      final currentItems = state.items?.map((item) {
+        if (item.id == feedId) {
+          return currentItem.copyWith(
+            isLiked: isLiked,
+            likeCount: result.updatedLikeCount ?? currentItem.likeCount,
+          );
+        }
+        return item;
+      }).toList();
+      
+      await setValue(currentItems);
       
       log('[BaseFeedNotifier] ✅ Safe like update completed: item $feedId, isLiked=$isLiked, likeCount=$result.updatedLikeCount');
     }
@@ -253,10 +267,24 @@ abstract class BaseFeedNotifier extends Notifier<BaseFeedState> {
         feedItem: currentItem,
         isSaved: isSaved,
         collectionName: targetCollectionName,
+        currentFeedType: _currentFeedType,
       );
       
-      // Apply returned result to all feed types and cache - DRY!
-      final applyResult = await result.applyToAllFeeds(ref, feedId);
+      // Apply returned result to all OTHER feed types and cache - DRY!
+      final applyResult = await result.applyToAllFeeds(ref, feedId, currentFeedType: _currentFeedType);
+      
+      // Update current feed state manually (since we skipped it in applyToAllFeeds)
+      final currentItems = state.items?.map((item) {
+        if (item.id == feedId) {
+          return currentItem.copyWith(
+            isSaved: isSaved,
+            collectionName: result.collectionName ?? currentItem.collectionName,
+          );
+        }
+        return item;
+      }).toList();
+      
+      await setValue(currentItems);
       
       if (!applyResult.isCompleteSuccess) {
         log('[BaseFeedNotifier] ⚠️ Partial failure: ${(applyResult.successRate * 100).toStringAsFixed(1)}% success');
