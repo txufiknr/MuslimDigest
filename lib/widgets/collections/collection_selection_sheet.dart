@@ -1,7 +1,6 @@
 import 'dart:developer' show log;
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:muslimdigest/config/colors.dart';
 import 'package:muslimdigest/config/themes.dart';
@@ -205,14 +204,10 @@ class _CollectionSelectionSheetState extends ConsumerState<CollectionSelectionSh
   }
 
   Widget _buildListContent(MyHelper h) {
-    if (_showCreateButton) return _buildCreateCollectionSection(h);
+    if (_showCreateButton) return SizedBox.shrink();
     if (_isLoading) return MyLoader().center();
     if (_filteredCollections.isEmpty) return _buildEmptyState(h);
     return _buildCollectionsList(h);
-  }
-
-  Widget _buildCreateCollectionSection(MyHelper h) {
-    return SizedBox.shrink();
   }
 
   Widget _buildEmptyState(MyHelper h) {

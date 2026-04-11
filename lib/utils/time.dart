@@ -14,6 +14,23 @@ bool isSameDay(DateTime? date1, DateTime? date2) {
 /// Check if a date is today (UTC)
 bool isToday(DateTime? dateUTC) => isSameDay(dateUTC, todayUTC);
 
+/// Determines if the daily digest should be available based on the last ingest time.
+/// 
+/// Returns true if:
+/// - No previous ingest date exists (first time user)
+/// - Last ingest was before tomorrow (with 1-hour buffer)
+/// 
+/// Returns false if:
+/// - Last ingest was within the same day as tomorrow
+/// 
+/// [ingestLastDateUTC] The UTC timestamp of the last digest ingest
+/// Returns bool indicating whether digest should be available
+bool isDigestShouldBeAvailable(DateTime? ingestLastDateUTC) {
+  // if ingestLastDateUTC is not today + 1 hour waiting for ingest completion
+  if (ingestLastDateUTC == null) return true;
+  return !isSameDay(ingestLastDateUTC, todayUTC.add(const Duration(hours: 1)));
+}
+
 /// Get current hijri date
 JHijri get hijriDate => JHijri.now();
 

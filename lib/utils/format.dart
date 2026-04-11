@@ -87,6 +87,11 @@ final _kBracketQuotePattern = RegExp(
   r'(.+?):\s*"([^"]+)"\s*\[([^\]]+)\]',
 );
 
+// Matches asterisk pattern for italic text: "*text*"
+final _kAsteriskPattern = RegExp(
+  r'\*([^*]+)\*',
+);
+
 /// Parsed result of a raw text string.
 ///
 /// - [header] is the optional leading text before the first bullet (e.g. a
@@ -113,6 +118,7 @@ final _kBracketQuotePattern = RegExp(
 /// - [bracketQuote] is the quoted text part when bracket quote pattern is detected.
 /// - [bracketQuotePrefix] is the prefix text before the colon in bracket quote pattern.
 /// - [bracketQuoteReference] is the reference text in square brackets for bracket quote pattern.
+/// - [asteriskText] is the italic text part when asterisk pattern is detected.
 /// - [trailing] is the text after the quote pattern.
 /// - [rawText] is the original raw text for fallback.
 @immutable
@@ -141,6 +147,7 @@ class _ParseResult {
     this.bracketQuote,
     this.bracketQuotePrefix,
     this.bracketQuoteReference,
+    this.asteriskText,
     this.trailing,
   });
 
@@ -167,6 +174,7 @@ class _ParseResult {
   final String? bracketQuote;
   final String? bracketQuotePrefix;
   final String? bracketQuoteReference;
+  final String? asteriskText;
   final String? trailing;
 
   bool get hasBullets => lines.isNotEmpty;
@@ -178,6 +186,7 @@ class _ParseResult {
   bool get hasSaidQuote => saidQuote != null;
   bool get hasStatingQuote => statingQuote != null;
   bool get hasBracketQuote => bracketQuote != null;
+  bool get hasAsterisk => asteriskText != null;
 }
 
 /// Strips the leading bullet character from [line] and returns the trimmed
@@ -220,7 +229,7 @@ String? _stripLeadingBullet(String line) {
 /// When no bullets are found at all, [_ParseResult.lines] is empty.
 _ParseResult _parseText(String rawText, {ParseMode mode = ParseMode.primary}) {
   final trimmed = rawText.trim();
-  if (trimmed.isEmpty) return const _ParseResult();
+  if (trimmed.isEmpty) return _ParseResult(rawText: rawText);
 
   // Preprocess text to replace smart quotes with standard quotes
   final normalizedText = trimmed
@@ -231,9 +240,7 @@ _ParseResult _parseText(String rawText, {ParseMode mode = ParseMode.primary}) {
       .replaceAll('\u2026', '...'); // Horizontal ellipsis
 
   // In nested mode, skip primary content patterns to avoid recursion
-  if (mode == ParseMode.nested) {
-    // Only process quote patterns in nested mode
-  } else {
+  if (mode == ParseMode.primary) {
     // ── Strategy 1: Hadith detection ────────────────────────────────────────────
     final hadithMatch = _kHadithPattern.firstMatch(normalizedText);
     if (hadithMatch != null) {
@@ -252,7 +259,7 @@ _ParseResult _parseText(String rawText, {ParseMode mode = ParseMode.primary}) {
       return _ParseResult(
         rawText: rawText,
         question: qaMatch.group(1)?.trim(),
-        answer: _parseText(qaMatch.group(2)!, mode: ParseMode.nested).rawText,
+        answer: qaMatch.group(2)?.trim(),
       );
     }
   }
@@ -268,6 +275,7 @@ _ParseResult _parseText(String rawText, {ParseMode mode = ParseMode.primary}) {
     final afterQuote = normalizedText.substring(matchEnd).trim();
     
     return _ParseResult(
+      rawText: rawText,
       commaQuoteText: beforeQuote.isNotEmpty ? beforeQuote : null,
       commaQuote: quoteText,
       commaQuoteReference: referenceText,
@@ -284,6 +292,7 @@ _ParseResult _parseText(String rawText, {ParseMode mode = ParseMode.primary}) {
     final afterQuote = normalizedText.substring(matchEnd).trim();
     
     return _ParseResult(
+      rawText: rawText,
       wordsQuotePrefix: prefix?.isNotEmpty == true ? prefix : 'words',
       wordsQuote: quoteText,
       trailing: afterQuote.isNotEmpty ? afterQuote : null,
@@ -299,6 +308,7 @@ _ParseResult _parseText(String rawText, {ParseMode mode = ParseMode.primary}) {
     final afterQuote = normalizedText.substring(matchEnd).trim();
     
     return _ParseResult(
+      rawText: rawText,
       saidQuotePrefix: prefix?.isNotEmpty == true ? prefix : 'said',
       saidQuote: quoteText,
       trailing: afterQuote.isNotEmpty ? afterQuote : null,
@@ -314,6 +324,7 @@ _ParseResult _parseText(String rawText, {ParseMode mode = ParseMode.primary}) {
     final afterQuote = normalizedText.substring(matchEnd).trim();
     
     return _ParseResult(
+      rawText: rawText,
       generalQuotePrefix: prefix,
       generalQuote: quoteText,
       trailing: afterQuote.isNotEmpty ? afterQuote : null,
@@ -333,6 +344,7 @@ _ParseResult _parseText(String rawText, {ParseMode mode = ParseMode.primary}) {
     final usedWord = matchedText.contains('states') ? 'states' : 'stating';
     
     return _ParseResult(
+      rawText: rawText,
       statingQuotePrefix: prefix?.isNotEmpty == true ? '$prefix $usedWord' : usedWord,
       statingQuote: quoteText,
       trailing: afterQuote.isNotEmpty ? afterQuote : null,
@@ -349,10 +361,20 @@ _ParseResult _parseText(String rawText, {ParseMode mode = ParseMode.primary}) {
     final afterQuote = normalizedText.substring(matchEnd).trim();
     
     return _ParseResult(
+      rawText: rawText,
       bracketQuotePrefix: prefix,
       bracketQuote: quoteText,
       bracketQuoteReference: referenceText,
       trailing: afterQuote.isNotEmpty ? afterQuote : null,
+    );
+  }
+
+  // Strategy 2.11: Asterisk pattern detection for italic text
+  if (_kAsteriskPattern.hasMatch(normalizedText)) {
+    // Use Text.rich to handle multiple asterisk occurrences
+    return _ParseResult(
+      rawText: rawText,
+      asteriskText: normalizedText, // Store the full text for rich rendering
     );
   }
 
@@ -379,11 +401,11 @@ _ParseResult _parseText(String rawText, {ParseMode mode = ParseMode.primary}) {
       }
     }
     if (lines.isNotEmpty) {
-      return _ParseResult(header: header, lines: lines);
+      return _ParseResult(rawText: rawText, header: header, lines: lines);
     }
   }
 
-  // ── Strategy 4: inline bullets ─────────────────────────────────────────────
+  // Strategy 4: inline bullets ─────────────────────────────────────────────
   if (_kInlineBulletDetect.hasMatch(normalizedText)) {
     final rawParts = normalizedText.split(_kBulletSplit);
 
@@ -407,17 +429,17 @@ _ParseResult _parseText(String rawText, {ParseMode mode = ParseMode.primary}) {
     }
 
     if (lines.isNotEmpty) {
-      return _ParseResult(header: header, lines: lines);
+      return _ParseResult(rawText: rawText, header: header, lines: lines);
     }
   }
 
   // ── Strategy 5: single bullet line ─────────────────────────────────────────
   final stripped = _stripLeadingBullet(normalizedText);
   if (stripped != null) {
-    return _ParseResult(header: null, lines: [stripped]);
+    return _ParseResult(rawText: rawText, header: null, lines: [stripped]);
   }
 
-  return const _ParseResult();
+  return _ParseResult(rawText: normalizedText);
 }
 
 /// Builds widget from _ParseResult using unified rendering logic
@@ -439,7 +461,7 @@ Widget _buildWidgetFromResult(BuildContext context, _ParseResult result, {TextSt
   if (result.isQA) {
     return qaPair(
       result.question!,
-      result.answer!,
+      _buildWidgetFromResult(context, _parseText(result.answer!, mode: ParseMode.nested), style: style),
       style: style,
     );
   }
@@ -500,6 +522,14 @@ Widget _buildWidgetFromResult(BuildContext context, _ParseResult result, {TextSt
     );
   }
 
+  if (result.hasAsterisk) {
+    return asteriskText(
+      result.asteriskText!,
+      afterText: result.trailing,
+      style: style,
+    );
+  }
+
   if (result.hasBullets) {
     return bulletedList(
       result.lines,
@@ -554,7 +584,7 @@ Widget bulletedList(
 /// [question] and [answer] are displayed as separate text widgets
 /// with "Q:" and "A:" prefixes respectively.
 /// [spacing] controls the vertical gap between question and answer.
-Widget qaPair(String question, String answer, {
+Widget qaPair(String question, Widget answer, {
   TextStyle? style,
   double spacing = 8,
 }) {
@@ -574,10 +604,56 @@ Widget qaPair(String question, String answer, {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text('A: ', style: style?.copyWith(fontWeight: FontWeight.w600) ?? TextStyle(fontWeight: FontWeight.w600)),
-          Expanded(child: Text(answer, style: style)),
+          // Expanded(child: Text(answer, style: style)),
+          Expanded(child: answer),
         ],
       ),
     ],
+  );
+}
+
+/// Renders text with asterisk pattern for italic styling.
+///
+/// The text is displayed with all asterisk-wrapped portions styled as italic.
+/// [fullText] is the complete text containing asterisk patterns.
+/// [afterText] is unused (kept for compatibility).
+Widget asteriskText(String fullText, {String? afterText, TextStyle? style}) {
+  final italicStyle = style?.copyWith(
+    fontStyle: FontStyle.italic,
+  ) ?? TextStyle(
+    fontStyle: FontStyle.italic,
+  );
+
+  final textSpans = <TextSpan>[];
+  int lastIndex = 0;
+  
+  // Find all asterisk occurrences and build rich text
+  for (final match in _kAsteriskPattern.allMatches(fullText)) {
+    // Add text before the asterisk
+    if (match.start > lastIndex) {
+      textSpans.add(TextSpan(text: fullText.substring(lastIndex, match.start)));
+    }
+    
+    // Add the italic text
+    final italicText = match.group(1)!;
+    textSpans.add(TextSpan(
+      text: italicText,
+      style: italicStyle,
+    ));
+    
+    lastIndex = match.end;
+  }
+  
+  // Add remaining text after the last asterisk
+  if (lastIndex < fullText.length) {
+    textSpans.add(TextSpan(text: fullText.substring(lastIndex)));
+  }
+
+  return Text.rich(
+    TextSpan(
+      children: textSpans,
+      style: style,
+    ),
   );
 }
 

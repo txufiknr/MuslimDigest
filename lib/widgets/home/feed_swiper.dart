@@ -305,10 +305,10 @@ class FeedSwiperState extends ConsumerState<FeedSwiper> {
       ).withPaddingAll(AppThemes.contentPadding);
     }
 
-    log('_initialItemIndex = $_initialItemIndex');
-    log('_cardsCount = $_cardsCount');
-    log('_canGoNext = $_canGoNext');
-    log('_canGoPrev = $_canGoPrev');
+    // log('_initialItemIndex = $_initialItemIndex');
+    // log('_cardsCount = $_cardsCount');
+    // log('_canGoNext = $_canGoNext');
+    // log('_canGoPrev = $_canGoPrev');
     // log('Swipe direction: $_swipeDirection, Undo direction: $_undoDirection');
 
     return CardSwiper(

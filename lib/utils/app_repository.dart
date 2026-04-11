@@ -19,6 +19,7 @@ import 'package:muslimdigest/utils/app.dart';
 import 'package:muslimdigest/utils/route.dart';
 import 'package:muslimdigest/utils/time.dart';
 import 'package:muslimdigest/variables/feed.dart' show FeedType;
+import 'package:muslimdigest/variables/time.dart';
 import 'package:muslimdigest/variables/user.dart';
 
 /// Business-logic repository. Uses Ref, never WidgetRef.
@@ -41,8 +42,10 @@ class AppRepository {
 
   /// Whether today's digest feed fetch is done or due
   bool get isDailyDigestUpToDate => ingestLastDate != null && isToday(ingestLastDate!) && feedState.isAvailable;
-  // "Do we have today's content?"
-  bool get shouldFetchDailyDigest => !isDailyDigestUpToDate;
+  // "Do we have today's content to fetch?"
+  bool get shouldNewDigestAvailable => isDigestShouldBeAvailable(ingestLastDate);
+  // "Should we fetch today's content?"
+  bool get shouldFetchDailyDigest => !isDailyDigestUpToDate && shouldNewDigestAvailable;
 
   /// Digest feed is newer than last read (even though it's not today)
   bool get newDigestFeedAvailable => readLastDate == null || ingestLastDate?.isAfter(readLastDate!) == true;
@@ -85,7 +88,7 @@ class AppRepository {
   bool get shouldShowDigest {
     if (!_ref.mounted || isFirstRun) return true; // always digest for first time user
     log('[homeFeedType] isStreakToday = $isStreakToday');
-    log('[homeFeedType] shouldFetchDailyDigest = $shouldFetchDailyDigest');
+    log('[homeFeedType] shouldFetchDailyDigest = $shouldFetchDailyDigest (ingestLastDate = $ingestLastDate, todayUTC = $todayUTC)');
     log('[homeFeedType] shouldForceReloadDigest = $shouldForceReloadDigest');
     log('[homeFeedType] isDailyDigestCompleted = $isDailyDigestCompleted');
     if (isStreakToday) return false; // has streak today
